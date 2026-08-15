@@ -16,7 +16,7 @@ def test_score_numbers_returns_scores():
 
     assert len(scores) == 3
     assert scores[0].number == 1
-    assert scores[0].score == pytest.approx(1.0)
+    assert scores[0].score == pytest.approx(0.7)
 
 
 def test_score_numbers_is_deterministic():

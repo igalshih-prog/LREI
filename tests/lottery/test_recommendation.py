@@ -1,27 +1,33 @@
 import pytest
 
-from lrei.lottery.recommendation import (
-    RecommendationEngine,
-    RecommendationError,
-)
+from lrei.lottery.dataset import LotteryDataset, LotteryDrawRecord
+from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
 
 def make_statistics() -> LotteryStatistics:
-    return LotteryStatistics(
-        frequencies={
-            1: 10,
-            2: 9,
-            3: 8,
-            4: 7,
-            5: 6,
-            6: 5,
-            7: 4,
-            8: 3,
-            9: 2,
-            10: 1,
-        }
+    dataset = LotteryDataset(
+        [
+            LotteryDrawRecord(
+                draw_id="draw-001",
+                numbers=(1, 2, 3, 4, 5, 6),
+            ),
+            LotteryDrawRecord(
+                draw_id="draw-002",
+                numbers=(1, 2, 3, 4, 5, 7),
+            ),
+            LotteryDrawRecord(
+                draw_id="draw-003",
+                numbers=(1, 2, 3, 4, 8, 9),
+            ),
+            LotteryDrawRecord(
+                draw_id="draw-004",
+                numbers=(1, 2, 3, 10, 11, 12),
+            ),
+        ]
     )
+
+    return LotteryStatistics.from_dataset(dataset)
 
 
 def test_recommendation_engine_returns_result():

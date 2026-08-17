@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
-from .optimizer import LotteryOptimizer
+from .optimizer import LotteryOptimizer, OptimizerError
 
 
 class SelectionError(Exception):
@@ -37,7 +37,12 @@ class TicketSelector:
         if not tickets:
             raise SelectionError("No tickets were provided")
 
-        optimized = self.optimizer.optimize(tickets)
+        try:
+            optimized = self.optimizer.optimize(tickets)
+        except OptimizerError as exc:
+            raise SelectionError(
+                f"Ticket optimization failed: {exc}"
+            ) from exc
 
         if not optimized:
             raise SelectionError(

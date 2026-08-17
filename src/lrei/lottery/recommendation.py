@@ -50,7 +50,10 @@ class RecommendationEngine:
         if ticket_count <= 0:
             raise ValueError("ticket_count must be positive")
 
-        frequencies = statistics.frequencies()
+        frequencies = {
+            item.number: item.count
+            for item in statistics.number_frequency
+        }
 
         scores = self.predictor.score_numbers(
             frequencies=frequencies,

@@ -176,3 +176,56 @@ def test_backtester_rejects_dataset_that_is_too_small():
             train_size=6,
             test_size=1,
         )
+def test_backtester_includes_random_baseline_results():
+    backtester = LotteryBacktester()
+
+    result = backtester.run(
+        dataset=make_dataset(),
+        train_size=3,
+        test_size=1,
+        ticket_count=20,
+        seed=42,
+    )
+
+    for case in result.cases:
+        assert case.baseline_best_match >= 0
+        assert case.baseline_total_matches >= 0
+
+
+def test_backtester_baseline_uses_same_ticket_count():
+    backtester = LotteryBacktester()
+
+    result = backtester.run(
+        dataset=make_dataset(),
+        train_size=3,
+        test_size=1,
+        ticket_count=20,
+        seed=42,
+    )
+
+    for case in result.cases:
+        assert (
+            case.recommended_ticket_count
+            > 0
+        )
+
+        assert (
+            case.recommended_ticket_count
+            <= case.generated_ticket_count
+        )
+
+
+def test_backtester_exposes_baseline_aggregate_metrics():
+    backtester = LotteryBacktester()
+
+    result = backtester.run(
+        dataset=make_dataset(),
+        train_size=3,
+        test_size=1,
+        ticket_count=20,
+        seed=42,
+    )
+
+    assert result.baseline_best_match >= 0
+    assert result.baseline_total_matches >= 0
+    assert result.baseline_average_matches >= 0.0

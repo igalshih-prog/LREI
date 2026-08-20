@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .baseline import RandomBaseline
 from .dataset import LotteryDataset, WalkForwardDataset
 from .recommendation import RecommendationEngine
 
@@ -21,8 +22,12 @@ class BacktestCase:
     generated_ticket_count: int
     recommended_ticket_count: int
     test_draw_id: str
+
     best_match: int
     total_matches: int
+
+    baseline_best_match: int
+    baseline_total_matches: int
 
 
 @dataclass(frozen=True)
@@ -39,27 +44,66 @@ class BacktestResult:
 
     @property
     def best_match(self) -> int:
-        """Return the highest number of matches in any test case."""
+        """Return the highest match from the recommendation engine."""
 
         if not self.cases:
             return 0
 
-        return max(case.best_match for case in self.cases)
+        return max(
+            case.best_match
+            for case in self.cases
+        )
 
     @property
     def total_matches(self) -> int:
-        """Return the total number of matched numbers."""
+        """Return total matches from the recommendation engine."""
 
-        return sum(case.total_matches for case in self.cases)
+        return sum(
+            case.total_matches
+            for case in self.cases
+        )
 
     @property
     def average_matches(self) -> float:
-        """Return the average total matches per test case."""
+        """Return average matches per test case."""
 
         if not self.cases:
             return 0.0
 
         return self.total_matches / self.case_count
+
+    @property
+    def baseline_best_match(self) -> int:
+        """Return the highest match from the random baseline."""
+
+        if not self.cases:
+            return 0
+
+        return max(
+            case.baseline_best_match
+            for case in self.cases
+        )
+
+    @property
+    def baseline_total_matches(self) -> int:
+        """Return total matches from the random baseline."""
+
+        return sum(
+            case.baseline_total_matches
+            for case in self.cases
+        )
+
+    @property
+    def baseline_average_matches(self) -> float:
+        """Return average baseline matches per test case."""
+
+        if not self.cases:
+            return 0.0
+
+        return (
+            self.baseline_total_matches
+            / self.case_count
+        )
 
 
 class LotteryBacktester:
@@ -68,8 +112,10 @@ class LotteryBacktester:
     def __init__(
         self,
         engine: RecommendationEngine | None = None,
+        baseline: RandomBaseline | None = None,
     ) -> None:
         self.engine = engine or RecommendationEngine()
+        self.baseline = baseline or RandomBaseline()
 
     def run(
         self,
@@ -82,13 +128,19 @@ class LotteryBacktester:
         """Run a chronological walk-forward backtest."""
 
         if train_size <= 0:
-            raise ValueError("train_size must be positive")
+            raise ValueError(
+                "train_size must be positive"
+            )
 
         if test_size <= 0:
-            raise ValueError("test_size must be positive")
+            raise ValueError(
+                "test_size must be positive"
+            )
 
         if ticket_count <= 0:
-            raise ValueError("ticket_count must be positive")
+            raise ValueError(
+                "ticket_count must be positive"
+            )
 
         if train_size + test_size > len(dataset):
             raise BacktestError(
@@ -106,7 +158,9 @@ class LotteryBacktester:
         for split_index, (train, test) in enumerate(
             walk_forward.splits()
         ):
-            statistics = self._statistics_from_dataset(train)
+            statistics = self._statistics_from_dataset(
+                train
+            )
 
             result = self.engine.recommend(
                 statistics=statistics,
@@ -118,17 +172,53 @@ class LotteryBacktester:
                 ),
             )
 
+            recommended_tickets = (
+                result.recommended_tickets
+            )
+
+            baseline_tickets = (
+                self.baseline.generate_tickets(
+                    count=len(recommended_tickets),
+                    seed=(
+                        seed + 10_000 + split_index
+                        if seed is not None
+                        else None
+                    ),
+                )
+            )
+
             for test_draw in test:
+                actual_numbers = set(
+                    test_draw.numbers
+                )
+
                 best_match = 0
                 total_matches = 0
 
-                actual_numbers = set(test_draw.numbers)
+                for ticket in recommended_tickets:
+                    matches = len(
+                        set(ticket) & actual_numbers
+                    )
 
-                for ticket in result.recommended_tickets:
-                    matches = len(set(ticket) & actual_numbers)
-
-                    best_match = max(best_match, matches)
+                    best_match = max(
+                        best_match,
+                        matches,
+                    )
                     total_matches += matches
+
+                baseline_best_match = 0
+                baseline_total_matches = 0
+
+                for ticket in baseline_tickets:
+                    matches = len(
+                        set(ticket) & actual_numbers
+                    )
+
+                    baseline_best_match = max(
+                        baseline_best_match,
+                        matches,
+                    )
+                    baseline_total_matches += matches
 
                 cases.append(
                     BacktestCase(
@@ -138,15 +228,23 @@ class LotteryBacktester:
                             result.generated_tickets
                         ),
                         recommended_ticket_count=len(
-                            result.recommended_tickets
+                            recommended_tickets
                         ),
                         test_draw_id=test_draw.draw_id,
                         best_match=best_match,
                         total_matches=total_matches,
+                        baseline_best_match=(
+                            baseline_best_match
+                        ),
+                        baseline_total_matches=(
+                            baseline_total_matches
+                        ),
                     )
                 )
 
-        return BacktestResult(cases=tuple(cases))
+        return BacktestResult(
+            cases=tuple(cases)
+        )
 
     @staticmethod
     def _statistics_from_dataset(
@@ -154,4 +252,6 @@ class LotteryBacktester:
     ):
         from .statistics import LotteryStatistics
 
-        return LotteryStatistics.from_dataset(dataset)
+        return LotteryStatistics.from_dataset(
+            dataset
+        )

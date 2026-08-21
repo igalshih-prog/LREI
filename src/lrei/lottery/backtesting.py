@@ -105,6 +105,40 @@ class BacktestResult:
             / self.case_count
         )
 
+    def match_count_at_least(
+        self,
+        threshold: int,
+    ) -> int:
+        """Return cases where recommendation reaches a match threshold."""
+
+        if threshold <= 0:
+            raise ValueError(
+                "threshold must be positive"
+            )
+
+        return sum(
+            1
+            for case in self.cases
+            if case.best_match >= threshold
+        )
+
+    def baseline_match_count_at_least(
+        self,
+        threshold: int,
+    ) -> int:
+        """Return baseline cases reaching a match threshold."""
+
+        if threshold <= 0:
+            raise ValueError(
+                "threshold must be positive"
+            )
+
+        return sum(
+            1
+            for case in self.cases
+            if case.baseline_best_match >= threshold
+        )
+
 
 class LotteryBacktester:
     """Evaluate recommendations using chronological walk-forward testing."""

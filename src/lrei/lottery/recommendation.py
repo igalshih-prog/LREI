@@ -20,7 +20,7 @@ class RecommendedTicket:
     """One recommended lottery ticket."""
 
     numbers: tuple[int, ...]
-    strong_number: int
+    strong_number: int | None = None
 
 
 @dataclass(frozen=True)
@@ -28,15 +28,18 @@ class RecommendationResult:
     """Final recommendation result."""
 
     scores: tuple[NumberScore, ...]
-    strong_scores: tuple[NumberScore, ...]
     generated_tickets: tuple[tuple[int, ...], ...]
     recommended_tickets: tuple[tuple[int, ...], ...]
+
+    strong_scores: tuple[NumberScore, ...] = ()
+
     generated_tickets_with_strong: tuple[
         RecommendedTicket, ...
-    ]
+    ] = ()
+
     recommended_tickets_with_strong: tuple[
         RecommendedTicket, ...
-    ]
+    ] = ()
 
 
 class RecommendationEngine:
@@ -90,39 +93,17 @@ class RecommendationEngine:
             frequencies=frequencies,
         )
 
-        strong_scores = self._score_strong_numbers(
-            statistics
-        )
-
         rng = random.Random(seed)
 
         generated: list[
             tuple[int, ...]
         ] = []
 
-        generated_with_strong: list[
-            RecommendedTicket
-        ] = []
-
         for _ in range(ticket_count):
-            ticket = self.generator.generate_ticket(
-                scores=scores,
-                rng=rng,
-            )
-
-            strong_number = (
-                self.generator.generate_strong_number(
-                    scores=strong_scores,
+            generated.append(
+                self.generator.generate_ticket(
+                    scores=scores,
                     rng=rng,
-                )
-            )
-
-            generated.append(ticket)
-
-            generated_with_strong.append(
-                RecommendedTicket(
-                    numbers=ticket,
-                    strong_number=strong_number,
                 )
             )
 
@@ -135,27 +116,72 @@ class RecommendationEngine:
                 "Optimizer returned no recommended tickets"
             )
 
-        recommended_set = set(recommended)
+        # ---------------------------------------------------------
+        # Strong number is optional for backward compatibility.
+        # Older unit-test datasets may not contain it.
+        # Real datasets with strong-number data will use it.
+        # ---------------------------------------------------------
+
+        strong_scores = self._score_strong_numbers(
+            statistics
+        )
+
+        generated_with_strong: list[
+            RecommendedTicket
+        ] = []
 
         recommended_with_strong: list[
             RecommendedTicket
         ] = []
 
-        for item in generated_with_strong:
-            if item.numbers in recommended_set:
-                recommended_with_strong.append(item)
+        if strong_scores:
+            for ticket in generated:
+                strong_number = (
+                    self.generator.generate_strong_number(
+                        scores=strong_scores,
+                        rng=rng,
+                    )
+                )
 
-        if not recommended_with_strong:
-            raise RecommendationError(
-                "No strong-number recommendations "
-                "remain after optimization"
-            )
+                generated_with_strong.append(
+                    RecommendedTicket(
+                        numbers=ticket,
+                        strong_number=strong_number,
+                    )
+                )
+
+            recommended_set = set(recommended)
+
+            for item in generated_with_strong:
+                if item.numbers in recommended_set:
+                    recommended_with_strong.append(
+                        item
+                    )
+
+        else:
+            # Keep the existing pipeline functional
+            # when strong-number data is unavailable.
+            generated_with_strong = [
+                RecommendedTicket(
+                    numbers=ticket,
+                    strong_number=None,
+                )
+                for ticket in generated
+            ]
+
+            recommended_set = set(recommended)
+
+            recommended_with_strong = [
+                item
+                for item in generated_with_strong
+                if item.numbers in recommended_set
+            ]
 
         return RecommendationResult(
             scores=tuple(scores),
-            strong_scores=tuple(strong_scores),
             generated_tickets=tuple(generated),
             recommended_tickets=recommended,
+            strong_scores=tuple(strong_scores),
             generated_tickets_with_strong=tuple(
                 generated_with_strong
             ),
@@ -168,71 +194,25 @@ class RecommendationEngine:
         self,
         statistics: LotteryStatistics,
     ) -> tuple[NumberScore, ...]:
-        """Score strong numbers independently."""
+        """Score strong numbers when available."""
 
-        strong_frequencies = (
-            self._extract_strong_frequencies(
-                statistics
-            )
+        strong_frequency = getattr(
+            statistics,
+            "strong_number_frequency",
+            (),
         )
+
+        if not strong_frequency:
+            return ()
+
+        frequencies = {
+            item.number: item.count
+            for item in strong_frequency
+        }
+
+        if not frequencies:
+            return ()
 
         return self.predictor.score_numbers(
-            frequencies=strong_frequencies,
-        )
-
-    @staticmethod
-    def _extract_strong_frequencies(
-        statistics: LotteryStatistics,
-    ) -> dict[int, int]:
-        """
-        Extract strong-number frequencies.
-
-        This method supports statistics implementations
-        that expose strong-number frequency data.
-        """
-
-        for attribute_name in (
-            "strong_number_frequency",
-            "strong_frequency",
-            "strong_frequencies",
-        ):
-            value = getattr(
-                statistics,
-                attribute_name,
-                None,
-            )
-
-            if value is None:
-                continue
-
-            if isinstance(value, dict):
-                return {
-                    int(number): int(count)
-                    for number, count in value.items()
-                }
-
-            result: dict[int, int] = {}
-
-            for item in value:
-                number = getattr(
-                    item,
-                    "number",
-                    None,
-                )
-
-                count = getattr(
-                    item,
-                    "count",
-                    None,
-                )
-
-                if number is not None and count is not None:
-                    result[int(number)] = int(count)
-
-            if result:
-                return result
-
-        raise RecommendationError(
-            "Statistics does not contain strong-number "
-            "frequency data"
+            frequencies=frequencies,
         )

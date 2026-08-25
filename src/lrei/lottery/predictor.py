@@ -27,14 +27,22 @@ class LotteryPredictor:
         recency_weight: float = 0.3,
     ) -> None:
         if frequency_weight < 0:
-            raise ValueError("frequency_weight must be non-negative")
+            raise ValueError(
+                "frequency_weight must be non-negative"
+            )
 
         if recency_weight < 0:
-            raise ValueError("recency_weight must be non-negative")
-
-        if frequency_weight == 0 and recency_weight == 0:
             raise ValueError(
-                "At least one predictor weight must be greater than zero"
+                "recency_weight must be non-negative"
+            )
+
+        if (
+            frequency_weight == 0
+            and recency_weight == 0
+        ):
+            raise ValueError(
+                "At least one predictor weight "
+                "must be greater than zero"
             )
 
         self.frequency_weight = frequency_weight
@@ -45,8 +53,58 @@ class LotteryPredictor:
         frequencies: Mapping[int, int],
         recency_scores: Mapping[int, float] | None = None,
     ) -> tuple[NumberScore, ...]:
-        """Return deterministic scores for all numbers in the input."""
+        """Return deterministic scores for all numbers."""
 
+        return self._score(
+            frequencies=frequencies,
+            recency_scores=recency_scores,
+        )
+
+    def score_strong_numbers(
+        self,
+        frequencies: Mapping[int, int],
+        recency_scores: Mapping[int, float] | None = None,
+    ) -> tuple[NumberScore, ...]:
+        """Return deterministic scores for strong numbers."""
+
+        return self._score(
+            frequencies=frequencies,
+            recency_scores=recency_scores,
+        )
+
+    def rank_numbers(
+        self,
+        frequencies: Mapping[int, int],
+        recency_scores: Mapping[int, float] | None = None,
+    ) -> tuple[NumberScore, ...]:
+        """Return main numbers ordered by score."""
+
+        scored = self.score_numbers(
+            frequencies=frequencies,
+            recency_scores=recency_scores,
+        )
+
+        return self._rank(scored)
+
+    def rank_strong_numbers(
+        self,
+        frequencies: Mapping[int, int],
+        recency_scores: Mapping[int, float] | None = None,
+    ) -> tuple[NumberScore, ...]:
+        """Return strong numbers ordered by score."""
+
+        scored = self.score_strong_numbers(
+            frequencies=frequencies,
+            recency_scores=recency_scores,
+        )
+
+        return self._rank(scored)
+
+    def _score(
+        self,
+        frequencies: Mapping[int, int],
+        recency_scores: Mapping[int, float] | None,
+    ) -> tuple[NumberScore, ...]:
         if not frequencies:
             return ()
 
@@ -57,7 +115,10 @@ class LotteryPredictor:
         if max_frequency <= 0:
             max_frequency = 1
 
-        total_weight = self.frequency_weight + self.recency_weight
+        total_weight = (
+            self.frequency_weight
+            + self.recency_weight
+        )
 
         scores: list[NumberScore] = []
 
@@ -69,12 +130,19 @@ class LotteryPredictor:
                     f"Frequency cannot be negative: {frequency}"
                 )
 
-            frequency_score = frequency / max_frequency
-            recency_score = float(recency_scores.get(number, 0.0))
+            frequency_score = (
+                frequency / max_frequency
+            )
+
+            recency_score = float(
+                recency_scores.get(number, 0.0)
+            )
 
             score = (
-                self.frequency_weight * frequency_score
-                + self.recency_weight * recency_score
+                self.frequency_weight
+                * frequency_score
+                + self.recency_weight
+                * recency_score
             ) / total_weight
 
             scores.append(
@@ -86,21 +154,16 @@ class LotteryPredictor:
 
         return tuple(scores)
 
-    def rank_numbers(
-        self,
-        frequencies: Mapping[int, int],
-        recency_scores: Mapping[int, float] | None = None,
+    @staticmethod
+    def _rank(
+        scored: tuple[NumberScore, ...],
     ) -> tuple[NumberScore, ...]:
-        """Return numbers ordered from highest score to lowest score."""
-
-        scored = self.score_numbers(
-            frequencies=frequencies,
-            recency_scores=recency_scores,
-        )
-
         return tuple(
             sorted(
                 scored,
-                key=lambda item: (-item.score, item.number),
+                key=lambda item: (
+                    -item.score,
+                    item.number,
+                ),
             )
         )

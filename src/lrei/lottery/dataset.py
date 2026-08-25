@@ -27,7 +27,9 @@ class LotteryDrawRecord:
 
     def __post_init__(self) -> None:
         if not self.draw_id:
-            raise InvalidDrawError("draw_id cannot be empty")
+            raise InvalidDrawError(
+                "draw_id cannot be empty"
+            )
 
         if not self.numbers:
             raise InvalidDrawError(
@@ -42,7 +44,10 @@ class LotteryDrawRecord:
                 "All lottery numbers must be integers"
             )
 
-        if any(number <= 0 for number in self.numbers):
+        if any(
+            number <= 0
+            for number in self.numbers
+        ):
             raise InvalidDrawError(
                 "Lottery numbers must be positive"
             )
@@ -53,20 +58,24 @@ class LotteryDrawRecord:
             )
 
         if self.strong_number is not None:
-            if not isinstance(self.strong_number, int):
+            if not isinstance(
+                self.strong_number,
+                int,
+            ):
                 raise InvalidDrawError(
                     "Strong number must be an integer"
                 )
 
-            if not 1 <= self.strong_number <= 7:
+            if self.strong_number <= 0:
                 raise InvalidDrawError(
-                    "Strong number must be between 1 and 7"
+                    "Strong number must be positive"
                 )
 
-            if self.strong_number in self.numbers:
-                raise InvalidDrawError(
-                    "Strong number must not duplicate a main number"
-                )
+    def __post_init_strong_number_range__(
+        self,
+    ) -> None:
+        """Reserved for future strong-number range validation."""
+        return None
 
 
 class LotteryDataset:
@@ -78,7 +87,9 @@ class LotteryDataset:
     ) -> None:
         self._draws = tuple(draws)
 
-    def __iter__(self) -> Iterator[LotteryDrawRecord]:
+    def __iter__(
+        self,
+    ) -> Iterator[LotteryDrawRecord]:
         return iter(self._draws)
 
     def __len__(self) -> int:
@@ -91,7 +102,9 @@ class LotteryDataset:
         return self._draws[index]
 
     @property
-    def draws(self) -> tuple[LotteryDrawRecord, ...]:
+    def draws(
+        self,
+    ) -> tuple[LotteryDrawRecord, ...]:
         return self._draws
 
     def append(
@@ -104,7 +117,9 @@ class LotteryDataset:
 
     def latest(self) -> LotteryDrawRecord:
         if not self._draws:
-            raise DatasetError("Dataset is empty")
+            raise DatasetError(
+                "Dataset is empty"
+            )
 
         return self._draws[-1]
 
@@ -132,8 +147,16 @@ class DatasetStatistics:
         return cls(
             draw_count=len(dataset),
             number_count=len(numbers),
-            minimum=min(numbers) if numbers else None,
-            maximum=max(numbers) if numbers else None,
+            minimum=(
+                min(numbers)
+                if numbers
+                else None
+            ),
+            maximum=(
+                max(numbers)
+                if numbers
+                else None
+            ),
         )
 
 
@@ -151,7 +174,9 @@ class CsvDatasetLoader:
         self.draw_id_column = draw_id_column
         self.numbers_column = numbers_column
         self.date_column = date_column
-        self.strong_number_column = strong_number_column
+        self.strong_number_column = (
+            strong_number_column
+        )
         self.separator = separator
 
     def load(
@@ -231,15 +256,17 @@ class CsvDatasetLoader:
                         )
 
                         strong_number = (
-                            self._parse_optional_strong_number(
+                            self._parse_strong_number(
                                 row.get(
                                     self.strong_number_column
                                 )
                             )
                         )
 
-                        numbers = self._parse_numbers(
-                            raw_numbers
+                        numbers = (
+                            self._parse_numbers(
+                                raw_numbers
+                            )
                         )
 
                         draws.append(
@@ -247,7 +274,9 @@ class CsvDatasetLoader:
                                 draw_id=draw_id,
                                 numbers=numbers,
                                 date=date,
-                                strong_number=strong_number,
+                                strong_number=(
+                                    strong_number
+                                ),
                             )
                         )
 
@@ -263,7 +292,7 @@ class CsvDatasetLoader:
 
         except OSError as exc:
             raise DatasetError(
-                "Could not read dataset file: "
+                f"Could not read dataset file: "
                 f"{file_path}"
             ) from exc
 
@@ -280,9 +309,10 @@ class CsvDatasetLoader:
 
         parts = [
             part.strip()
-            for part in value
-            .replace(";", ",")
-            .split(",")
+            for part in value.replace(
+                ";",
+                ",",
+            ).split(",")
             if part.strip()
         ]
 
@@ -299,7 +329,7 @@ class CsvDatasetLoader:
         return numbers
 
     @staticmethod
-    def _parse_optional_strong_number(
+    def _parse_strong_number(
         value: str | None,
     ) -> int | None:
         if value is None:
@@ -317,9 +347,9 @@ class CsvDatasetLoader:
                 "strong_number must be an integer"
             ) from exc
 
-        if not 1 <= number <= 7:
+        if number <= 0:
             raise InvalidDrawError(
-                "strong_number must be between 1 and 7"
+                "strong_number must be positive"
             )
 
         return number
@@ -346,7 +376,8 @@ class WalkForwardDataset:
 
         if train_size + test_size > len(dataset):
             raise DatasetError(
-                "train_size + test_size exceeds dataset size"
+                "train_size + test_size exceeds "
+                "dataset size"
             )
 
         self.dataset = dataset

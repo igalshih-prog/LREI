@@ -1,4 +1,3 @@
-```python
 """Walk-forward backtesting for lottery recommendations."""
 
 from __future__ import annotations
@@ -23,10 +22,8 @@ class BacktestCase:
     generated_ticket_count: int
     recommended_ticket_count: int
     test_draw_id: str
-
     best_match: int
     total_matches: int
-
     baseline_best_match: int
     baseline_total_matches: int
 
@@ -45,7 +42,7 @@ class BacktestResult:
 
     @property
     def best_match(self) -> int:
-        """Return the highest match from the recommendation engine."""
+        """Return the highest match from LREI."""
 
         if not self.cases:
             return 0
@@ -57,7 +54,7 @@ class BacktestResult:
 
     @property
     def total_matches(self) -> int:
-        """Return total matches from the recommendation engine."""
+        """Return total matches from LREI."""
 
         return sum(
             case.total_matches
@@ -66,7 +63,7 @@ class BacktestResult:
 
     @property
     def average_matches(self) -> float:
-        """Return average matches per test case."""
+        """Return average LREI matches per test case."""
 
         if not self.cases:
             return 0.0
@@ -113,7 +110,7 @@ class BacktestResult:
         self,
         threshold: int,
     ) -> int:
-        """Return the number of test cases with at least threshold matches."""
+        """Return number of cases with at least threshold matches."""
 
         if threshold < 0:
             raise ValueError(
@@ -278,4 +275,3 @@ class LotteryBacktester:
         return LotteryStatistics.from_dataset(
             dataset
         )
-```

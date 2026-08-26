@@ -22,8 +22,10 @@ class BacktestCase:
     generated_ticket_count: int
     recommended_ticket_count: int
     test_draw_id: str
+
     best_match: int
     total_matches: int
+
     baseline_best_match: int
     baseline_total_matches: int
 
@@ -110,7 +112,7 @@ class BacktestResult:
         self,
         threshold: int,
     ) -> int:
-        """Return number of cases with at least threshold matches."""
+        """Return number of cases where LREI reached the threshold."""
 
         if threshold < 0:
             raise ValueError(
@@ -121,6 +123,23 @@ class BacktestResult:
             1
             for case in self.cases
             if case.best_match >= threshold
+        )
+
+    def baseline_match_count_at_least(
+        self,
+        threshold: int,
+    ) -> int:
+        """Return number of cases where baseline reached the threshold."""
+
+        if threshold < 0:
+            raise ValueError(
+                "threshold must be non-negative"
+            )
+
+        return sum(
+            1
+            for case in self.cases
+            if case.baseline_best_match >= threshold
         )
 
 

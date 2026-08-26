@@ -44,7 +44,7 @@ class BacktestResult:
 
     @property
     def best_match(self) -> int:
-        """Return the highest match from LREI."""
+        """Return the highest match from the recommendation engine."""
 
         if not self.cases:
             return 0
@@ -56,7 +56,7 @@ class BacktestResult:
 
     @property
     def total_matches(self) -> int:
-        """Return total matches from LREI."""
+        """Return total matches from the recommendation engine."""
 
         return sum(
             case.total_matches
@@ -65,7 +65,7 @@ class BacktestResult:
 
     @property
     def average_matches(self) -> float:
-        """Return average LREI matches per test case."""
+        """Return average matches per test case."""
 
         if not self.cases:
             return 0.0
@@ -112,12 +112,10 @@ class BacktestResult:
         self,
         threshold: int,
     ) -> int:
-        """Return number of cases where LREI reached the threshold."""
+        """Return number of test cases with at least threshold matches."""
 
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
+        if threshold <= 0:
+            return self.case_count
 
         return sum(
             1
@@ -129,12 +127,10 @@ class BacktestResult:
         self,
         threshold: int,
     ) -> int:
-        """Return number of cases where baseline reached the threshold."""
+        """Return number of baseline cases with at least threshold matches."""
 
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
+        if threshold <= 0:
+            return self.case_count
 
         return sum(
             1
@@ -241,7 +237,6 @@ class LotteryBacktester:
                         best_match,
                         matches,
                     )
-
                     total_matches += matches
 
                 baseline_best_match = 0
@@ -256,7 +251,6 @@ class LotteryBacktester:
                         baseline_best_match,
                         matches,
                     )
-
                     baseline_total_matches += matches
 
                 cases.append(

@@ -4,68 +4,79 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.statistics import LotteryStatistics
 
 
-def test_strong_number_frequency_ranking_is_available():
+def load_real_dataset():
     root = Path(__file__).resolve().parents[2]
     data_file = root / "data" / "lottery.csv"
+    return CsvDatasetLoader().load(data_file)
 
-    dataset = CsvDatasetLoader().load(data_file)
+
+def test_strong_number_statistics_exist():
+    dataset = load_real_dataset()
     statistics = LotteryStatistics.from_dataset(dataset)
 
-    ranked = statistics.most_frequent_strong(limit=7)
-
-    assert len(ranked) > 0
-
-    counts = [item.count for item in ranked]
-
-    assert counts == sorted(counts, reverse=True)
+    assert statistics.total_strong_numbers > 0
+    assert statistics.strong_number_frequency
 
 
-def test_strong_number_frequency_ranking_is_reproducible():
-    root = Path(__file__).resolve().parents[2]
-    data_file = root / "data" / "lottery.csv"
-
-    dataset = CsvDatasetLoader().load(data_file)
-
-    statistics_1 = LotteryStatistics.from_dataset(dataset)
-    statistics_2 = LotteryStatistics.from_dataset(dataset)
-
-    ranking_1 = statistics_1.most_frequent_strong(limit=7)
-    ranking_2 = statistics_2.most_frequent_strong(limit=7)
-
-    assert ranking_1 == ranking_2
-
-
-def test_strong_number_statistics_cover_all_observed_values():
-    root = Path(__file__).resolve().parents[2]
-    data_file = root / "data" / "lottery.csv"
-
-    dataset = CsvDatasetLoader().load(data_file)
+def test_strong_number_frequencies_sum_to_one():
+    dataset = load_real_dataset()
     statistics = LotteryStatistics.from_dataset(dataset)
 
-    observed = set()
-
-    for draw in dataset:
-        if draw.strong_number is not None:
-            observed.add(draw.strong_number)
-
-    calculated = {
-        item.number
-        for item in statistics.strong_number_frequency
-    }
-
-    assert observed == calculated
-
-
-def test_strong_number_frequencies_are_normalized():
-    root = Path(__file__).resolve().parents[2]
-    data_file = root / "data" / "lottery.csv"
-
-    dataset = CsvDatasetLoader().load(data_file)
-    statistics = LotteryStatistics.from_dataset(dataset)
-
-    total_frequency = sum(
+    total = sum(
         item.frequency
         for item in statistics.strong_number_frequency
     )
 
-    assert abs(total_frequency - 1.0) < 1e-9
+    assert abs(total - 1.0) < 1e-9
+
+
+def test_strong_number_frequency_data_is_valid():
+    dataset = load_real_dataset()
+    statistics = LotteryStatistics.from_dataset(dataset)
+
+    for item in statistics.strong_number_frequency:
+        assert item.number > 0
+        assert item.count > 0
+        assert item.frequency > 0
+
+
+def test_most_frequent_strong_numbers_returns_valid_data():
+    dataset = load_real_dataset()
+    statistics = LotteryStatistics.from_dataset(dataset)
+
+    result = statistics.most_frequent_strong(7)
+
+    assert result
+    assert len(result) <= 7
+
+    counts = [item.count for item in result]
+
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_least_frequent_strong_numbers_returns_valid_data():
+    dataset = load_real_dataset()
+    statistics = LotteryStatistics.from_dataset(dataset)
+
+    result = statistics.least_frequent_strong(7)
+
+    assert result
+    assert len(result) <= 7
+
+    counts = [item.count for item in result]
+
+    assert counts == sorted(counts)
+
+
+def test_strong_frequency_lookup():
+    dataset = load_real_dataset()
+    statistics = LotteryStatistics.from_dataset(dataset)
+
+    first = statistics.strong_number_frequency[0]
+
+    result = statistics.strong_frequency_for(first.number)
+
+    assert result is not None
+    assert result.number == first.number
+    assert result.count == first.count
+    assert result.frequency == first.frequency

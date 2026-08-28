@@ -53,17 +53,20 @@ class RecommendationEngine:
     ) -> None:
         self.predictor = (
             predictor
-            or LotteryPredictor()
+            if predictor is not None
+            else LotteryPredictor()
         )
 
         self.generator = (
             generator
-            or TicketGenerator()
+            if generator is not None
+            else TicketGenerator()
         )
 
         self.optimizer = (
             optimizer
-            or LotteryOptimizer(
+            if optimizer is not None
+            else LotteryOptimizer(
                 OptimizerConfig(
                     max_overlap=4,
                     max_tickets=10,
@@ -89,15 +92,23 @@ class RecommendationEngine:
             for item in statistics.number_frequency
         }
 
+        if not frequencies:
+            raise RecommendationError(
+                "Statistics does not contain number frequency data"
+            )
+
         scores = self.predictor.score_numbers(
             frequencies=frequencies,
         )
 
+        if not scores:
+            raise RecommendationError(
+                "Predictor returned no number scores"
+            )
+
         rng = random.Random(seed)
 
-        generated: list[
-            tuple[int, ...]
-        ] = []
+        generated: list[tuple[int, ...]] = []
 
         for _ in range(ticket_count):
             generated.append(
@@ -115,12 +126,6 @@ class RecommendationEngine:
             raise RecommendationError(
                 "Optimizer returned no recommended tickets"
             )
-
-        # ---------------------------------------------------------
-        # Strong number is optional for backward compatibility.
-        # Older unit-test datasets may not contain it.
-        # Real datasets with strong-number data will use it.
-        # ---------------------------------------------------------
 
         strong_scores = self._score_strong_numbers(
             statistics
@@ -152,15 +157,13 @@ class RecommendationEngine:
 
             recommended_set = set(recommended)
 
-            for item in generated_with_strong:
-                if item.numbers in recommended_set:
-                    recommended_with_strong.append(
-                        item
-                    )
+            recommended_with_strong = [
+                item
+                for item in generated_with_strong
+                if item.numbers in recommended_set
+            ]
 
         else:
-            # Keep the existing pipeline functional
-            # when strong-number data is unavailable.
             generated_with_strong = [
                 RecommendedTicket(
                     numbers=ticket,
@@ -180,7 +183,7 @@ class RecommendationEngine:
         return RecommendationResult(
             scores=tuple(scores),
             generated_tickets=tuple(generated),
-            recommended_tickets=recommended,
+            recommended_tickets=tuple(recommended),
             strong_scores=tuple(strong_scores),
             generated_tickets_with_strong=tuple(
                 generated_with_strong
@@ -213,6 +216,8 @@ class RecommendationEngine:
         if not frequencies:
             return ()
 
-        return self.predictor.score_numbers(
-            frequencies=frequencies,
+        return tuple(
+            self.predictor.score_numbers(
+                frequencies=frequencies,
+            )
         )

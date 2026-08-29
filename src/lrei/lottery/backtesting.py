@@ -1,4 +1,4 @@
-"""Chronological backtesting for lottery recommendations."""
+"""Lottery backtesting utilities."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .statistics import LotteryStatistics
 
 @dataclass(frozen=True)
 class BacktestCase:
-    """Results for one chronological test draw."""
+    """Result of evaluating one historical lottery draw."""
 
     test_draw_id: str
     train_size: int
@@ -22,11 +22,9 @@ class BacktestCase:
 
     best_match: int
     total_matches: int
-    average_matches: float
 
     baseline_best_match: int
     baseline_total_matches: int
-    baseline_average_matches: float
 
     strong_match: int = 0
     baseline_strong_match: int = 0
@@ -34,7 +32,7 @@ class BacktestCase:
 
 @dataclass(frozen=True)
 class BacktestResult:
-    """Complete result of a chronological backtest."""
+    """Aggregate result of a lottery backtest."""
 
     cases: tuple[BacktestCase, ...]
 
@@ -47,10 +45,7 @@ class BacktestResult:
         if not self.cases:
             return 0
 
-        return max(
-            case.best_match
-            for case in self.cases
-        )
+        return max(case.best_match for case in self.cases)
 
     @property
     def total_matches(self) -> int:
@@ -97,14 +92,14 @@ class BacktestResult:
         )
 
     @property
-    def strong_total_matches(self) -> int:
+    def strong_match_count(self) -> int:
         return sum(
             case.strong_match
             for case in self.cases
         )
 
     @property
-    def baseline_strong_total_matches(self) -> int:
+    def baseline_strong_match_count(self) -> int:
         return sum(
             case.baseline_strong_match
             for case in self.cases
@@ -114,70 +109,39 @@ class BacktestResult:
         self,
         threshold: int,
     ) -> int:
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
+        """Count cases whose best match reaches threshold."""
 
         return sum(
-            case.best_match >= threshold
+            1
             for case in self.cases
+            if case.best_match >= threshold
         )
 
     def baseline_match_count_at_least(
         self,
         threshold: int,
     ) -> int:
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
+        """Count baseline cases reaching threshold."""
 
         return sum(
-            case.baseline_best_match >= threshold
+            1
             for case in self.cases
-        )
-
-    def strong_match_count_at_least(
-        self,
-        threshold: int,
-    ) -> int:
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
-
-        return sum(
-            case.strong_match >= threshold
-            for case in self.cases
-        )
-
-    def baseline_strong_match_count_at_least(
-        self,
-        threshold: int,
-    ) -> int:
-        if threshold < 0:
-            raise ValueError(
-                "threshold must be non-negative"
-            )
-
-        return sum(
-            case.baseline_strong_match >= threshold
-            for case in self.cases
+            if case.baseline_best_match >= threshold
         )
 
 
 class LotteryBacktester:
-    """Run chronological lottery backtests."""
+    """Evaluate the recommendation engine on historical draws."""
 
     def __init__(
         self,
-        engine: RecommendationEngine | None = None,
+        recommendation_engine: (
+            RecommendationEngine | None
+        ) = None,
     ) -> None:
-        self.engine = (
-            engine
-            if engine is not None
-            else RecommendationEngine()
+        self.recommendation_engine = (
+            recommendation_engine
+            or RecommendationEngine()
         )
 
     def run(
@@ -188,13 +152,7 @@ class LotteryBacktester:
         ticket_count: int = 50,
         seed: int | None = None,
     ) -> BacktestResult:
-        """Run a chronological backtest.
-
-        ``test_size`` is the number of draws evaluated at each
-        chronological step. For the current project API, the
-        complete remaining dataset is evaluated one draw at a
-        time while the training window grows.
-        """
+        """Run chronological walk-forward backtesting."""
 
         if train_size <= 0:
             raise ValueError(
@@ -213,188 +171,299 @@ class LotteryBacktester:
 
         if len(dataset) <= train_size:
             raise ValueError(
-                "dataset must contain at least one "
-                "draw after train_size"
+                "dataset is too small for backtesting"
             )
 
-        rng = random.Random(seed)
+        records = list(dataset)
 
         cases: list[BacktestCase] = []
 
-        for index in range(
+        master_rng = random.Random(seed)
+
+        for test_index in range(
             train_size,
-            len(dataset),
+            len(records),
+            test_size,
         ):
-            train_dataset = dataset[:index]
-            test_draw = dataset[index]
+            train_records = records[:test_index]
 
-            statistics = LotteryStatistics.from_dataset(
-                train_dataset
+            if not train_records:
+                continue
+
+            test_records = records[
+                test_index:
+                min(
+                    test_index + test_size,
+                    len(records),
+                )
+            ]
+
+            if not test_records:
+                continue
+
+            training_dataset = LotteryDataset(
+                train_records
             )
 
-            recommendation_seed = rng.randrange(
+            statistics = (
+                LotteryStatistics.from_dataset(
+                    training_dataset
+                )
+            )
+
+            case_seed = master_rng.randint(
                 0,
-                2**32,
+                2**31 - 1,
             )
 
-            result = self.engine.recommend(
-                statistics=statistics,
-                ticket_count=ticket_count,
-                seed=recommendation_seed,
+            recommendation = (
+                self.recommendation_engine.recommend(
+                    statistics=statistics,
+                    ticket_count=ticket_count,
+                    seed=case_seed,
+                )
             )
 
-            recommended = (
-                result.recommended_tickets
+            recommended_tickets = (
+                recommendation.recommended_tickets
             )
 
             generated_count = len(
-                result.generated_tickets
+                recommendation.generated_tickets
             )
 
             recommended_count = len(
-                recommended
+                recommended_tickets
             )
 
-            actual_numbers = set(
-                test_draw.numbers
-            )
-
-            main_match_counts = [
-                len(
-                    set(ticket)
-                    & actual_numbers
+            for test_draw in test_records:
+                actual_numbers = set(
+                    test_draw.numbers
                 )
-                for ticket in recommended
-            ]
 
-            if main_match_counts:
-                best_match = max(
-                    main_match_counts
+                ticket_matches = [
+                    len(
+                        set(ticket)
+                        & actual_numbers
+                    )
+                    for ticket in recommended_tickets
+                ]
+
+                best_match = (
+                    max(ticket_matches)
+                    if ticket_matches
+                    else 0
                 )
+
                 total_matches = sum(
-                    main_match_counts
+                    ticket_matches
                 )
-                average_matches = (
-                    total_matches
-                    / len(main_match_counts)
+
+                baseline_rng = random.Random(
+                    case_seed
+                    + hash(
+                        test_draw.draw_id
+                    ) % 1_000_000
                 )
-            else:
-                best_match = 0
-                total_matches = 0
-                average_matches = 0.0
 
-            baseline_best_match = 0
-            baseline_total_matches = 0
-
-            population = tuple(
-                sorted(
-                    {
-                        number
-                        for draw in train_dataset
-                        for number in draw.numbers
-                    }
-                )
-            )
-
-            numbers_per_ticket = len(
-                test_draw.numbers
-            )
-
-            baseline_match_counts: list[int] = []
-
-            if (
-                population
-                and len(population) >= numbers_per_ticket
-            ):
-                for _ in range(
-                    max(recommended_count, 1)
-                ):
-                    baseline_ticket = rng.sample(
-                        population,
-                        numbers_per_ticket,
+                baseline_tickets = (
+                    self._generate_random_tickets(
+                        statistics=statistics,
+                        ticket_count=recommended_count,
+                        rng=baseline_rng,
                     )
-
-                    baseline_match_counts.append(
-                        len(
-                            set(baseline_ticket)
-                            & actual_numbers
-                        )
-                    )
-
-            if baseline_match_counts:
-                baseline_best_match = max(
-                    baseline_match_counts
                 )
+
+                baseline_matches = [
+                    len(
+                        set(ticket)
+                        & actual_numbers
+                    )
+                    for ticket in baseline_tickets
+                ]
+
+                baseline_best_match = (
+                    max(baseline_matches)
+                    if baseline_matches
+                    else 0
+                )
+
                 baseline_total_matches = sum(
-                    baseline_match_counts
+                    baseline_matches
                 )
-                baseline_average_matches = (
-                    baseline_total_matches
-                    / len(baseline_match_counts)
+
+                strong_match = 0
+                baseline_strong_match = 0
+
+                actual_strong = getattr(
+                    test_draw,
+                    "strong_number",
+                    None,
                 )
-            else:
-                baseline_average_matches = 0.0
 
-            strong_match = 0
-            baseline_strong_match = 0
-
-            actual_strong = getattr(
-                test_draw,
-                "strong_number",
-                None,
-            )
-
-            if (
-                actual_strong is not None
-                and result.generated_tickets_with_strong
-            ):
-                strong_match = max(
-                    (
-                        int(
-                            item.strong_number
+                if (
+                    actual_strong is not None
+                    and recommendation
+                    .recommended_tickets_with_strong
+                ):
+                    strong_match = sum(
+                        1
+                        for ticket in (
+                            recommendation
+                            .recommended_tickets_with_strong
+                        )
+                        if (
+                            ticket.strong_number
                             == actual_strong
                         )
-                        for item
-                        in result.generated_tickets_with_strong
-                        if item.strong_number is not None
-                    ),
-                    default=0,
-                )
-
-            strong_population = tuple(
-                item.number
-                for item
-                in statistics.strong_number_frequency
-            )
-
-            if (
-                actual_strong is not None
-                and strong_population
-            ):
-                baseline_strong_match = int(
-                    rng.choice(
-                        strong_population
                     )
-                    == actual_strong
-                )
 
-            cases.append(
-                BacktestCase(
-                    test_draw_id=test_draw.draw_id,
-                    train_size=index,
-                    generated_ticket_count=generated_count,
-                    recommended_ticket_count=recommended_count,
-                    best_match=best_match,
-                    total_matches=total_matches,
-                    average_matches=average_matches,
-                    baseline_best_match=baseline_best_match,
-                    baseline_total_matches=baseline_total_matches,
-                    baseline_average_matches=baseline_average_matches,
-                    strong_match=strong_match,
-                    baseline_strong_match=baseline_strong_match,
+                    baseline_strong_match = (
+                        self._random_strong_matches(
+                            statistics=statistics,
+                            actual_strong=actual_strong,
+                            ticket_count=recommended_count,
+                            rng=baseline_rng,
+                        )
+                    )
+
+                cases.append(
+                    BacktestCase(
+                        test_draw_id=test_draw.draw_id,
+                        train_size=len(
+                            train_records
+                        ),
+                        generated_ticket_count=(
+                            generated_count
+                        ),
+                        recommended_ticket_count=(
+                            recommended_count
+                        ),
+                        best_match=best_match,
+                        total_matches=(
+                            total_matches
+                        ),
+                        baseline_best_match=(
+                            baseline_best_match
+                        ),
+                        baseline_total_matches=(
+                            baseline_total_matches
+                        ),
+                        strong_match=strong_match,
+                        baseline_strong_match=(
+                            baseline_strong_match
+                        ),
+                    )
                 )
-            )
 
         return BacktestResult(
             cases=tuple(cases)
         )
+
+    def _generate_random_tickets(
+        self,
+        statistics: LotteryStatistics,
+        ticket_count: int,
+        rng: random.Random,
+    ) -> tuple[tuple[int, ...], ...]:
+        """Generate random baseline tickets."""
+
+        minimum = (
+            statistics.minimum_number
+        )
+
+        maximum = (
+            statistics.maximum_number
+        )
+
+        if minimum is None or maximum is None:
+            return ()
+
+        numbers_per_ticket = (
+            self._numbers_per_ticket(
+                statistics
+            )
+        )
+
+        population = list(
+            range(
+                minimum,
+                maximum + 1,
+            )
+        )
+
+        if (
+            len(population)
+            < numbers_per_ticket
+        ):
+            return ()
+
+        tickets: list[
+            tuple[int, ...]
+        ] = []
+
+        for _ in range(ticket_count):
+            ticket = tuple(
+                sorted(
+                    rng.sample(
+                        population,
+                        numbers_per_ticket,
+                    )
+                )
+            )
+
+            tickets.append(ticket)
+
+        return tuple(tickets)
+
+    def _numbers_per_ticket(
+        self,
+        statistics: LotteryStatistics,
+    ) -> int:
+        """Determine how many main numbers a ticket uses."""
+
+        if statistics.draw_count <= 0:
+            return 6
+
+        if statistics.total_numbers <= 0:
+            return 6
+
+        estimated = round(
+            statistics.total_numbers
+            / statistics.draw_count
+        )
+
+        return max(1, estimated)
+
+    def _random_strong_matches(
+        self,
+        statistics: LotteryStatistics,
+        actual_strong: int,
+        ticket_count: int,
+        rng: random.Random,
+    ) -> int:
+        """Evaluate random strong-number selections."""
+
+        strong_numbers = [
+            item.number
+            for item in getattr(
+                statistics,
+                "strong_number_frequency",
+                (),
+            )
+        ]
+
+        if not strong_numbers:
+            return 0
+
+        matches = 0
+
+        for _ in range(ticket_count):
+            selected = rng.choice(
+                strong_numbers
+            )
+
+            if selected == actual_strong:
+                matches += 1
+
+        return matches

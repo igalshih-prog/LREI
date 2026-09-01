@@ -1,59 +1,74 @@
 # LREI
 
-LREI is a production-ready Python foundation with a command-line interface,
-environment-based configuration, structured application logging, and a small,
-testable SQLite persistence layer.
+## Lottery Recommendation & Evaluation Intelligence
 
-## Requirements
+LREI is a Python-based lottery recommendation and evaluation system.
 
-- Python 3.10 or newer
+The project analyzes historical lottery draws, scores numbers using historical patterns, generates lottery tickets, applies optimization, and evaluates the results against a random baseline using chronological backtesting.
 
-## Install
+## Main Features
 
-Install the package in editable mode along with development tools:
+- Historical lottery dataset analysis
+- Number frequency analysis
+- Recency analysis
+- Number scoring
+- Lottery ticket generation
+- Ticket optimization
+- Strong number evaluation
+- Chronological backtesting
+- Random baseline comparison
+- Reproducible evaluation using seeds
+- Ablation testing
+- Multiple ticket-count evaluation
+- SQLite persistence layer
+- Command-line interface
+- Automated testing with GitHub Actions
 
-```bash
-python -m pip install -e ".[dev]"
-```
+## Evaluation Philosophy
 
-## Development
+LREI does not claim to predict future lottery results with certainty.
 
-```bash
-ruff check .
-black --check .
-mypy src
-pytest
-```
+The purpose of the system is to evaluate whether its recommendation strategy performs differently from a comparable random baseline when tested on historical data.
 
-## Command line
+The evaluation process uses chronological backtesting to avoid training on future draws.
 
-The `lrei` command creates and manages a local SQLite database:
+## Dataset
 
-```bash
-lrei init-db
-lrei add "First entry"
-lrei list
-lrei config
-```
+The project includes a historical lottery dataset containing:
 
-Configuration is supplied through environment variables:
+- 4,533 lottery draws
 
-| Variable | Purpose |
-| --- | --- |
-| `LREI_DATA_DIR` | Directory used for application data. |
-| `LREI_DATABASE` | Explicit SQLite database path; overrides `LREI_DATA_DIR`. |
-| `LREI_LOG_LEVEL` | Logging level, such as `DEBUG`, `INFO`, or `WARNING`. |
+The dataset is used for historical analysis and backtesting.
 
-Every command also accepts `--database PATH` to override the database for that
-invocation.
+## Backtesting
 
-## Project layout
+LREI performs chronological evaluation.
+
+For each test case:
+
+1. Historical draws before the test draw are used as training data.
+2. The recommendation engine scores lottery numbers.
+3. Tickets are generated.
+4. Tickets are optimized.
+5. The recommended tickets are compared with the actual future draw.
+6. A random baseline is evaluated using the same ticket-count conditions.
+7. Results are aggregated across all test cases.
+
+## Strong Number Evaluation
+
+LREI also evaluates strong-number recommendations.
+
+Historical results are compared against a random strong-number baseline.
+
+Example evaluation output:
 
 ```text
-src/lrei/
-  config.py       # validated environment configuration
-  logging.py      # application logging setup
-  database.py     # SQLite data access layer
-  cli.py          # Typer command-line interface
-tests/            # unit and CLI tests
-```
+LREI STRONG NUMBER
+Correct predictions: 6435
+Average correct predictions: 1.8214
+
+RANDOM STRONG NUMBER
+Correct predictions: 5059
+Average correct predictions: 1.4319
+
+LREI advantage: +0.3895

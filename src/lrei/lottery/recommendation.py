@@ -69,7 +69,7 @@ class RecommendationEngine:
             else LotteryOptimizer(
                 OptimizerConfig(
                     max_overlap=4,
-                    max_tickets=10,
+                    max_tickets=14,
                 )
             )
         )

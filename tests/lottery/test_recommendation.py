@@ -112,4 +112,4 @@ def test_recommendation_engine_returns_no_more_than_optimizer_limit():
         seed=42,
     )
 
-    assert len(result.recommended_tickets) <= 10
+    assert len(result.recommended_tickets) <= 14

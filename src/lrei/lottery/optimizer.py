@@ -15,7 +15,7 @@ class OptimizerConfig:
     """Configuration for ticket diversity optimization."""
 
     max_overlap: int = 4
-    max_tickets: int = 10
+    max_tickets: int = 14
 
     def __post_init__(self) -> None:
         if self.max_overlap < 0:

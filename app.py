@@ -1,4 +1,7 @@
+```python
+from io import BytesIO
 from pathlib import Path
+import tempfile
 
 import streamlit as st
 
@@ -14,8 +17,24 @@ st.set_page_config(
 )
 
 
+def load_dataset_from_file(file_bytes: bytes):
+    with tempfile.NamedTemporaryFile(
+        suffix=".csv",
+        delete=False,
+    ) as temp_file:
+        temp_file.write(file_bytes)
+        temp_path = Path(temp_file.name)
+
+    try:
+        dataset = CsvDatasetLoader().load(temp_path)
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+    return dataset
+
+
 @st.cache_data
-def load_lottery_data():
+def load_default_lottery_data():
     root = Path(__file__).resolve().parent
     data_file = root / "data" / "lottery.csv"
 
@@ -25,9 +44,12 @@ def load_lottery_data():
     return dataset, statistics
 
 
-def generate_tickets(ticket_count: int, seed: int):
-    dataset, statistics = load_lottery_data()
-
+def generate_tickets(
+    dataset,
+    ticket_count: int,
+    seed: int,
+):
+    statistics = LotteryStatistics.from_dataset(dataset)
     engine = RecommendationEngine()
 
     result = engine.recommend(
@@ -38,7 +60,7 @@ def generate_tickets(ticket_count: int, seed: int):
 
     tickets = result.recommended_tickets_with_strong[:ticket_count]
 
-    return dataset, result, tickets
+    return result, tickets
 
 
 st.title("🎯 LREI")
@@ -51,10 +73,46 @@ st.write(
 
 st.divider()
 
-ticket_count = st.selectbox(
-    "מספר טורים",
-    [10, 14],
-    index=1,
+st.subheader("📂 נתוני ההגרלות")
+
+uploaded_file = st.file_uploader(
+    "העלה קובץ CSV של ההגרלות",
+    type=["csv"],
+    help="מומלץ להעלות קובץ המכיל את 10 השנים האחרונות.",
+)
+
+if uploaded_file is not None:
+    try:
+        dataset = load_dataset_from_file(
+            uploaded_file.getvalue()
+        )
+
+        st.success(
+            f"הקובץ נטען בהצלחה — "
+            f"{len(dataset)} הגרלות נותחו."
+        )
+
+    except Exception as error:
+        st.error(
+            "לא ניתן לטעון את הקובץ. "
+            f"בדוק שהמבנה שלו מתאים לקובץ ההגרלות הקיים.\n\n"
+            f"שגיאה: {error}"
+        )
+        st.stop()
+
+else:
+    dataset, _ = load_default_lottery_data()
+
+    st.info(
+        f"משתמש בנתוני ההגרלות הקיימים — "
+        f"{len(dataset)} הגרלות."
+    )
+
+st.divider()
+
+st.metric(
+    "הגרלות זמינות לניתוח",
+    len(dataset),
 )
 
 seed = st.number_input(
@@ -65,17 +123,18 @@ seed = st.number_input(
 )
 
 if st.button(
-    "🎲 צור טורים",
+    "🎲 צור 14 טורים",
     use_container_width=True,
     type="primary",
 ):
-    with st.spinner("מייצר טורים..."):
-        dataset, result, tickets = generate_tickets(
-            ticket_count=ticket_count,
+    with st.spinner("מנתח את ההגרלות ומייצר טורים..."):
+        result, tickets = generate_tickets(
+            dataset=dataset,
+            ticket_count=14,
             seed=seed,
         )
 
-    st.success("הטורים נוצרו בהצלחה!")
+    st.success("14 הטורים נוצרו בהצלחה!")
 
     st.metric(
         "הגרלות שנותחו",
@@ -89,7 +148,7 @@ if st.button(
 
     st.divider()
 
-    st.subheader("🎯 הטורים המומלצים")
+    st.subheader("🎯 14 הטורים המומלצים")
 
     all_tickets = []
 
@@ -127,7 +186,7 @@ if st.button(
     st.divider()
 
     st.download_button(
-        label="📋 הורד את הטורים",
+        label="📋 הורד את 14 הטורים",
         data="\n".join(all_tickets),
         file_name="lrei_tickets.txt",
         mime="text/plain",
@@ -151,3 +210,4 @@ if st.button(
             f"Strong {score.number:02d} — "
             f"{score.score:.6f}"
         )
+```

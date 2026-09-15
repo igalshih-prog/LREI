@@ -94,6 +94,10 @@ class ProRecommendationEngine:
         recommended = tuple(recommended[: self.config.max_tickets])
         if not recommended:
             raise ValueError("Pro optimizer returned no tickets")
+        if len(recommended) != self.config.max_tickets:
+            raise ValueError(
+                "Pro optimizer could not produce the configured number of tickets"
+            )
 
         strong_scores = self._strong_scores(dataset)
         generated_with_strong = [
@@ -111,11 +115,19 @@ class ProRecommendationEngine:
             for ticket in generated
         ]
 
-        recommended_set = set(recommended)
         recommended_with_strong = tuple(
-            item
-            for item in generated_with_strong
-            if item.numbers in recommended_set
+            RecommendedTicket(
+                numbers=ticket,
+                strong_number=(
+                    self.generator.generate_strong_number(
+                        scores=strong_scores,
+                        rng=rng,
+                    )
+                    if strong_scores
+                    else None
+                ),
+            )
+            for ticket in recommended
         )
 
         return RecommendationResult(
@@ -177,7 +189,6 @@ class ProRecommendationEngine:
                     LotteryDataset(window_draws)
                 )
 
-        # Fallback for legacy datasets that have no usable dates.
         fallback_fraction = 0.30 if years == 3 else 0.10
         size = max(1, round(len(dataset) * fallback_fraction))
         return cls._frequency(

@@ -64,8 +64,8 @@ def test_ticket_count_details():
 
         assert min(generated_counts) == ticket_count
         assert max(generated_counts) == ticket_count
-        assert min(recommended_counts) > 0
-        assert max(recommended_counts) <= ticket_count
+        assert min(recommended_counts) == 14
+        assert max(recommended_counts) == 14
 
     print()
     print("=" * 70)

@@ -3,6 +3,7 @@ from pathlib import Path
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
+from lrei.lottery.statistics import LotteryStatistics
 
 
 def _hit_summary(tickets, actual):
@@ -32,9 +33,10 @@ def test_regular_vs_pro_10_year_dataset():
         # Strict walk-forward: target is never included in its own history,
         # and every earlier test draw becomes available to later predictions.
         history = LotteryDataset(draws=draws[: first_test_index + index])
+        statistics = LotteryStatistics.from_dataset(history)
 
         regular = RecommendationEngine().recommend(
-            history.statistics(),
+            statistics,
             ticket_count=14,
             seed=1000 + index,
         )

@@ -69,7 +69,7 @@ class RecommendationEngine:
             else LotteryOptimizer(
                 OptimizerConfig(
                     max_overlap=4,
-                    max_tickets=20,
+                    max_tickets=14,
                 )
             )
         )
@@ -107,24 +107,38 @@ class RecommendationEngine:
             )
 
         rng = random.Random(seed)
-
         generated: list[tuple[int, ...]] = []
+        recommended: tuple[tuple[int, ...], ...] = ()
 
-        for _ in range(ticket_count):
-            generated.append(
-                self.generator.generate_ticket(
-                    scores=scores,
-                    rng=rng,
-                )
-            )
-
-        recommended = self.optimizer.optimize(
-            generated
+        # The public recommendation target is 14 tickets.  The optimizer
+        # may reject candidates because of the overlap constraint, so keep
+        # generating fresh candidates until the full portfolio is possible.
+        target_tickets = min(
+            self.optimizer.config.max_tickets,
+            14,
         )
 
-        if not recommended:
+        batch_size = max(ticket_count, target_tickets * 10)
+
+        for _ in range(5):
+            for _ in range(batch_size):
+                generated.append(
+                    self.generator.generate_ticket(
+                        scores=scores,
+                        rng=rng,
+                    )
+                )
+
+            recommended = self.optimizer.optimize(generated)
+
+            if len(recommended) >= target_tickets:
+                recommended = recommended[:target_tickets]
+                break
+
+        if len(recommended) != target_tickets:
             raise RecommendationError(
-                "Optimizer returned no recommended tickets"
+                "Optimizer could not produce the required "
+                f"{target_tickets} recommended tickets"
             )
 
         strong_scores = self._score_strong_numbers(
@@ -155,13 +169,19 @@ class RecommendationEngine:
                     )
                 )
 
-            recommended_set = set(recommended)
-
-            recommended_with_strong = [
-                item
-                for item in generated_with_strong
-                if item.numbers in recommended_set
-            ]
+            for ticket in recommended:
+                strong_number = (
+                    self.generator.generate_strong_number(
+                        scores=strong_scores,
+                        rng=rng,
+                    )
+                )
+                recommended_with_strong.append(
+                    RecommendedTicket(
+                        numbers=ticket,
+                        strong_number=strong_number,
+                    )
+                )
 
         else:
             generated_with_strong = [
@@ -172,12 +192,12 @@ class RecommendationEngine:
                 for ticket in generated
             ]
 
-            recommended_set = set(recommended)
-
             recommended_with_strong = [
-                item
-                for item in generated_with_strong
-                if item.numbers in recommended_set
+                RecommendedTicket(
+                    numbers=ticket,
+                    strong_number=None,
+                )
+                for ticket in recommended
             ]
 
         return RecommendationResult(

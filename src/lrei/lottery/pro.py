@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import random
 from collections import Counter
 from dataclasses import dataclass
@@ -45,13 +44,13 @@ class ProRecommendationEngine:
         dataset: LotteryDataset,
         seed: int | None = None,
     ) -> RecommendationResult:
-        """Generate exactly up to 14 Pro tickets from the supplied history."""
+        """Generate up to the configured number of Pro tickets."""
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
 
         frequencies = self._frequency(dataset)
-        recent_3 = self._window_frequency(dataset, 0.30)
-        recent_1 = self._window_frequency(dataset, 0.10)
+        recent_3 = self._window_frequency(dataset, years=3)
+        recent_1 = self._window_frequency(dataset, years=1)
         recent_draws = self._recent_draw_frequency(dataset, 60)
 
         individual_scores = self._individual_scores(
@@ -79,8 +78,6 @@ class ProRecommendationEngine:
 
         recommended = self.optimizer.optimize(generated)
 
-        # If the strict overlap rule leaves fewer than 14, use a deterministic
-        # second pass with a larger candidate pool before giving up.
         if len(recommended) < self.config.max_tickets:
             expanded = list(generated)
             for _ in range(self.config.candidate_count):
@@ -138,12 +135,52 @@ class ProRecommendationEngine:
         return dict(counts)
 
     @staticmethod
+    def _subtract_years(value: date, years: int) -> date:
+        """Subtract whole calendar years while handling February 29."""
+        try:
+            return value.replace(year=value.year - years)
+        except ValueError:
+            return value.replace(
+                year=value.year - years,
+                month=2,
+                day=28,
+            )
+
+    @classmethod
     def _window_frequency(
+        cls,
         dataset: LotteryDataset,
-        fraction: float,
+        years: int,
     ) -> dict[int, int]:
-        size = max(1, math.ceil(len(dataset) * fraction))
-        return ProRecommendationEngine._frequency(
+        """Count numbers inside a real calendar window when dates are available."""
+        dated_draws = [
+            (draw, cls._parse_date(draw.date))
+            for draw in dataset
+        ]
+        valid_dates = [
+            draw_date
+            for _, draw_date in dated_draws
+            if draw_date is not None
+        ]
+
+        if valid_dates:
+            latest_date = max(valid_dates)
+            start_date = cls._subtract_years(latest_date, years)
+            window_draws = [
+                draw
+                for draw, draw_date in dated_draws
+                if draw_date is not None
+                and start_date <= draw_date <= latest_date
+            ]
+            if window_draws:
+                return cls._frequency(
+                    LotteryDataset(window_draws)
+                )
+
+        # Fallback for legacy datasets that have no usable dates.
+        fallback_fraction = 0.30 if years == 3 else 0.10
+        size = max(1, round(len(dataset) * fallback_fraction))
+        return cls._frequency(
             LotteryDataset(dataset.draws[-size:])
         )
 
@@ -237,10 +274,22 @@ class ProRecommendationEngine:
     def _parse_date(value: str | None) -> date | None:
         if not value:
             return None
-        try:
-            return date.fromisoformat(value[:10])
-        except ValueError:
-            return None
+
+        text = value.strip()
+        formats = (
+            "%Y-%m-%d",
+            "%d/%m/%Y",
+            "%d-%m-%Y",
+            "%Y/%m/%d",
+        )
+        for fmt in formats:
+            try:
+                return date.fromisoformat(text[:10]) if fmt == "%Y-%m-%d" else date.fromisoformat(
+                    date.strptime(text[:10], fmt).isoformat()
+                )
+            except ValueError:
+                continue
+        return None
 
     def _generate_candidate(
         self,
@@ -273,7 +322,6 @@ class ProRecommendationEngine:
                             tuple(sorted((number, selected[-2], selected[-1]))),
                             0,
                         )
-                        for _ in [0]
                     ) / triple_max
                     weight *= 1.0 + 0.20 * triple_bonus
                 weights.append((number, weight))

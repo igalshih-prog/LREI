@@ -1,33 +1,46 @@
 from pathlib import Path
 
-from lrei.lottery.dataset import LotteryDataset
+from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 
 
 def _hit_summary(tickets, actual):
     hits = [len(set(ticket) & set(actual)) for ticket in tickets]
-    return sum(hits) / len(hits), max(hits), int(any(h >= 3 for h in hits)), int(any(h >= 4 for h in hits)), int(any(h >= 5 for h in hits))
+    return (
+        sum(hits) / len(hits),
+        max(hits),
+        int(any(h >= 3 for h in hits)),
+        int(any(h >= 4 for h in hits)),
+        int(any(h >= 5 for h in hits)),
+    )
 
 
 def test_regular_vs_pro_10_year_dataset():
-    dataset = LotteryDataset.from_csv(Path("data/lottery.csv"))
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
     assert len(draws) > 200
 
     holdout = min(141, max(100, len(draws) // 8))
-    train_draws = draws[:-holdout]
-    test_draws = draws[-holdout:]
+    first_test_index = len(draws) - holdout
+    test_draws = draws[first_test_index:]
 
     regular_total = regular_best = regular_3 = regular_4 = regular_5 = 0.0
     pro_total = pro_best = pro_3 = pro_4 = pro_5 = 0.0
 
     for index, target in enumerate(test_draws):
-        history = LotteryDataset(draws=tuple(train_draws[: len(train_draws) + index]))
-        regular = RecommendationEngine().recommend(history.statistics(), ticket_count=14, seed=1000 + index)
+        # Strict walk-forward: target is never included in its own history,
+        # and every earlier test draw becomes available to later predictions.
+        history = LotteryDataset(draws=draws[: first_test_index + index])
+
+        regular = RecommendationEngine().recommend(
+            history.statistics(),
+            ticket_count=14,
+            seed=1000 + index,
+        )
         pro = ProRecommendationEngine().recommend(history)
 
-        r = _hit_summary(regular.tickets[:14], target.numbers)
+        r = _hit_summary(regular.recommended_tickets[:14], target.numbers)
         p = _hit_summary(pro.tickets[:14], target.numbers)
 
         regular_total += r[0]

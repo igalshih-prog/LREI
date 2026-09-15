@@ -8,7 +8,7 @@ from lrei.lottery.statistics import LotteryStatistics
 
 def _load_chronological() -> LotteryDataset:
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
-    return LotteryDataset(reversed(dataset.draws))
+    return LotteryDataset(dataset.draws)
 
 
 def _score(recommended, actual):
@@ -40,6 +40,9 @@ def test_print_regular_vs_pro_historical_backtest():
         regular_result = regular.recommend(statistics=statistics, ticket_count=14, seed=seed)
         pro_result = pro.recommend(dataset=training, seed=seed)
 
+        assert len(regular_result.recommended_tickets) == 14
+        assert len(pro_result.recommended_tickets) == 14
+
         rb, rt = _score(regular_result.recommended_tickets, actual)
         pb, pt = _score(pro_result.recommended_tickets, actual)
         regular_best.append(rb)
@@ -59,7 +62,7 @@ def test_print_regular_vs_pro_historical_backtest():
                 if ticket.strong_number == actual.strong_number
             )
 
-    print("\n=== REGULAR vs PRO (historical only) ===")
+    print("\n=== REGULAR vs PRO (strict chronological backtest) ===")
     print(f"Dataset draws: {len(dataset)}")
     print(f"Test draws: {len(test_draws)}")
     print("Tickets per draw: 14")

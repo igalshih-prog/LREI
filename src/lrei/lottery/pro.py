@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime
 from itertools import combinations
 
 from .dataset import LotteryDataset
@@ -275,7 +275,7 @@ class ProRecommendationEngine:
         if not value:
             return None
 
-        text = value.strip()
+        text = value.strip()[:10]
         formats = (
             "%Y-%m-%d",
             "%d/%m/%Y",
@@ -284,9 +284,7 @@ class ProRecommendationEngine:
         )
         for fmt in formats:
             try:
-                return date.fromisoformat(text[:10]) if fmt == "%Y-%m-%d" else date.fromisoformat(
-                    date.strptime(text[:10], fmt).isoformat()
-                )
+                return datetime.strptime(text, fmt).date()
             except ValueError:
                 continue
         return None
@@ -317,11 +315,9 @@ class ProRecommendationEngine:
                     pair_bonus /= pair_max
                     weight *= 1.0 + 0.45 * pair_bonus
                 if len(selected) >= 2:
-                    triple_bonus = sum(
-                        triple_counts.get(
-                            tuple(sorted((number, selected[-2], selected[-1]))),
-                            0,
-                        )
+                    triple_bonus = triple_counts.get(
+                        tuple(sorted((number, selected[-2], selected[-1]))),
+                        0,
                     ) / triple_max
                     weight *= 1.0 + 0.20 * triple_bonus
                 weights.append((number, weight))

@@ -1,4 +1,3 @@
-```python
 from io import BytesIO
 from pathlib import Path
 import tempfile
@@ -6,6 +5,7 @@ import tempfile
 import streamlit as st
 
 from lrei.lottery.dataset import CsvDatasetLoader
+from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
@@ -44,21 +44,29 @@ def load_default_lottery_data():
     return dataset, statistics
 
 
-def generate_tickets(
-    dataset,
-    ticket_count: int,
-    seed: int,
-):
+def generate_regular_tickets(dataset, seed: int):
     statistics = LotteryStatistics.from_dataset(dataset)
     engine = RecommendationEngine()
 
     result = engine.recommend(
         statistics=statistics,
-        ticket_count=50,
+        ticket_count=800,
         seed=seed,
     )
 
-    tickets = result.recommended_tickets_with_strong[:ticket_count]
+    tickets = result.recommended_tickets_with_strong[:14]
+
+    return result, tickets
+
+
+def generate_pro_tickets(dataset, seed: int):
+    engine = ProRecommendationEngine()
+    result = engine.recommend(
+        dataset=dataset,
+        seed=seed,
+    )
+
+    tickets = result.recommended_tickets_with_strong[:14]
 
     return result, tickets
 
@@ -115,6 +123,23 @@ st.metric(
     len(dataset),
 )
 
+mode = st.radio(
+    "בחר מנוע",
+    options=["Regular", "Pro"],
+    index=1,
+    horizontal=True,
+)
+
+if mode == "Pro":
+    st.info(
+        "Pro משתמש במספר חלונות היסטוריים, משקל גבוה יותר לנתונים "
+        "עדכניים, צירופי זוגות ושלשות ואופטימיזציה של 14 הטורים יחד."
+    )
+else:
+    st.info(
+        "Regular משתמש במנוע הבסיסי של LREI ומפיק 14 טורים."
+    )
+
 seed = st.number_input(
     "Seed",
     min_value=0,
@@ -123,18 +148,27 @@ seed = st.number_input(
 )
 
 if st.button(
-    "🎲 צור 14 טורים",
+    f"🎲 צור 14 טורים — {mode}",
     use_container_width=True,
     type="primary",
 ):
-    with st.spinner("מנתח את ההגרלות ומייצר טורים..."):
-        result, tickets = generate_tickets(
-            dataset=dataset,
-            ticket_count=14,
-            seed=seed,
-        )
+    with st.spinner(
+        "מנתח את ההגרלות ומייצר טורים..."
+    ):
+        if mode == "Pro":
+            result, tickets = generate_pro_tickets(
+                dataset=dataset,
+                seed=seed,
+            )
+        else:
+            result, tickets = generate_regular_tickets(
+                dataset=dataset,
+                seed=seed,
+            )
 
-    st.success("14 הטורים נוצרו בהצלחה!")
+    st.success(
+        f"14 הטורים נוצרו בהצלחה — {mode}!"
+    )
 
     st.metric(
         "הגרלות שנותחו",
@@ -148,7 +182,9 @@ if st.button(
 
     st.divider()
 
-    st.subheader("🎯 14 הטורים המומלצים")
+    st.subheader(
+        f"🎯 14 הטורים המומלצים — {mode}"
+    )
 
     all_tickets = []
 
@@ -197,7 +233,10 @@ if st.button(
 
     st.subheader("📊 Top Number Scores")
 
-    for score in result.scores[:10]:
+    for score in sorted(
+        result.scores,
+        key=lambda item: (-item.score, item.number),
+    )[:10]:
         st.write(
             f"Number {score.number:02d} — "
             f"{score.score:.6f}"
@@ -205,9 +244,11 @@ if st.button(
 
     st.subheader("⭐ Strong Number Scores")
 
-    for score in result.strong_scores[:7]:
+    for score in sorted(
+        result.strong_scores,
+        key=lambda item: (-item.score, item.number),
+    )[:7]:
         st.write(
             f"Strong {score.number:02d} — "
             f"{score.score:.6f}"
         )
-```

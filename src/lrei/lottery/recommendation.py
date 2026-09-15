@@ -107,29 +107,29 @@ class RecommendationEngine:
             )
 
         rng = random.Random(seed)
-        generated: list[tuple[int, ...]] = []
+        candidate_pool: list[tuple[int, ...]] = []
         recommended: tuple[tuple[int, ...], ...] = ()
 
-        # The public recommendation target is 14 tickets.  The optimizer
-        # may reject candidates because of the overlap constraint, so keep
-        # generating fresh candidates until the full portfolio is possible.
+        # The public API preserves the requested generated-ticket count.
+        # Internally, however, we may need a larger candidate pool so the
+        # optimizer can build the required 14-ticket portfolio under the
+        # overlap constraint.
         target_tickets = min(
             self.optimizer.config.max_tickets,
             14,
         )
-
         batch_size = max(ticket_count, target_tickets * 10)
 
         for _ in range(5):
             for _ in range(batch_size):
-                generated.append(
+                candidate_pool.append(
                     self.generator.generate_ticket(
                         scores=scores,
                         rng=rng,
                     )
                 )
 
-            recommended = self.optimizer.optimize(generated)
+            recommended = self.optimizer.optimize(candidate_pool)
 
             if len(recommended) >= target_tickets:
                 recommended = recommended[:target_tickets]
@@ -140,6 +140,11 @@ class RecommendationEngine:
                 "Optimizer could not produce the required "
                 f"{target_tickets} recommended tickets"
             )
+
+        # `generated_tickets` is part of the public result contract and must
+        # contain exactly the number requested by the caller. Keep the
+        # larger internal candidate pool private.
+        generated = candidate_pool[:ticket_count]
 
         strong_scores = self._score_strong_numbers(
             statistics

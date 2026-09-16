@@ -1,0 +1,21 @@
+name: Pro robust benchmark
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run robust Pro vs random benchmark
+        run: python -m pytest tests/lottery/test_pro_random_baseline_robust.py -q -s

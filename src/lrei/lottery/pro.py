@@ -287,6 +287,12 @@ class ProRecommendationEngine:
         normalized = list(dict.fromkeys(tuple(sorted(ticket)) for ticket in generated))
         score_map = {item.number: item.score for item in scores}
         draw_count = max(1, round(sum(frequencies.values()) / 6))
+        base_scores = {
+            ticket: self._candidate_score(
+                ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, structure
+            )
+            for ticket in normalized
+        }
         selected, selected_numbers = [], set()
         while len(selected) < self.config.max_tickets:
             compatible = [
@@ -297,7 +303,7 @@ class ProRecommendationEngine:
                 break
 
             def marginal(ticket):
-                base = self._candidate_score(ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, structure)
+                base = base_scores[ticket]
                 new_numbers = len(set(ticket) - selected_numbers)
                 overlap = sum(self.optimizer.overlap(ticket, prior) for prior in selected) / len(selected) if selected else 0.0
                 return base + 0.035 * new_numbers - 0.018 * overlap

@@ -26,13 +26,7 @@ class ProConfig:
 
 
 class ProRecommendationEngine:
-    """Build recommendations from multiple historical windows and combinations.
-
-    Pro deliberately treats historical patterns as ranking signals rather than
-    predictions. Candidate tickets are scored for number strength, normalized
-    pair/triple affinity, and historically common structural profiles. The
-    final portfolio is selected with a score-aware diversity objective.
-    """
+    """Build recommendations from multiple historical windows and combinations."""
 
     def __init__(self, config: ProConfig | None = None) -> None:
         self.config = config or ProConfig()
@@ -88,6 +82,7 @@ class ProRecommendationEngine:
         recommended = self._select_portfolio(
             generated=generated,
             scores=individual_scores,
+            frequencies=frequencies,
             pair_counts=pair_counts,
             triple_counts=triple_counts,
             structure=structure,
@@ -108,6 +103,7 @@ class ProRecommendationEngine:
             recommended = self._select_portfolio(
                 generated=expanded,
                 scores=individual_scores,
+                frequencies=frequencies,
                 pair_counts=pair_counts,
                 triple_counts=triple_counts,
                 structure=structure,
@@ -256,9 +252,7 @@ class ProRecommendationEngine:
             sums.append(float(sum(numbers)))
             odd_counts.append(float(sum(number % 2 for number in numbers)))
             low_counts.append(float(sum(number <= 18 for number in numbers)))
-            consecutive_counts.append(
-                float(sum(b == a + 1 for a, b in zip(numbers, numbers[1:])))
-            )
+            consecutive_counts.append(float(sum(b == a + 1 for a, b in zip(numbers, numbers[1:]))))
 
         def mean(values: list[float]) -> float:
             return sum(values) / len(values) if values else 0.0
@@ -315,29 +309,25 @@ class ProRecommendationEngine:
 
         lower_sum = cls._percentile(sums, 0.10)
         upper_sum = cls._percentile(sums, 0.90)
-        if lower_sum <= total <= upper_sum:
-            score *= 1.08
-        else:
-            score *= 0.82
+        score *= 1.08 if lower_sum <= total <= upper_sum else 0.82
 
-        # Expert-style anti-clustering: avoid all numbers living in one band.
-        bands = [sum(1 for number in numbers if start <= number <= end)
-                 for start, end in ((1, 10), (11, 20), (21, 30), (31, 37))]
+        bands = [
+            sum(1 for number in numbers if start <= number <= end)
+            for start, end in ((1, 10), (11, 20), (21, 30), (31, 37))
+        ]
         score *= 1.0 if max(bands) <= 3 else 0.72
 
-        # Avoid the extreme all-odd/all-even and all-low/all-high shapes.
         if odd_count in (0, 6) or low_count in (0, 6):
             score *= 0.55
 
-        # One isolated consecutive pair is normal; long runs are penalized.
-        runs = 1
+        run_length = 1
         longest_run = 1
         for left, right in zip(numbers, numbers[1:]):
             if right == left + 1:
-                runs += 1
-                longest_run = max(longest_run, runs)
+                run_length += 1
+                longest_run = max(longest_run, run_length)
             else:
-                runs = 1
+                run_length = 1
         if longest_run >= 4:
             score *= 0.55
         elif longest_run == 3:
@@ -403,6 +393,7 @@ class ProRecommendationEngine:
         self,
         generated: list[tuple[int, ...]],
         scores: tuple[NumberScore, ...],
+        frequencies: dict[int, int],
         pair_counts: dict[tuple[int, ...], int],
         triple_counts: dict[tuple[int, ...], int],
         structure: dict[str, float | tuple[float, ...]],
@@ -410,20 +401,14 @@ class ProRecommendationEngine:
         """Select 14 tickets with learned score plus marginal portfolio coverage."""
         normalized = list(dict.fromkeys(tuple(sorted(ticket)) for ticket in generated))
         score_map = {item.number: item.score for item in scores}
-        frequencies = self._frequency_from_scores(scores, len(scores))
-        # Frequency reconstruction is only used to normalize affinity; absolute
-        # scale cancels in the lift ratio, so score ranks remain the primary signal.
-        if len(frequencies) != len(scores):
-            frequencies = {item.number: 1 for item in scores}
-        draw_count = max(1, int(sum(frequencies.values()) / 6))
+        draw_count = max(1, round(sum(frequencies.values()) / 6))
 
         selected: list[tuple[int, ...]] = []
         selected_numbers: set[int] = set()
         while len(selected) < self.config.max_tickets:
             compatible = [
                 ticket for ticket in normalized
-                if ticket not in selected
-                and self.optimizer.is_compatible(ticket, selected)
+                if ticket not in selected and self.optimizer.is_compatible(ticket, selected)
             ]
             if not compatible:
                 break
@@ -435,8 +420,7 @@ class ProRecommendationEngine:
                 )
                 new_numbers = len(set(ticket) - selected_numbers)
                 overlap = (
-                    sum(self.optimizer.overlap(ticket, prior) for prior in selected)
-                    / len(selected)
+                    sum(self.optimizer.overlap(ticket, prior) for prior in selected) / len(selected)
                     if selected else 0.0
                 )
                 return base + 0.035 * new_numbers - 0.018 * overlap
@@ -449,15 +433,6 @@ class ProRecommendationEngine:
             selected_numbers.update(best)
 
         return tuple(selected)
-
-    @staticmethod
-    def _frequency_from_scores(
-        scores: tuple[NumberScore, ...],
-        draw_count_hint: int,
-    ) -> dict[int, int]:
-        """Build a stable frequency proxy when only NumberScore objects are available."""
-        scale = max(1, draw_count_hint)
-        return {item.number: max(1, int(round(item.score * scale))) for item in scores}
 
     @staticmethod
     def _strong_scores(dataset: LotteryDataset) -> tuple[NumberScore, ...]:
@@ -513,9 +488,7 @@ class ProRecommendationEngine:
                     weight *= 1.0 + 0.35 * pair_bonus
                 if len(selected) >= 2:
                     recent_pair = tuple(sorted((selected[-2], selected[-1])))
-                    triple_bonus = triple_counts.get(
-                        tuple(sorted((number, *recent_pair))), 0
-                    ) / triple_max
+                    triple_bonus = triple_counts.get(tuple(sorted((number, *recent_pair))), 0) / triple_max
                     weight *= 1.0 + 0.15 * triple_bonus
                 weights.append((number, weight))
 
@@ -531,8 +504,6 @@ class ProRecommendationEngine:
             selected.append(chosen)
 
         ticket = tuple(sorted(selected))
-        # Structure-aware rejection keeps the candidate pool broad while still
-        # allowing atypical historical shapes to survive occasionally.
         if rng.random() < 0.72 and self._structure_score(ticket, structure) < 0.28:
             return self._generate_candidate(
                 scores=scores,

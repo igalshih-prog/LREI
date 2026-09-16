@@ -3,6 +3,11 @@ name: Pro robust benchmark
 on:
   push:
     branches: [main]
+    paths:
+      - "src/lrei/lottery/**"
+      - "data/lottery.csv"
+      - "tests/lottery/test_pro_random_baseline_robust.py"
+      - ".github/workflows/pro_robust_benchmark.yml"
   workflow_dispatch:
 
 jobs:

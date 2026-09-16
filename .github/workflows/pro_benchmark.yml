@@ -3,6 +3,11 @@ name: Pro benchmark
 on:
   push:
     branches: [main]
+    paths:
+      - "src/lrei/lottery/**"
+      - "data/lottery.csv"
+      - "tests/lottery/test_regular_vs_pro.py"
+      - ".github/workflows/pro_benchmark.yml"
   workflow_dispatch:
 
 jobs:

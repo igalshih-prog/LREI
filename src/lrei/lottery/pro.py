@@ -23,6 +23,7 @@ class ProConfig:
     candidate_count: int = 2000
     max_overlap: int = 4
     max_tickets: int = 14
+    use_rank_normalization: bool = True
 
 
 class ProRecommendationEngine:
@@ -150,10 +151,16 @@ class ProRecommendationEngine:
 
     def _individual_scores(self, frequencies, recent_3, recent_1, recent_draws):
         numbers = sorted(frequencies)
-        all_values = self._rank_normalise(frequencies, numbers)
-        three_values = self._rank_normalise(recent_3, numbers)
-        one_values = self._rank_normalise(recent_1, numbers)
-        recent_values = self._rank_normalise(recent_draws, numbers)
+        if self.config.use_rank_normalization:
+            all_values = self._rank_normalise(frequencies, numbers)
+            three_values = self._rank_normalise(recent_3, numbers)
+            one_values = self._rank_normalise(recent_1, numbers)
+            recent_values = self._rank_normalise(recent_draws, numbers)
+        else:
+            all_values = frequencies
+            three_values = recent_3
+            one_values = recent_1
+            recent_values = recent_draws
         scores = []
         for number in numbers:
             score = (

@@ -18,7 +18,13 @@ class EliteProConfig(ProConfig):
     ewma_weight: float = 0.25
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        # ProConfig has no __post_init__, so validate its runtime constraints here.
+        if self.candidate_count < self.max_tickets:
+            raise ValueError("candidate_count must cover max_tickets")
+        if self.ewma_half_life <= 0:
+            raise ValueError("ewma_half_life must be positive")
+        if self.affinity_prior_strength < 0:
+            raise ValueError("affinity_prior_strength must be non-negative")
         if self.rank_weight < 0 or self.raw_weight < 0 or self.ewma_weight < 0:
             raise ValueError("ensemble weights must be non-negative")
         if self.rank_weight + self.raw_weight + self.ewma_weight <= 0:

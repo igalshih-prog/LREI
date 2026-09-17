@@ -1,0 +1,27 @@
+name: Elite benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lrei/lottery/**"
+      - "data/lottery.csv"
+      - "tests/lottery/test_elite_vs_pro_random.py"
+      - ".github/workflows/elite_benchmark.yml"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run Elite vs Pro vs random benchmark
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s

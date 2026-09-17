@@ -18,15 +18,9 @@ def test_pro_scoring_ablation_smoke():
     first_test_index = len(draws) - holdout
 
     variants = {
-        "rank_blend": ProRecommendationEngine(
-            ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=False)
-        ),
-        "rank_plus_ewma": ProRecommendationEngine(
-            ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=True)
-        ),
-        "scaled_frequency_blend": ProRecommendationEngine(
-            ProConfig(candidate_count=300, use_rank_normalization=False, use_ewma=False)
-        ),
+        "rank_blend": ProRecommendationEngine(ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=False, affinity_prior_strength=0.0)),
+        "rank_plus_ewma": ProRecommendationEngine(ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=True, affinity_prior_strength=0.0)),
+        "rank_plus_bayesian_affinity": ProRecommendationEngine(ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=False, affinity_prior_strength=40.0)),
     }
 
     results = {name: [] for name in variants}

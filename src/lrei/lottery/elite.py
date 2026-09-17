@@ -18,6 +18,7 @@ class EliteProConfig(ProConfig):
     ewma_weight: float = 0.25
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.rank_weight < 0 or self.raw_weight < 0 or self.ewma_weight < 0:
             raise ValueError("ensemble weights must be non-negative")
         if self.rank_weight + self.raw_weight + self.ewma_weight <= 0:

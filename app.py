@@ -5,7 +5,7 @@ import tempfile
 import streamlit as st
 
 from lrei.lottery.dataset import CsvDatasetLoader
-from lrei.lottery.pro import ProRecommendationEngine
+from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
@@ -60,7 +60,7 @@ def generate_regular_tickets(dataset, seed: int):
 
 
 def generate_pro_tickets(dataset, seed: int):
-    engine = ProRecommendationEngine()
+    engine = EliteProRecommendationEngine()
     result = engine.recommend(
         dataset=dataset,
         seed=seed,
@@ -132,8 +132,8 @@ mode = st.radio(
 
 if mode == "Pro":
     st.info(
-        "Pro משתמש במספר חלונות היסטוריים, משקל גבוה יותר לנתונים "
-        "עדכניים, צירופי זוגות ושלשות ואופטימיזציה של 14 הטורים יחד."
+        "Pro משתמש בהרכב Ensemble של Rank, Raw Frequency ו-EWMA, "
+        "צירופי זוגות ושלשות, פרופיל מבני ואופטימיזציה מקומית של 14 הטורים יחד."
     )
 else:
     st.info(

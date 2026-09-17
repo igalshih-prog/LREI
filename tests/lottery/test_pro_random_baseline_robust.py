@@ -18,6 +18,20 @@ def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
     )
 
 
+def _bootstrap_ci(values, seed=20260917, samples=5000):
+    rng = random.Random(seed)
+    if not values:
+        return 0.0, 0.0
+    estimates = []
+    for _ in range(samples):
+        resample = [values[rng.randrange(len(values))] for _ in values]
+        estimates.append(mean(resample))
+    estimates.sort()
+    lower = estimates[int(0.025 * (len(estimates) - 1))]
+    upper = estimates[int(0.975 * (len(estimates) - 1))]
+    return lower, upper
+
+
 def test_pro_against_multiple_random_baselines_walk_forward():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -60,12 +74,14 @@ def test_pro_against_multiple_random_baselines_walk_forward():
 
     positive_draws = sum(value > 0 for value in paired_differences)
     tied_draws = sum(value == 0 for value in paired_differences)
+    difference_ci = _bootstrap_ci(paired_differences)
 
     print(f"Walk-forward draws: {holdout}")
     print(f"Random portfolios per draw: {random_portfolios_per_draw}")
     print(f"Pro mean hits / ticket: {mean(pro_average_hits):.4f}")
     print(f"Random mean hits / ticket: {mean(random_average_hits):.4f}")
     print(f"Mean paired difference: {mean(paired_differences):+.4f}")
+    print(f"95% bootstrap CI for paired difference: [{difference_ci[0]:+.4f}, {difference_ci[1]:+.4f}]")
     print(f"Draws where Pro > random mean: {positive_draws}/{holdout}")
     print(f"Draws tied: {tied_draws}/{holdout}")
     print(f"Pro best-ticket hits: {mean(pro_best_hits):.4f}")
@@ -76,3 +92,4 @@ def test_pro_against_multiple_random_baselines_walk_forward():
     assert len(paired_differences) == holdout
     assert all(0 <= value <= 6 for value in pro_average_hits)
     assert all(0 <= value <= 6 for value in random_average_hits)
+    assert all(value == value for value in paired_differences)

@@ -26,6 +26,7 @@ class ProConfig:
     use_rank_normalization: bool = True
     use_ewma: bool = False
     ewma_half_life: float = 36.0
+    affinity_prior_strength: float = 0.0
 
 
 class ProRecommendationEngine:
@@ -37,6 +38,8 @@ class ProRecommendationEngine:
             raise ValueError("candidate_count must cover max_tickets")
         if self.config.ewma_half_life <= 0:
             raise ValueError("ewma_half_life must be positive")
+        if self.config.affinity_prior_strength < 0:
+            raise ValueError("affinity_prior_strength must be non-negative")
         self.generator = TicketGenerator()
         self.optimizer = LotteryOptimizer(
             OptimizerConfig(
@@ -46,74 +49,41 @@ class ProRecommendationEngine:
         )
 
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
-        """Generate exactly the configured number of Pro tickets."""
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
-
         frequencies = self._frequency(dataset)
-        recent_3 = self._window_frequency(dataset, years=3)
-        recent_1 = self._window_frequency(dataset, years=1)
+        recent_3 = self._window_frequency(dataset, 3)
+        recent_1 = self._window_frequency(dataset, 1)
         recent_draws = self._recent_draw_frequency(dataset, 60)
         ewma = self._ewma_frequency(dataset, self.config.ewma_half_life) if self.config.use_ewma else {}
-        individual_scores = self._individual_scores(
-            frequencies, recent_3, recent_1, recent_draws, ewma
-        )
+        scores = self._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma)
         pair_counts = self._combination_counts(dataset, 2)
         triple_counts = self._combination_counts(dataset, 3)
         structure = self._structure_profile(dataset)
-
         rng = random.Random(seed)
-        generated = [
-            self._generate_candidate(individual_scores, pair_counts, triple_counts, structure, rng)
-            for _ in range(self.config.candidate_count)
-        ]
-        recommended = self._select_portfolio(
-            generated, individual_scores, frequencies, pair_counts, triple_counts, structure
-        )
-
+        generated = [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_count)]
+        recommended = self._select_portfolio(generated, scores, frequencies, pair_counts, triple_counts, structure)
         if len(recommended) < self.config.max_tickets:
-            expanded = list(generated)
-            expanded.extend(
-                self._generate_candidate(individual_scores, pair_counts, triple_counts, structure, rng)
-                for _ in range(self.config.candidate_count)
-            )
-            recommended = self._select_portfolio(
-                expanded, individual_scores, frequencies, pair_counts, triple_counts, structure
-            )
-
+            expanded = generated + [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_count)]
+            recommended = self._select_portfolio(expanded, scores, frequencies, pair_counts, triple_counts, structure)
         recommended = tuple(recommended[: self.config.max_tickets])
         if len(recommended) != self.config.max_tickets:
             raise ValueError("Pro optimizer could not produce the configured number of tickets")
-
         strong_scores = self._strong_scores(dataset)
-        generated_with_strong = [
-            RecommendedTicket(
-                numbers=ticket,
-                strong_number=self.generator.generate_strong_number(scores=strong_scores, rng=rng)
-                if strong_scores else None,
-            )
-            for ticket in generated
-        ]
-        recommended_with_strong = tuple(
-            RecommendedTicket(
-                numbers=ticket,
-                strong_number=self.generator.generate_strong_number(scores=strong_scores, rng=rng)
-                if strong_scores else None,
-            )
-            for ticket in recommended
-        )
+        generated_with_strong = tuple(RecommendedTicket(numbers=t, strong_number=self.generator.generate_strong_number(scores=strong_scores, rng=rng) if strong_scores else None) for t in generated)
+        recommended_with_strong = tuple(RecommendedTicket(numbers=t, strong_number=self.generator.generate_strong_number(scores=strong_scores, rng=rng) if strong_scores else None) for t in recommended)
         return RecommendationResult(
-            scores=individual_scores,
+            scores=scores,
             generated_tickets=tuple(generated),
             recommended_tickets=recommended,
             strong_scores=strong_scores,
-            generated_tickets_with_strong=tuple(generated_with_strong),
+            generated_tickets_with_strong=generated_with_strong,
             recommended_tickets_with_strong=recommended_with_strong,
         )
 
     @staticmethod
-    def _frequency(dataset: LotteryDataset) -> dict[int, int]:
-        counts: Counter[int] = Counter()
+    def _frequency(dataset):
+        counts = Counter()
         for draw in dataset:
             counts.update(draw.numbers)
         return dict(counts)
@@ -126,236 +96,170 @@ class ProRecommendationEngine:
             return value.replace(year=value.year - years, month=2, day=28)
 
     @classmethod
-    def _window_frequency(cls, dataset: LotteryDataset, years: int) -> dict[int, int]:
-        dated_draws = [(draw, cls._parse_date(draw.date)) for draw in dataset]
-        valid_dates = [draw_date for _, draw_date in dated_draws if draw_date is not None]
-        if valid_dates:
-            latest_date = max(valid_dates)
-            start_date = cls._subtract_years(latest_date, years)
-            window_draws = [
-                draw for draw, draw_date in dated_draws
-                if draw_date is not None and start_date <= draw_date <= latest_date
-            ]
-            if window_draws:
-                return cls._frequency(LotteryDataset(window_draws))
-        fallback_fraction = 0.30 if years == 3 else 0.10
-        size = max(1, round(len(dataset) * fallback_fraction))
+    def _window_frequency(cls, dataset, years):
+        dated = [(draw, cls._parse_date(draw.date)) for draw in dataset]
+        valid = [d for _, d in dated if d is not None]
+        if valid:
+            latest = max(valid)
+            start = cls._subtract_years(latest, years)
+            window = [draw for draw, d in dated if d is not None and start <= d <= latest]
+            if window:
+                return cls._frequency(LotteryDataset(window))
+        fraction = 0.30 if years == 3 else 0.10
+        size = max(1, round(len(dataset) * fraction))
         return cls._frequency(LotteryDataset(dataset.draws[-size:]))
 
     @staticmethod
-    def _recent_draw_frequency(dataset: LotteryDataset, draw_count: int) -> dict[int, int]:
-        size = min(len(dataset), draw_count)
-        return ProRecommendationEngine._frequency(LotteryDataset(dataset.draws[-size:]))
+    def _recent_draw_frequency(dataset, draw_count):
+        return ProRecommendationEngine._frequency(LotteryDataset(dataset.draws[-min(len(dataset), draw_count):]))
 
     @staticmethod
-    def _ewma_frequency(dataset: LotteryDataset, half_life: float) -> dict[int, float]:
-        """Compute an exponentially weighted occurrence signal over chronological draws."""
-        numbers = sorted({number for draw in dataset for number in draw.numbers})
-        if not numbers:
-            return {}
+    def _ewma_frequency(dataset, half_life):
+        numbers = sorted({n for draw in dataset for n in draw.numbers})
         alpha = 1.0 - math.exp(-math.log(2.0) / half_life)
-        values = {number: 0.0 for number in numbers}
+        values = {n: 0.0 for n in numbers}
         for draw in dataset:
             present = set(draw.numbers)
-            for number in numbers:
-                observation = 1.0 if number in present else 0.0
-                values[number] = (1.0 - alpha) * values[number] + alpha * observation
+            for n in numbers:
+                values[n] = (1.0 - alpha) * values[n] + alpha * (1.0 if n in present else 0.0)
         return values
 
     @staticmethod
-    def _rank_normalise(values: dict[int, float], numbers: list[int]) -> dict[int, float]:
-        """Convert each window to stable percentile-like ranks before blending."""
-        if not numbers:
-            return {}
-        ordered = sorted(numbers, key=lambda number: (values.get(number, 0.0), number))
+    def _rank_normalise(values, numbers):
+        ordered = sorted(numbers, key=lambda n: (values.get(n, 0.0), n))
         denominator = max(1, len(ordered) - 1)
-        return {number: index / denominator for index, number in enumerate(ordered)}
+        return {n: i / denominator for i, n in enumerate(ordered)}
 
     @staticmethod
-    def _scale_normalise(values: dict[int, float], numbers: list[int]) -> dict[int, float]:
-        """Scale a frequency window to [0, 1] without mixing incompatible count scales."""
-        if not numbers:
+    def _scale_normalise(values, numbers):
+        observed = [float(values.get(n, 0.0)) for n in numbers]
+        if not observed:
             return {}
-        observed = [float(values.get(number, 0.0)) for number in numbers]
-        minimum = min(observed)
-        maximum = max(observed)
-        if maximum <= minimum:
-            return {number: 0.5 for number in numbers}
-        span = maximum - minimum
-        return {number: (float(values.get(number, 0.0)) - minimum) / span for number in numbers}
+        low, high = min(observed), max(observed)
+        if high <= low:
+            return {n: 0.5 for n in numbers}
+        return {n: (float(values.get(n, 0.0)) - low) / (high - low) for n in numbers}
 
     def _individual_scores(self, frequencies, recent_3, recent_1, recent_draws, ewma=None):
         numbers = sorted(frequencies)
         normalise = self._rank_normalise if self.config.use_rank_normalization else self._scale_normalise
-        all_values = normalise(frequencies, numbers)
-        three_values = normalise(recent_3, numbers)
-        one_values = normalise(recent_1, numbers)
-        recent_values = normalise(recent_draws, numbers)
-        ewma_values = normalise(ewma, numbers) if ewma else {}
-        scores = []
-        for number in numbers:
+        a, b, c, d = (normalise(x, numbers) for x in (frequencies, recent_3, recent_1, recent_draws))
+        e = normalise(ewma, numbers) if ewma else {}
+        result = []
+        for n in numbers:
             if self.config.use_ewma:
-                score = (
-                    0.50 * all_values.get(number, 0.0)
-                    + 0.23 * three_values.get(number, 0.0)
-                    + 0.12 * one_values.get(number, 0.0)
-                    + 0.07 * recent_values.get(number, 0.0)
-                    + 0.08 * ewma_values.get(number, 0.0)
-                )
+                score = 0.50 * a.get(n, 0) + 0.23 * b.get(n, 0) + 0.12 * c.get(n, 0) + 0.07 * d.get(n, 0) + 0.08 * e.get(n, 0)
             else:
-                score = (
-                    0.55 * all_values.get(number, 0.0)
-                    + 0.25 * three_values.get(number, 0.0)
-                    + 0.12 * one_values.get(number, 0.0)
-                    + 0.08 * recent_values.get(number, 0.0)
-                )
-            scores.append(NumberScore(number=number, score=score))
-        return tuple(scores)
+                score = 0.55 * a.get(n, 0) + 0.25 * b.get(n, 0) + 0.12 * c.get(n, 0) + 0.08 * d.get(n, 0)
+            result.append(NumberScore(number=n, score=score))
+        return tuple(result)
 
     @staticmethod
-    def _combination_counts(dataset: LotteryDataset, size: int) -> dict[tuple[int, ...], int]:
-        counts: Counter[tuple[int, ...]] = Counter()
+    def _combination_counts(dataset, size):
+        counts = Counter()
         for draw in dataset:
             for combo in combinations(sorted(draw.numbers), size):
                 counts[combo] += 1
         return dict(counts)
 
     @staticmethod
-    def _structure_profile(dataset: LotteryDataset) -> dict[str, float | tuple[float, ...]]:
-        sums, odd_counts, low_counts, consecutive_counts = [], [], [], []
+    def _structure_profile(dataset):
+        sums, odds, lows, consecutive = [], [], [], []
         for draw in dataset:
-            numbers = sorted(draw.numbers)
-            sums.append(float(sum(numbers)))
-            odd_counts.append(float(sum(number % 2 for number in numbers)))
-            low_counts.append(float(sum(number <= 18 for number in numbers)))
-            consecutive_counts.append(float(sum(b == a + 1 for a, b in zip(numbers, numbers[1:]))))
-
-        def mean(values):
-            return sum(values) / len(values) if values else 0.0
-
-        def stdev(values, fallback):
-            if len(values) < 2:
-                return fallback
-            avg = mean(values)
-            variance = sum((value - avg) ** 2 for value in values) / len(values)
-            return max(math.sqrt(variance), fallback)
-
-        return {
-            "sum_mean": mean(sums),
-            "sum_std": stdev(sums, 8.0),
-            "odd_mean": mean(odd_counts),
-            "low_mean": mean(low_counts),
-            "consecutive_mean": mean(consecutive_counts),
-            "sum_values": tuple(sums),
-        }
+            n = sorted(draw.numbers)
+            sums.append(float(sum(n)))
+            odds.append(float(sum(x % 2 for x in n)))
+            lows.append(float(sum(x <= 18 for x in n)))
+            consecutive.append(float(sum(b == a + 1 for a, b in zip(n, n[1:]))))
+        def avg(v): return sum(v) / len(v) if v else 0.0
+        def sd(v):
+            if len(v) < 2: return 8.0
+            m = avg(v)
+            return max(math.sqrt(sum((x - m) ** 2 for x in v) / len(v)), 8.0)
+        return {"sum_mean": avg(sums), "sum_std": sd(sums), "odd_mean": avg(odds), "low_mean": avg(lows), "consecutive_mean": avg(consecutive), "sum_values": tuple(sums)}
 
     @staticmethod
     def _percentile(values, fraction):
-        if not values:
-            return 0.0
+        if not values: return 0.0
         ordered = sorted(values)
-        index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * fraction))))
-        return ordered[index]
+        return ordered[min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * fraction))))]
 
     @classmethod
     def _structure_score(cls, ticket, profile):
-        numbers = sorted(ticket)
-        odd_count = sum(number % 2 for number in numbers)
-        low_count = sum(number <= 18 for number in numbers)
-        total = sum(numbers)
-        consecutive = sum(b == a + 1 for a, b in zip(numbers, numbers[1:]))
-        sum_mean = float(profile["sum_mean"])
-        sum_std = float(profile["sum_std"])
-        odd_mean = float(profile["odd_mean"])
-        low_mean = float(profile["low_mean"])
-        consecutive_mean = float(profile["consecutive_mean"])
-        sums = profile["sum_values"]
-        score = math.exp(-abs(total - sum_mean) / (sum_std * 1.6))
-        score *= math.exp(-abs(odd_count - odd_mean) / 1.7)
-        score *= math.exp(-abs(low_count - low_mean) / 1.7)
-        score *= math.exp(-abs(consecutive - consecutive_mean) / 1.8)
-        lower_sum = cls._percentile(sums, 0.10)
-        upper_sum = cls._percentile(sums, 0.90)
-        score *= 1.08 if lower_sum <= total <= upper_sum else 0.82
-        bands = [sum(1 for number in numbers if start <= number <= end) for start, end in ((1, 10), (11, 20), (21, 30), (31, 37))]
+        n = sorted(ticket)
+        odd = sum(x % 2 for x in n)
+        low = sum(x <= 18 for x in n)
+        total = sum(n)
+        consecutive = sum(b == a + 1 for a, b in zip(n, n[1:]))
+        score = math.exp(-abs(total - float(profile["sum_mean"])) / (float(profile["sum_std"]) * 1.6))
+        score *= math.exp(-abs(odd - float(profile["odd_mean"])) / 1.7)
+        score *= math.exp(-abs(low - float(profile["low_mean"])) / 1.7)
+        score *= math.exp(-abs(consecutive - float(profile["consecutive_mean"])) / 1.8)
+        score *= 1.08 if cls._percentile(profile["sum_values"], 0.10) <= total <= cls._percentile(profile["sum_values"], 0.90) else 0.82
+        bands = [sum(start <= x <= end for x in n) for start, end in ((1, 10), (11, 20), (21, 30), (31, 37))]
         score *= 1.0 if max(bands) <= 3 else 0.72
-        if odd_count in (0, 6) or low_count in (0, 6):
-            score *= 0.55
-        run_length = longest_run = 1
-        for left, right in zip(numbers, numbers[1:]):
-            if right == left + 1:
-                run_length += 1
-                longest_run = max(longest_run, run_length)
-            else:
-                run_length = 1
-        if longest_run >= 4:
-            score *= 0.55
-        elif longest_run == 3:
-            score *= 0.82
+        if odd in (0, 6) or low in (0, 6): score *= 0.55
+        run = longest = 1
+        for a, b in zip(n, n[1:]):
+            run = run + 1 if b == a + 1 else 1
+            longest = max(longest, run)
+        if longest >= 4: score *= 0.55
+        elif longest == 3: score *= 0.82
         return score
 
     @staticmethod
-    def _affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count):
-        if draw_count <= 0:
-            return 0.0
+    def _affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count, prior_strength=0.0):
+        if draw_count <= 0: return 0.0
         pair_lifts, triple_lifts = [], []
         for left, right in combinations(ticket, 2):
-            observed_count = pair_counts.get((left, right), 0)
-            observed = observed_count / draw_count
-            p_left = frequencies.get(left, 0) / draw_count
-            p_right = frequencies.get(right, 0) / draw_count
-            expected = p_left * p_right
-            if expected > 0:
-                raw_lift = observed / expected
-                support = min(1.0, observed_count / 25.0)
-                pair_lifts.append(1.0 + support * (min(raw_lift, 3.0) - 1.0))
+            count = pair_counts.get((left, right), 0)
+            expected = (frequencies.get(left, 0) / draw_count) * (frequencies.get(right, 0) / draw_count)
+            if expected <= 0: continue
+            if prior_strength > 0:
+                rate = (count + prior_strength * expected) / (draw_count + prior_strength)
+                lift = rate / expected
+                support = min(1.0, (count + prior_strength) / (25.0 + prior_strength))
+            else:
+                lift = (count / draw_count) / expected
+                support = min(1.0, count / 25.0)
+            pair_lifts.append(1.0 + support * (min(lift, 3.0) - 1.0))
         for combo in combinations(ticket, 3):
-            observed_count = triple_counts.get(combo, 0)
-            observed = observed_count / draw_count
+            count = triple_counts.get(combo, 0)
             expected = 1.0
-            for number in combo:
-                expected *= frequencies.get(number, 0) / draw_count
-            if expected > 0:
-                raw_lift = observed / expected
-                support = min(1.0, observed_count / 5.0)
-                triple_lifts.append(1.0 + support * (min(raw_lift, 3.0) - 1.0))
+            for n in combo: expected *= frequencies.get(n, 0) / draw_count
+            if expected <= 0: continue
+            if prior_strength > 0:
+                rate = (count + prior_strength * expected) / (draw_count + prior_strength)
+                lift = rate / expected
+                support = min(1.0, (count + prior_strength) / (5.0 + prior_strength))
+            else:
+                lift = (count / draw_count) / expected
+                support = min(1.0, count / 5.0)
+            triple_lifts.append(1.0 + support * (min(lift, 3.0) - 1.0))
         pair = sum(pair_lifts) / len(pair_lifts) if pair_lifts else 1.0
         triple = sum(triple_lifts) / len(triple_lifts) if triple_lifts else 1.0
         return 0.65 * min(pair / 2.0, 1.5) + 0.35 * min(triple / 2.0, 1.5)
 
     @classmethod
-    def _candidate_score(cls, ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, profile):
-        number_score = sum(score_map.get(number, 0.0) for number in ticket) / len(ticket)
-        affinity = cls._affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count)
-        structure = cls._structure_score(ticket, profile)
-        return 0.58 * number_score + 0.22 * affinity + 0.20 * structure
+    def _candidate_score(cls, ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, profile, prior_strength=0.0):
+        number_score = sum(score_map.get(n, 0.0) for n in ticket) / len(ticket)
+        affinity = cls._affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count, prior_strength)
+        return 0.58 * number_score + 0.22 * affinity + 0.20 * cls._structure_score(ticket, profile)
 
     def _select_portfolio(self, generated, scores, frequencies, pair_counts, triple_counts, structure):
-        normalized = list(dict.fromkeys(tuple(sorted(ticket)) for ticket in generated))
-        score_map = {item.number: item.score for item in scores}
+        candidates = list(dict.fromkeys(tuple(sorted(t)) for t in generated))
+        score_map = {x.number: x.score for x in scores}
         draw_count = max(1, round(sum(frequencies.values()) / 6))
-        base_scores = {
-            ticket: self._candidate_score(
-                ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, structure
-            )
-            for ticket in normalized
-        }
+        base = {t: self._candidate_score(t, score_map, pair_counts, triple_counts, frequencies, draw_count, structure, self.config.affinity_prior_strength) for t in candidates}
         selected, selected_numbers = [], set()
         while len(selected) < self.config.max_tickets:
-            compatible = [
-                ticket for ticket in normalized
-                if ticket not in selected and self.optimizer.is_compatible(ticket, selected)
-            ]
-            if not compatible:
-                break
-
-            def marginal(ticket):
-                base = base_scores[ticket]
-                new_numbers = len(set(ticket) - selected_numbers)
-                overlap = sum(self.optimizer.overlap(ticket, prior) for prior in selected) / len(selected) if selected else 0.0
-                return base + 0.035 * new_numbers - 0.018 * overlap
-
-            best = max(compatible, key=lambda ticket: (marginal(ticket), tuple(-number for number in ticket)))
+            compatible = [t for t in candidates if t not in selected and self.optimizer.is_compatible(t, selected)]
+            if not compatible: break
+            def value(t):
+                new = len(set(t) - selected_numbers)
+                overlap = sum(self.optimizer.overlap(t, prior) for prior in selected) / len(selected) if selected else 0.0
+                return base[t] + 0.035 * new - 0.018 * overlap
+            best = max(compatible, key=lambda t: (value(t), tuple(-n for n in t)))
             selected.append(best)
             selected_numbers.update(best)
         return tuple(selected)
@@ -363,50 +267,42 @@ class ProRecommendationEngine:
     @staticmethod
     def _strong_scores(dataset):
         counts = Counter(draw.strong_number for draw in dataset if draw.strong_number is not None)
-        if not counts:
-            return ()
+        if not counts: return ()
         maximum = max(counts.values())
-        return tuple(NumberScore(number=number, score=count / maximum) for number, count in sorted(counts.items()))
+        return tuple(NumberScore(number=n, score=c / maximum) for n, c in sorted(counts.items()))
 
     @staticmethod
     def _parse_date(value):
-        if not value:
-            return None
+        if not value: return None
         text = value.strip()[:10]
         for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
-            try:
-                return datetime.strptime(text, fmt).date()
-            except ValueError:
-                continue
+            try: return datetime.strptime(text, fmt).date()
+            except ValueError: pass
         return None
 
     def _generate_candidate(self, scores, pair_counts, triple_counts, structure, rng):
         selected = []
-        score_map = {item.number: item.score for item in scores}
+        score_map = {x.number: x.score for x in scores}
         pair_max = max(pair_counts.values(), default=1)
         triple_max = max(triple_counts.values(), default=1)
         for _ in range(6):
             weights = []
-            for number in score_map:
-                if number in selected:
-                    continue
-                weight = max(score_map[number], 0.0001)
+            for n in score_map:
+                if n in selected: continue
+                weight = max(score_map[n], 0.0001)
                 if selected:
-                    pair_bonus = sum(pair_counts.get(tuple(sorted((number, other))), 0) for other in selected) / len(selected)
-                    weight *= 1.0 + 0.35 * (pair_bonus / pair_max)
+                    pair_bonus = sum(pair_counts.get(tuple(sorted((n, other))), 0) for other in selected) / len(selected)
+                    weight *= 1.0 + 0.35 * pair_bonus / pair_max
                 if len(selected) >= 2:
-                    recent_pair = tuple(sorted((selected[-2], selected[-1])))
-                    triple_bonus = triple_counts.get(tuple(sorted((number, *recent_pair))), 0) / triple_max
-                    weight *= 1.0 + 0.15 * triple_bonus
-                weights.append((number, weight))
-            total = sum(weight for _, weight in weights)
-            target = rng.random() * total
-            cumulative = 0.0
+                    pair = tuple(sorted((selected[-2], selected[-1])))
+                    weight *= 1.0 + 0.15 * triple_counts.get(tuple(sorted((n, *pair))), 0) / triple_max
+                weights.append((n, weight))
+            target, cumulative = rng.random() * sum(w for _, w in weights), 0.0
             chosen = weights[-1][0]
-            for number, weight in weights:
-                cumulative += weight
+            for n, w in weights:
+                cumulative += w
                 if target < cumulative:
-                    chosen = number
+                    chosen = n
                     break
             selected.append(chosen)
         ticket = tuple(sorted(selected))

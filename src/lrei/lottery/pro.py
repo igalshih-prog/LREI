@@ -24,6 +24,8 @@ class ProConfig:
     max_overlap: int = 4
     max_tickets: int = 14
     use_rank_normalization: bool = True
+    use_ewma: bool = False
+    ewma_half_life: float = 36.0
 
 
 class ProRecommendationEngine:
@@ -33,6 +35,8 @@ class ProRecommendationEngine:
         self.config = config or ProConfig()
         if self.config.candidate_count < self.config.max_tickets:
             raise ValueError("candidate_count must cover max_tickets")
+        if self.config.ewma_half_life <= 0:
+            raise ValueError("ewma_half_life must be positive")
         self.generator = TicketGenerator()
         self.optimizer = LotteryOptimizer(
             OptimizerConfig(
@@ -50,7 +54,10 @@ class ProRecommendationEngine:
         recent_3 = self._window_frequency(dataset, years=3)
         recent_1 = self._window_frequency(dataset, years=1)
         recent_draws = self._recent_draw_frequency(dataset, 60)
-        individual_scores = self._individual_scores(frequencies, recent_3, recent_1, recent_draws)
+        ewma = self._ewma_frequency(dataset, self.config.ewma_half_life) if self.config.use_ewma else {}
+        individual_scores = self._individual_scores(
+            frequencies, recent_3, recent_1, recent_draws, ewma
+        )
         pair_counts = self._combination_counts(dataset, 2)
         triple_counts = self._combination_counts(dataset, 3)
         structure = self._structure_profile(dataset)
@@ -141,6 +148,21 @@ class ProRecommendationEngine:
         return ProRecommendationEngine._frequency(LotteryDataset(dataset.draws[-size:]))
 
     @staticmethod
+    def _ewma_frequency(dataset: LotteryDataset, half_life: float) -> dict[int, float]:
+        """Compute an exponentially weighted occurrence signal over chronological draws."""
+        numbers = sorted({number for draw in dataset for number in draw.numbers})
+        if not numbers:
+            return {}
+        alpha = 1.0 - math.exp(-math.log(2.0) / half_life)
+        values = {number: 0.0 for number in numbers}
+        for draw in dataset:
+            present = set(draw.numbers)
+            for number in numbers:
+                observation = 1.0 if number in present else 0.0
+                values[number] = (1.0 - alpha) * values[number] + alpha * observation
+        return values
+
+    @staticmethod
     def _rank_normalise(values: dict[int, float], numbers: list[int]) -> dict[int, float]:
         """Convert each window to stable percentile-like ranks before blending."""
         if not numbers:
@@ -162,26 +184,31 @@ class ProRecommendationEngine:
         span = maximum - minimum
         return {number: (float(values.get(number, 0.0)) - minimum) / span for number in numbers}
 
-    def _individual_scores(self, frequencies, recent_3, recent_1, recent_draws):
+    def _individual_scores(self, frequencies, recent_3, recent_1, recent_draws, ewma=None):
         numbers = sorted(frequencies)
-        if self.config.use_rank_normalization:
-            all_values = self._rank_normalise(frequencies, numbers)
-            three_values = self._rank_normalise(recent_3, numbers)
-            one_values = self._rank_normalise(recent_1, numbers)
-            recent_values = self._rank_normalise(recent_draws, numbers)
-        else:
-            all_values = self._scale_normalise(frequencies, numbers)
-            three_values = self._scale_normalise(recent_3, numbers)
-            one_values = self._scale_normalise(recent_1, numbers)
-            recent_values = self._scale_normalise(recent_draws, numbers)
+        normalise = self._rank_normalise if self.config.use_rank_normalization else self._scale_normalise
+        all_values = normalise(frequencies, numbers)
+        three_values = normalise(recent_3, numbers)
+        one_values = normalise(recent_1, numbers)
+        recent_values = normalise(recent_draws, numbers)
+        ewma_values = normalise(ewma, numbers) if ewma else {}
         scores = []
         for number in numbers:
-            score = (
-                0.55 * all_values.get(number, 0.0)
-                + 0.25 * three_values.get(number, 0.0)
-                + 0.12 * one_values.get(number, 0.0)
-                + 0.08 * recent_values.get(number, 0.0)
-            )
+            if self.config.use_ewma:
+                score = (
+                    0.50 * all_values.get(number, 0.0)
+                    + 0.23 * three_values.get(number, 0.0)
+                    + 0.12 * one_values.get(number, 0.0)
+                    + 0.07 * recent_values.get(number, 0.0)
+                    + 0.08 * ewma_values.get(number, 0.0)
+                )
+            else:
+                score = (
+                    0.55 * all_values.get(number, 0.0)
+                    + 0.25 * three_values.get(number, 0.0)
+                    + 0.12 * one_values.get(number, 0.0)
+                    + 0.08 * recent_values.get(number, 0.0)
+                )
             scores.append(NumberScore(number=number, score=score))
         return tuple(scores)
 

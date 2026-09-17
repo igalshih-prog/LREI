@@ -19,10 +19,13 @@ def test_pro_scoring_ablation_smoke():
 
     variants = {
         "rank_blend": ProRecommendationEngine(
-            ProConfig(candidate_count=300, use_rank_normalization=True)
+            ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=False)
+        ),
+        "rank_plus_ewma": ProRecommendationEngine(
+            ProConfig(candidate_count=300, use_rank_normalization=True, use_ewma=True)
         ),
         "scaled_frequency_blend": ProRecommendationEngine(
-            ProConfig(candidate_count=300, use_rank_normalization=False)
+            ProConfig(candidate_count=300, use_rank_normalization=False, use_ewma=False)
         ),
     }
 

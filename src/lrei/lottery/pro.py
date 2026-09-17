@@ -149,6 +149,19 @@ class ProRecommendationEngine:
         denominator = max(1, len(ordered) - 1)
         return {number: index / denominator for index, number in enumerate(ordered)}
 
+    @staticmethod
+    def _scale_normalise(values: dict[int, float], numbers: list[int]) -> dict[int, float]:
+        """Scale a frequency window to [0, 1] without mixing incompatible count scales."""
+        if not numbers:
+            return {}
+        observed = [float(values.get(number, 0.0)) for number in numbers]
+        minimum = min(observed)
+        maximum = max(observed)
+        if maximum <= minimum:
+            return {number: 0.5 for number in numbers}
+        span = maximum - minimum
+        return {number: (float(values.get(number, 0.0)) - minimum) / span for number in numbers}
+
     def _individual_scores(self, frequencies, recent_3, recent_1, recent_draws):
         numbers = sorted(frequencies)
         if self.config.use_rank_normalization:
@@ -157,10 +170,10 @@ class ProRecommendationEngine:
             one_values = self._rank_normalise(recent_1, numbers)
             recent_values = self._rank_normalise(recent_draws, numbers)
         else:
-            all_values = frequencies
-            three_values = recent_3
-            one_values = recent_1
-            recent_values = recent_draws
+            all_values = self._scale_normalise(frequencies, numbers)
+            three_values = self._scale_normalise(recent_3, numbers)
+            one_values = self._scale_normalise(recent_1, numbers)
+            recent_values = self._scale_normalise(recent_draws, numbers)
         scores = []
         for number in numbers:
             score = (

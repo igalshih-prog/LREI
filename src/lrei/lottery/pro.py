@@ -246,6 +246,42 @@ class ProRecommendationEngine:
         affinity = cls._affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count, prior_strength)
         return 0.58 * number_score + 0.22 * affinity + 0.20 * cls._structure_score(ticket, profile)
 
+    def _portfolio_objective(self, selected, base):
+        if not selected:
+            return 0.0
+        unique_count = len(set().union(*(set(t) for t in selected)))
+        pair_overlaps = [self.optimizer.overlap(left, right) for left, right in combinations(selected, 2)]
+        mean_overlap = sum(pair_overlaps) / len(pair_overlaps) if pair_overlaps else 0.0
+        return sum(base[t] for t in selected) + 0.035 * unique_count - 0.018 * mean_overlap
+
+    def _refine_portfolio(self, selected, candidates, base):
+        """Improve the greedy portfolio with one deterministic local-swap pass."""
+        current = list(selected)
+        if len(current) < self.config.max_tickets:
+            return tuple(current)
+        ranked_candidates = sorted(candidates, key=lambda t: (base[t], tuple(-n for n in t)), reverse=True)
+        shortlist = ranked_candidates[: min(300, len(ranked_candidates))]
+        current_score = self._portfolio_objective(current, base)
+        for index in range(len(current)):
+            incumbent = current[index]
+            best_ticket = incumbent
+            best_score = current_score
+            others = current[:index] + current[index + 1:]
+            for candidate in shortlist:
+                if candidate == incumbent or candidate in others:
+                    continue
+                if not self.optimizer.is_compatible(candidate, others):
+                    continue
+                trial = others + [candidate]
+                trial_score = self._portfolio_objective(trial, base)
+                if trial_score > best_score + 1e-12:
+                    best_ticket = candidate
+                    best_score = trial_score
+            if best_ticket != incumbent:
+                current[index] = best_ticket
+                current_score = best_score
+        return tuple(current)
+
     def _select_portfolio(self, generated, scores, frequencies, pair_counts, triple_counts, structure):
         candidates = list(dict.fromkeys(tuple(sorted(t)) for t in generated))
         score_map = {x.number: x.score for x in scores}
@@ -262,7 +298,7 @@ class ProRecommendationEngine:
             best = max(compatible, key=lambda t: (value(t), tuple(-n for n in t)))
             selected.append(best)
             selected_numbers.update(best)
-        return tuple(selected)
+        return self._refine_portfolio(selected, candidates, base)
 
     @staticmethod
     def _strong_scores(dataset):

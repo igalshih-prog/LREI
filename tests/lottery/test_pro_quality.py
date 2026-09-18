@@ -53,3 +53,43 @@ def test_pro_coverage_is_stable_across_seeds():
         coverages.append(len(covered))
     assert min(coverages) >= 30
     assert max(coverages) <= 37
+
+def test_pro_portfolio_selector_ablation():
+    """Compare selector tradeoffs on a small fixed walk-forward sample."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(20, max(12, len(draws) // 50))
+    start = len(draws) - holdout
+
+    variants = {
+        "current": (0.035, 0.018),
+        "coverage_light": (0.020, 0.018),
+        "coverage_strong": (0.050, 0.018),
+        "overlap_strong": (0.035, 0.030),
+        "balanced": (0.025, 0.025),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[: start + offset])
+        for name, (coverage, overlap) in variants.items():
+            engine = ProRecommendationEngine(ProConfig(
+                candidate_count=300,
+                max_tickets=14,
+                portfolio_coverage_weight=coverage,
+                portfolio_overlap_penalty=overlap,
+            ))
+            result = engine.recommend(history, seed=91000 + offset)
+            actual = set(target.numbers)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    print("Pro portfolio selector ablation:")
+    for name, values in results.items():
+        print(f"  {name}: {mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

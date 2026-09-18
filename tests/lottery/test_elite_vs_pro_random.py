@@ -85,7 +85,10 @@ def test_elite_against_pro_and_multiple_random_baselines_walk_forward():
     elite_random_ci = _bootstrap_ci(elite_vs_random)
     elite_pro_ci = _bootstrap_ci(elite_vs_pro, seed=20260919)
 
+    expected_random_mean = 6.0 * 6.0 / 37.0
+
     print(f"Elite/Pro walk-forward draws: {holdout}")
+    print(f"Theoretical random mean hits / ticket: {expected_random_mean:.4f}")
     print(f"Random portfolios per draw: {random_portfolios_per_draw}")
     print(f"Elite mean hits / ticket: {mean(elite_means):.4f}")
     print(f"Pro mean hits / ticket:   {mean(pro_means):.4f}")

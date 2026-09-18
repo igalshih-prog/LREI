@@ -54,6 +54,7 @@ def test_pro_coverage_is_stable_across_seeds():
     assert min(coverages) >= 30
     assert max(coverages) <= 37
 
+
 def test_pro_portfolio_selector_ablation():
     """Compare selector tradeoffs on a small fixed walk-forward sample."""
     from statistics import mean
@@ -93,3 +94,23 @@ def test_pro_portfolio_selector_ablation():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_pro_candidate_pool_diversity_diagnostic():
+    """Measure whether the candidate generator is creating a sufficiently broad pool."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    history = type(dataset)(draws=draws[:-20])
+    engine = ProRecommendationEngine()
+    result = engine.recommend(history, seed=20260918)
+
+    unique_candidates = len(set(result.generated_tickets))
+    covered_candidates = len(set().union(*map(set, result.generated_tickets)))
+
+    print("Pro candidate-pool diversity:")
+    print(f"  generated: {len(result.generated_tickets)}")
+    print(f"  unique: {unique_candidates}")
+    print(f"  number coverage: {covered_candidates}")
+
+    assert unique_candidates > 0
+    assert 1 <= covered_candidates <= 37

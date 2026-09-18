@@ -76,7 +76,10 @@ def test_pro_against_multiple_random_baselines_walk_forward():
     tied_draws = sum(value == 0 for value in paired_differences)
     difference_ci = _bootstrap_ci(paired_differences)
 
+    expected_random_mean = 6.0 * 6.0 / 37.0
+
     print(f"Walk-forward draws: {holdout}")
+    print(f"Theoretical random mean hits / ticket: {expected_random_mean:.4f}")
     print(f"Random portfolios per draw: {random_portfolios_per_draw}")
     print(f"Pro mean hits / ticket: {mean(pro_average_hits):.4f}")
     print(f"Random mean hits / ticket: {mean(random_average_hits):.4f}")

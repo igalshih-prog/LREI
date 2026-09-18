@@ -90,3 +90,12 @@ def test_elite_pro_propagates_number_signal_strength():
     assert rank_engine.config.number_signal_strength == 0.75
     assert raw_engine.config.number_signal_strength == 0.75
     assert ewma_engine.config.number_signal_strength == 0.75
+
+
+def test_elite_pro_coverage_is_stable_across_seeds():
+    config = EliteProConfig(candidate_count=120, max_tickets=14)
+    engine = EliteProRecommendationEngine(config)
+    for seed in (1, 7, 42, 99):
+        result = engine.recommend(DATASET, seed=seed)
+        covered = set().union(*map(set, result.recommended_tickets))
+        assert len(covered) >= 30

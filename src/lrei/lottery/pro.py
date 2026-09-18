@@ -27,6 +27,7 @@ class ProConfig:
     use_ewma: bool = False
     ewma_half_life: float = 36.0
     affinity_prior_strength: float = 0.0
+    number_signal_strength: float = 1.0
 
 
 class ProRecommendationEngine:
@@ -40,6 +41,8 @@ class ProRecommendationEngine:
             raise ValueError("ewma_half_life must be positive")
         if self.config.affinity_prior_strength < 0:
             raise ValueError("affinity_prior_strength must be non-negative")
+        if not 0.0 <= self.config.number_signal_strength <= 1.0:
+            raise ValueError("number_signal_strength must be between 0 and 1")
         self.generator = TicketGenerator()
         self.optimizer = LotteryOptimizer(
             OptimizerConfig(
@@ -151,6 +154,7 @@ class ProRecommendationEngine:
                 score = 0.50 * a.get(n, 0) + 0.23 * b.get(n, 0) + 0.12 * c.get(n, 0) + 0.07 * d.get(n, 0) + 0.08 * e.get(n, 0)
             else:
                 score = 0.55 * a.get(n, 0) + 0.25 * b.get(n, 0) + 0.12 * c.get(n, 0) + 0.08 * d.get(n, 0)
+            score = 0.5 + self.config.number_signal_strength * (score - 0.5)
             result.append(NumberScore(number=n, score=score))
         return tuple(result)
 

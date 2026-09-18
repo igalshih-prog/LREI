@@ -1,0 +1,28 @@
+name: Pro selector ablation
+# Small walk-forward selector experiment; production defaults remain unchanged.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lrei/lottery/pro.py"
+      - "data/lottery.csv"
+      - "tests/lottery/test_pro_quality.py"
+      - ".github/workflows/pro_selector_ablation.yml"
+  workflow_dispatch:
+
+jobs:
+  ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run selector ablation
+        run: python -m pytest tests/lottery/test_pro_quality.py -q -s -k selector_ablation

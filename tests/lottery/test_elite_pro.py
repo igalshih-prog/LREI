@@ -79,3 +79,14 @@ def test_elite_pro_rejects_invalid_adaptive_settings():
             pass
         else:
             raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_elite_pro_propagates_number_signal_strength():
+    config = EliteProConfig(candidate_count=90, max_tickets=14, number_signal_strength=0.75)
+    rank_engine = EliteProRecommendationEngine._engine(config, True, False)
+    raw_engine = EliteProRecommendationEngine._engine(config, False, False)
+    ewma_engine = EliteProRecommendationEngine._engine(config, True, True)
+
+    assert rank_engine.config.number_signal_strength == 0.75
+    assert raw_engine.config.number_signal_strength == 0.75
+    assert ewma_engine.config.number_signal_strength == 0.75

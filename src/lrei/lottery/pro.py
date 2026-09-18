@@ -27,7 +27,7 @@ class ProConfig:
     use_ewma: bool = False
     ewma_half_life: float = 36.0
     affinity_prior_strength: float = 0.0
-    number_signal_strength: float = 1.0
+    number_signal_strength: float = 0.75
 
 
 class ProRecommendationEngine:

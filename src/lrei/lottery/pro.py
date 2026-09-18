@@ -341,6 +341,7 @@ class ProRecommendationEngine:
                     chosen = n
                     break
             selected.append(chosen)
-        # Keep structure as a scoring signal, not a hard rejection gate.
-        # The portfolio selector still uses structure softly.
-        return tuple(sorted(selected))
+        ticket = tuple(sorted(selected))
+        if rng.random() < 0.72 and self._structure_score(ticket, structure) < 0.28:
+            return self._generate_candidate(scores, pair_counts, triple_counts, structure, rng)
+        return ticket

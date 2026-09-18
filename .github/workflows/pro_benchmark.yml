@@ -1,4 +1,5 @@
 name: Pro benchmark
+# Benchmark workflow kept self-triggerable so algorithm commits are always validated.
 
 on:
   push:

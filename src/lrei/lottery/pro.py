@@ -28,6 +28,8 @@ class ProConfig:
     ewma_half_life: float = 36.0
     affinity_prior_strength: float = 0.0
     number_signal_strength: float = 0.75
+    portfolio_coverage_weight: float = 0.035
+    portfolio_overlap_penalty: float = 0.018
 
 
 class ProRecommendationEngine:
@@ -43,6 +45,10 @@ class ProRecommendationEngine:
             raise ValueError("affinity_prior_strength must be non-negative")
         if not 0.0 <= self.config.number_signal_strength <= 1.0:
             raise ValueError("number_signal_strength must be between 0 and 1")
+        if self.config.portfolio_coverage_weight < 0:
+            raise ValueError("portfolio_coverage_weight must be non-negative")
+        if self.config.portfolio_overlap_penalty < 0:
+            raise ValueError("portfolio_overlap_penalty must be non-negative")
         self.generator = TicketGenerator()
         self.optimizer = LotteryOptimizer(
             OptimizerConfig(
@@ -256,7 +262,7 @@ class ProRecommendationEngine:
         unique_count = len(set().union(*(set(t) for t in selected)))
         pair_overlaps = [self.optimizer.overlap(left, right) for left, right in combinations(selected, 2)]
         mean_overlap = sum(pair_overlaps) / len(pair_overlaps) if pair_overlaps else 0.0
-        return sum(base[t] for t in selected) + 0.035 * unique_count - 0.018 * mean_overlap
+        return sum(base[t] for t in selected) + self.config.portfolio_coverage_weight * unique_count - self.config.portfolio_overlap_penalty * mean_overlap
 
     def _refine_portfolio(self, selected, candidates, base):
         """Improve the greedy portfolio with one deterministic local-swap pass."""
@@ -298,7 +304,7 @@ class ProRecommendationEngine:
             def value(t):
                 new = len(set(t) - selected_numbers)
                 overlap = sum(self.optimizer.overlap(t, prior) for prior in selected) / len(selected) if selected else 0.0
-                return base[t] + 0.035 * new - 0.018 * overlap
+                return base[t] + self.config.portfolio_coverage_weight * new - self.config.portfolio_overlap_penalty * overlap
             best = max(compatible, key=lambda t: (value(t), tuple(-n for n in t)))
             selected.append(best)
             selected_numbers.update(best)

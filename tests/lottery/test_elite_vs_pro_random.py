@@ -109,3 +109,42 @@ def test_elite_against_pro_and_multiple_random_baselines_walk_forward():
     assert all(0 <= value <= 6 for value in random_means)
     assert all(value == value for value in elite_vs_random)
     assert all(value == value for value in elite_vs_pro)
+
+def test_elite_robust_baseline_walk_forward_diagnostic():
+    """Use a longer holdout and repeated random portfolios for a less noisy Elite check."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+    elite_means = []
+    random_means = []
+    paired = []
+
+    engine = EliteProRecommendationEngine()
+    baseline_rng = random.Random(20260920)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        elite = engine.recommend(history, seed=96000 + offset)
+        elite_hits = _hits(elite.recommended_tickets, target.numbers)
+        random_results = [
+            _hits(_random_portfolio(baseline_rng), target.numbers)
+            for _ in range(random_portfolios_per_draw)
+        ]
+        random_mean = mean(hit for result in random_results for hit in result)
+        elite_mean = mean(elite_hits)
+        elite_means.append(elite_mean)
+        random_means.append(random_mean)
+        paired.append(elite_mean - random_mean)
+
+    ci = _bootstrap_ci(paired, seed=20260921)
+    print("Elite robust baseline diagnostic:")
+    print(f"  holdout={holdout}")
+    print(f"  Elite mean hits/ticket={mean(elite_means):.4f}")
+    print(f"  Random mean hits/ticket={mean(random_means):.4f}")
+    print(f"  Elite-Random={mean(paired):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(paired) == holdout
+    assert all(value == value for value in paired)

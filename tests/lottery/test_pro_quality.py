@@ -96,6 +96,52 @@ def test_pro_portfolio_selector_ablation():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+def test_pro_candidate_generation_ablation():
+    """Compare candidate-generation settings on a small walk-forward sample."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(12, max(8, len(draws) // 80))
+    start = len(draws) - holdout
+
+    variants = {
+        "current": (0.35, 0.15, 0.72, 0.28),
+        "pair_light": (0.15, 0.08, 0.72, 0.28),
+        "pair_strong": (0.55, 0.25, 0.72, 0.28),
+        "gate_light": (0.35, 0.15, 0.45, 0.24),
+        "gate_strong": (0.35, 0.15, 0.88, 0.30),
+        "no_gate": (0.35, 0.15, 0.00, 0.28),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[: start + offset])
+        for name, (pair, triple, gate_probability, gate_threshold) in variants.items():
+            engine = ProRecommendationEngine(ProConfig(
+                candidate_count=250,
+                max_tickets=14,
+                pair_bonus_strength=pair,
+                triple_bonus_strength=triple,
+                structural_gate_probability=gate_probability,
+                structural_gate_threshold=gate_threshold,
+            ))
+            result = engine.recommend(history, seed=92000 + offset)
+            actual = set(target.numbers)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    print("Pro candidate-generation ablation:")
+    for name, values in results.items():
+        print(f"  {name}: {mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
 def test_pro_candidate_pool_diversity_diagnostic():
     """Measure whether the candidate generator is creating a sufficiently broad pool."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))

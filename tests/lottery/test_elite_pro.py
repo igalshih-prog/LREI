@@ -99,3 +99,20 @@ def test_elite_pro_coverage_is_stable_across_seeds():
         result = engine.recommend(DATASET, seed=seed)
         covered = set().union(*map(set, result.recommended_tickets))
         assert len(covered) >= 30
+
+
+def test_elite_candidate_pool_diversity_diagnostic():
+    config = EliteProConfig(candidate_count=300, max_tickets=14)
+    engine = EliteProRecommendationEngine(config)
+    result = engine.recommend(DATASET, seed=20260918)
+
+    unique_candidates = len(set(result.generated_tickets))
+    covered_candidates = len(set().union(*map(set, result.generated_tickets)))
+
+    print("Elite candidate-pool diversity:")
+    print(f"  generated: {len(result.generated_tickets)}")
+    print(f"  unique: {unique_candidates}")
+    print(f"  number coverage: {covered_candidates}")
+
+    assert unique_candidates > 0
+    assert 1 <= covered_candidates <= 37

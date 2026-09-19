@@ -21,6 +21,9 @@ class EliteProConfig(ProConfig):
     calibration_draws: int = 30
     calibration_top_k: int = 10
     adaptive_shrinkage: float = 0.50
+    candidate_rank_weight: float = 1.0 / 3.0
+    candidate_raw_weight: float = 1.0 / 3.0
+    candidate_ewma_weight: float = 1.0 / 3.0
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -39,6 +42,11 @@ class EliteProConfig(ProConfig):
             raise ValueError("calibration_top_k must be between 1 and 37")
         if not 0.0 <= self.adaptive_shrinkage <= 1.0:
             raise ValueError("adaptive_shrinkage must be between 0 and 1")
+        candidate_weights = (self.candidate_rank_weight, self.candidate_raw_weight, self.candidate_ewma_weight)
+        if any(weight < 0 for weight in candidate_weights):
+            raise ValueError("candidate ensemble weights must be non-negative")
+        if sum(candidate_weights) <= 0:
+            raise ValueError("candidate ensemble weights must have positive total")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -149,9 +157,13 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
 
         candidates = []
         variant_specs = ((rank_engine, rank_scores), (raw_engine, raw_scores), (ewma_engine, ewma_scores))
-        per_variant = max(1, self.config.candidate_count // len(variant_specs))
-        for engine, scores in variant_specs:
-            for _ in range(per_variant):
+        candidate_weights = (self.config.candidate_rank_weight, self.config.candidate_raw_weight, self.config.candidate_ewma_weight)
+        total_candidate_weight = sum(candidate_weights)
+        allocations = [int(self.config.candidate_count * weight / total_candidate_weight) for weight in candidate_weights]
+        for index in range(self.config.candidate_count - sum(allocations)):
+            allocations[index % len(allocations)] += 1
+        for (engine, scores), count in zip(variant_specs, allocations):
+            for _ in range(count):
                 candidates.append(self._generate_candidate(scores, pair_counts, triple_counts, structure, rng))
         while len(candidates) < self.config.candidate_count:
             candidates.append(self._generate_candidate(ensemble_scores, pair_counts, triple_counts, structure, rng))

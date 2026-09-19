@@ -30,6 +30,10 @@ class ProConfig:
     number_signal_strength: float = 0.75
     portfolio_coverage_weight: float = 0.035
     portfolio_overlap_penalty: float = 0.018
+    pair_bonus_strength: float = 0.35
+    triple_bonus_strength: float = 0.15
+    structural_gate_probability: float = 0.72
+    structural_gate_threshold: float = 0.28
 
 
 class ProRecommendationEngine:
@@ -49,6 +53,14 @@ class ProRecommendationEngine:
             raise ValueError("portfolio_coverage_weight must be non-negative")
         if self.config.portfolio_overlap_penalty < 0:
             raise ValueError("portfolio_overlap_penalty must be non-negative")
+        if self.config.pair_bonus_strength < 0:
+            raise ValueError("pair_bonus_strength must be non-negative")
+        if self.config.triple_bonus_strength < 0:
+            raise ValueError("triple_bonus_strength must be non-negative")
+        if not 0.0 <= self.config.structural_gate_probability <= 1.0:
+            raise ValueError("structural_gate_probability must be between 0 and 1")
+        if not 0.0 <= self.config.structural_gate_threshold <= 1.0:
+            raise ValueError("structural_gate_threshold must be between 0 and 1")
         self.generator = TicketGenerator()
         self.optimizer = LotteryOptimizer(
             OptimizerConfig(
@@ -338,10 +350,10 @@ class ProRecommendationEngine:
                 weight = max(score_map[n], 0.0001)
                 if selected:
                     pair_bonus = sum(pair_counts.get(tuple(sorted((n, other))), 0) for other in selected) / len(selected)
-                    weight *= 1.0 + 0.35 * pair_bonus / pair_max
+                    weight *= 1.0 + self.config.pair_bonus_strength * pair_bonus / pair_max
                 if len(selected) >= 2:
                     pair = tuple(sorted((selected[-2], selected[-1])))
-                    weight *= 1.0 + 0.15 * triple_counts.get(tuple(sorted((n, *pair))), 0) / triple_max
+                    weight *= 1.0 + self.config.triple_bonus_strength * triple_counts.get(tuple(sorted((n, *pair))), 0) / triple_max
                 weights.append((n, weight))
             target, cumulative = rng.random() * sum(w for _, w in weights), 0.0
             chosen = weights[-1][0]
@@ -352,6 +364,6 @@ class ProRecommendationEngine:
                     break
             selected.append(chosen)
         ticket = tuple(sorted(selected))
-        if rng.random() < 0.72 and self._structure_score(ticket, structure) < 0.28:
+        if rng.random() < self.config.structural_gate_probability and self._structure_score(ticket, structure) < self.config.structural_gate_threshold:
             return self._generate_candidate(scores, pair_counts, triple_counts, structure, rng)
         return ticket

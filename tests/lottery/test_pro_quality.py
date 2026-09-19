@@ -116,6 +116,7 @@ def test_pro_candidate_generation_ablation():
         "no_gate": (0.35, 0.15, 0.00, 0.28),
     }
     results = {name: [] for name in variants}
+    diversity = {name: [] for name in variants}
 
     for offset, target in enumerate(draws[start:]):
         history = LotteryDataset(draws=draws[: start + offset])
@@ -134,9 +135,29 @@ def test_pro_candidate_generation_ablation():
                 mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
             )
 
+            unique_pool = set(result.generated_tickets)
+            covered_numbers = set().union(*map(set, result.generated_tickets))
+            sample = list(unique_pool)[:300]
+            overlaps = [
+                len(set(left) & set(right))
+                for left, right in combinations(sample, 2)
+            ]
+            diversity[name].append((
+                len(unique_pool) / len(result.generated_tickets),
+                len(covered_numbers),
+                mean(overlaps) if overlaps else 0.0,
+            ))
+
     print("Pro candidate-generation ablation:")
     for name, values in results.items():
-        print(f"  {name}: {mean(values):.4f}")
+        ratio = mean(item[0] for item in diversity[name])
+        coverage = mean(item[1] for item in diversity[name])
+        overlap = mean(item[2] for item in diversity[name])
+        print(
+            f"  {name}: hits={mean(values):.4f} "
+            f"unique_ratio={ratio:.4f} coverage={coverage:.2f} "
+            f"mean_pool_overlap={overlap:.4f}"
+        )
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())

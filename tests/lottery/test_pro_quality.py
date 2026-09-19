@@ -104,13 +104,24 @@ def test_pro_candidate_pool_diversity_diagnostic():
     engine = ProRecommendationEngine()
     result = engine.recommend(history, seed=20260918)
 
-    unique_candidates = len(set(result.generated_tickets))
+    unique_pool = list(set(result.generated_tickets))
+    unique_candidates = len(unique_pool)
     covered_candidates = len(set().union(*map(set, result.generated_tickets)))
+    duplicate_ratio = 1.0 - unique_candidates / len(result.generated_tickets)
+    pool_overlaps = [
+        len(set(left) & set(right))
+        for left, right in combinations(unique_pool[:500], 2)
+    ]
+    mean_overlap = sum(pool_overlaps) / len(pool_overlaps) if pool_overlaps else 0.0
 
     print("Pro candidate-pool diversity:")
     print(f"  generated: {len(result.generated_tickets)}")
     print(f"  unique: {unique_candidates}")
+    print(f"  duplicate ratio: {duplicate_ratio:.4f}")
     print(f"  number coverage: {covered_candidates}")
+    print(f"  mean overlap (first 500 unique): {mean_overlap:.4f}")
 
     assert unique_candidates > 0
     assert 1 <= covered_candidates <= 37
+    assert 0.0 <= duplicate_ratio < 1.0
+    assert 0.0 <= mean_overlap <= 6.0

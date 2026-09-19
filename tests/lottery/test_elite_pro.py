@@ -136,3 +136,36 @@ def test_elite_candidate_pool_diversity_diagnostic():
 
     assert unique_candidates > 0
     assert 1 <= covered_candidates <= 37
+
+def test_elite_weighting_ablation_diagnostic():
+    """Compare fixed/adaptive ensemble settings without changing production defaults."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(24, max(16, len(draws) // 48))
+    start = len(draws) - holdout
+    variants = {
+        "current": dict(adaptive_weights=True, adaptive_shrinkage=0.50, calibration_draws=30, calibration_top_k=10),
+        "fixed": dict(adaptive_weights=False),
+        "adaptive_light": dict(adaptive_weights=True, adaptive_shrinkage=0.25, calibration_draws=30, calibration_top_k=10),
+        "adaptive_strong": dict(adaptive_weights=True, adaptive_shrinkage=0.75, calibration_draws=30, calibration_top_k=10),
+        "short_calibration": dict(adaptive_weights=True, adaptive_shrinkage=0.50, calibration_draws=15, calibration_top_k=10),
+        "broad_top_k": dict(adaptive_weights=True, adaptive_shrinkage=0.50, calibration_draws=30, calibration_top_k=15),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = EliteProConfig(candidate_count=300, max_tickets=14, **kwargs)
+            result = EliteProRecommendationEngine(config).recommend(history, seed=94000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    print("Elite weighting ablation:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

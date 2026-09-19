@@ -59,6 +59,10 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             ewma_half_life=config.ewma_half_life,
             affinity_prior_strength=config.affinity_prior_strength,
             number_signal_strength=config.number_signal_strength,
+            pair_bonus_strength=config.pair_bonus_strength,
+            triple_bonus_strength=config.triple_bonus_strength,
+            structural_gate_probability=config.structural_gate_probability,
+            structural_gate_threshold=config.structural_gate_threshold,
         ))
 
     @staticmethod

@@ -171,3 +171,21 @@ def test_pro_candidate_pool_diversity_diagnostic():
     assert 1 <= covered_candidates <= 37
     assert 0.0 <= duplicate_ratio < 1.0
     assert 0.0 <= mean_overlap <= 6.0
+
+
+def test_pro_structural_gate_has_bounded_retries():
+    """Extreme gate settings must not recurse without a bound."""
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    engine = ProRecommendationEngine(ProConfig(
+        candidate_count=20,
+        max_tickets=14,
+        structural_gate_probability=1.0,
+        structural_gate_threshold=1.0,
+    ))
+
+    result = engine.recommend(dataset, seed=20260919)
+
+    assert len(result.generated_tickets) == 20
+    assert len(result.recommended_tickets) == 14

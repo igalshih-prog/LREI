@@ -338,7 +338,7 @@ class ProRecommendationEngine:
             except ValueError: pass
         return None
 
-    def _generate_candidate(self, scores, pair_counts, triple_counts, structure, rng):
+    def _generate_candidate(self, scores, pair_counts, triple_counts, structure, rng, attempts=0):
         selected = []
         score_map = {x.number: x.score for x in scores}
         pair_max = max(pair_counts.values(), default=1)
@@ -364,6 +364,17 @@ class ProRecommendationEngine:
                     break
             selected.append(chosen)
         ticket = tuple(sorted(selected))
-        if rng.random() < self.config.structural_gate_probability and self._structure_score(ticket, structure) < self.config.structural_gate_threshold:
-            return self._generate_candidate(scores, pair_counts, triple_counts, structure, rng)
+        gate_rejects = (
+            rng.random() < self.config.structural_gate_probability
+            and self._structure_score(ticket, structure) < self.config.structural_gate_threshold
+        )
+        if gate_rejects and attempts < 64:
+            return self._generate_candidate(
+                scores,
+                pair_counts,
+                triple_counts,
+                structure,
+                rng,
+                attempts=attempts + 1,
+            )
         return ticket

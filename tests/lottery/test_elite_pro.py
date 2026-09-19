@@ -101,6 +101,26 @@ def test_elite_pro_coverage_is_stable_across_seeds():
         assert len(covered) >= 30
 
 
+def test_elite_propagates_candidate_generation_settings():
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        pair_bonus_strength=0.21,
+        triple_bonus_strength=0.09,
+        structural_gate_probability=0.61,
+        structural_gate_threshold=0.24,
+    )
+    rank_engine = EliteProRecommendationEngine._engine(config, True, False)
+    raw_engine = EliteProRecommendationEngine._engine(config, False, False)
+    ewma_engine = EliteProRecommendationEngine._engine(config, True, True)
+
+    for engine in (rank_engine, raw_engine, ewma_engine):
+        assert engine.config.pair_bonus_strength == 0.21
+        assert engine.config.triple_bonus_strength == 0.09
+        assert engine.config.structural_gate_probability == 0.61
+        assert engine.config.structural_gate_threshold == 0.24
+
+
 def test_elite_candidate_pool_diversity_diagnostic():
     config = EliteProConfig(candidate_count=300, max_tickets=14)
     engine = EliteProRecommendationEngine(config)

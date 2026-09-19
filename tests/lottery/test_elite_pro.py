@@ -169,3 +169,41 @@ def test_elite_weighting_ablation_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+def test_elite_candidate_allocation_ablation_diagnostic():
+    """Compare candidate-source allocations without changing the default 1/3 mix."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(16, max(12, len(draws) // 70))
+    start = len(draws) - holdout
+    variants = {
+        "equal": (1.0, 1.0, 1.0),
+        "rank_heavy": (2.0, 1.0, 1.0),
+        "raw_heavy": (1.0, 2.0, 1.0),
+        "ewma_heavy": (1.0, 1.0, 2.0),
+        "rank_ewma": (1.5, 0.5, 1.5),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, weights in variants.items():
+            config = EliteProConfig(
+                candidate_count=300,
+                max_tickets=14,
+                candidate_rank_weight=weights[0],
+                candidate_raw_weight=weights[1],
+                candidate_ewma_weight=weights[2],
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=95000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    print("Elite candidate-source allocation ablation:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

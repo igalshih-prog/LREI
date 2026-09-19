@@ -104,7 +104,7 @@ def test_pro_candidate_generation_ablation():
 
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
-    holdout = min(12, max(8, len(draws) // 80))
+    holdout = min(24, max(16, len(draws) // 48))
     start = len(draws) - holdout
 
     variants = {
@@ -121,7 +121,7 @@ def test_pro_candidate_generation_ablation():
         history = LotteryDataset(draws=draws[: start + offset])
         for name, (pair, triple, gate_probability, gate_threshold) in variants.items():
             engine = ProRecommendationEngine(ProConfig(
-                candidate_count=250,
+                candidate_count=200,
                 max_tickets=14,
                 pair_bonus_strength=pair,
                 triple_bonus_strength=triple,

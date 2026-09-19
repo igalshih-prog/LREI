@@ -210,3 +210,38 @@ def test_pro_structural_gate_has_bounded_retries():
 
     assert len(result.generated_tickets) == 20
     assert len(result.recommended_tickets) == 14
+
+def test_pro_number_signal_calibration_diagnostic():
+    """Measure whether Pro number scores retain signal on unseen draws."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(24, max(16, len(draws) // 48))
+    start = len(draws) - holdout
+    top_k = 10
+    top_hits = []
+    middle_hits = []
+    bottom_hits = []
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[: start + offset])
+        result = ProRecommendationEngine().recommend(history, seed=93000 + offset)
+        ranked = sorted(result.scores, key=lambda item: (-item.score, item.number))
+        actual = set(target.numbers)
+        top_hits.append(len({item.number for item in ranked[:top_k]} & actual))
+        bottom_hits.append(len({item.number for item in ranked[-top_k:]} & actual))
+        middle = ranked[top_k:-top_k]
+        middle_hits.append(
+            len({item.number for item in middle} & actual)
+        )
+
+    print("Pro number-signal calibration:")
+    print(f"  top_{top_k}_mean_hits={mean(top_hits):.4f}")
+    print(f"  middle_mean_hits={mean(middle_hits):.4f}")
+    print(f"  bottom_{top_k}_mean_hits={mean(bottom_hits):.4f}")
+
+    assert len(top_hits) == holdout
+    assert all(0 <= value <= top_k for value in top_hits)
+    assert all(0 <= value <= top_k for value in bottom_hits)

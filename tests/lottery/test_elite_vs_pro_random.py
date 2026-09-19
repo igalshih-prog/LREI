@@ -148,3 +148,42 @@ def test_elite_robust_baseline_walk_forward_diagnostic():
 
     assert len(paired) == holdout
     assert all(value == value for value in paired)
+
+
+def test_elite_candidate_allocation_robust_walk_forward_diagnostic():
+    """Compare equal vs EWMA-heavy candidate allocation on a longer holdout."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "equal": (1.0, 1.0, 1.0),
+        "ewma_heavy": (1.0, 1.0, 2.0),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, weights in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                candidate_rank_weight=weights[0],
+                candidate_raw_weight=weights[1],
+                candidate_ewma_weight=weights[2],
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=97000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    difference = [ewma - equal for ewma, equal in zip(results["ewma_heavy"], results["equal"])]
+    ci = _bootstrap_ci(difference, seed=20260922)
+
+    print("Elite candidate-allocation robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  EWMA-heavy - equal={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

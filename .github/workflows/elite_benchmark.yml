@@ -28,4 +28,4 @@ jobs:
       - name: Run Elite vs Pro vs random benchmark
         run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s
       - name: Run Elite candidate diversity diagnostic
-        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k candidate_pool_diversity
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_pool_diversity or weighting_ablation_diagnostic"

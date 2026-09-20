@@ -29,6 +29,8 @@ class EliteProConfig(ProConfig):
     candidate_calibration_draws: int = 20
     candidate_calibration_candidate_count: int = 100
     candidate_adaptive_shrinkage: float = 0.50
+    momentum_strength: float = 0.0
+    momentum_window: int = 60
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -58,6 +60,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("candidate_calibration_candidate_count must cover max_tickets")
         if not 0.0 <= self.candidate_adaptive_shrinkage <= 1.0:
             raise ValueError("candidate_adaptive_shrinkage must be between 0 and 1")
+        if not 0.0 <= self.momentum_strength <= 1.0:
+            raise ValueError("momentum_strength must be between 0 and 1")
+        if self.momentum_window < 10:
+            raise ValueError("momentum_window must be at least 10")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -174,6 +180,28 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         total = sum(blended)
         return tuple(x / total for x in blended)
 
+    @staticmethod
+    def _momentum_scores(dataset: LotteryDataset, window: int) -> dict[int, float]:
+        """Compare recent appearance rates with the immediately preceding window."""
+        if len(dataset) < window * 2:
+            return {}
+        recent = dataset.draws[-window:]
+        previous = dataset.draws[-window * 2:-window]
+        recent_counts = {}
+        previous_counts = {}
+        for draw in recent:
+            for number in draw.numbers:
+                recent_counts[number] = recent_counts.get(number, 0) + 1
+        for draw in previous:
+            for number in draw.numbers:
+                previous_counts[number] = previous_counts.get(number, 0) + 1
+        numbers = sorted(set(recent_counts) | set(previous_counts))
+        raw = {n: recent_counts.get(n, 0) - previous_counts.get(n, 0) for n in numbers}
+        low, high = min(raw.values()), max(raw.values())
+        if high == low:
+            return {n: 0.5 for n in numbers}
+        return {n: (raw[n] - low) / (high - low) for n in numbers}
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
@@ -197,13 +225,18 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         rank_map = {s.number: s.score for s in rank_scores}
         raw_map = {s.number: s.score for s in raw_scores}
         ewma_map = {s.number: s.score for s in ewma_scores}
-        ensemble_scores = tuple(
-            NumberScore(
-                number=n,
-                score=weights[0] * rank_map[n] + weights[1] * raw_map[n] + weights[2] * ewma_map[n],
-            )
+        base_ensemble = {
+            n: weights[0] * rank_map[n] + weights[1] * raw_map[n] + weights[2] * ewma_map[n]
             for n in sorted(rank_map)
-        )
+        }
+        momentum = self._momentum_scores(dataset, self.config.momentum_window)
+        if self.config.momentum_strength > 0.0 and momentum:
+            base_ensemble = {
+                n: (1.0 - self.config.momentum_strength) * score
+                + self.config.momentum_strength * momentum.get(n, 0.5)
+                for n, score in base_ensemble.items()
+            }
+        ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))
 
         pair_counts = self._combination_counts(dataset, 2)
         triple_counts = self._combination_counts(dataset, 3)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import random
+from statistics import mean
 from dataclasses import dataclass
 
 from .dataset import LotteryDataset

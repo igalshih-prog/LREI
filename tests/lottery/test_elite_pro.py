@@ -207,3 +207,48 @@ def test_elite_candidate_allocation_ablation_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_adaptive_candidate_weights_are_normalized_and_can_be_disabled():
+    base = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_candidate_weights=True,
+        candidate_calibration_draws=20,
+        candidate_calibration_candidate_count=30,
+        candidate_adaptive_shrinkage=0.50,
+    )
+    engine = EliteProRecommendationEngine(base)
+    variants = (
+        (engine._engine(base, True, False), None),
+        (engine._engine(base, False, False), None),
+        (engine._engine(base, True, True), None),
+    )
+    weights = engine._adaptive_candidate_weights(DATASET, variants)
+    assert len(weights) == 3
+    assert all(weight >= 0.0 for weight in weights)
+    assert abs(sum(weights) - 1.0) < 1e-12
+
+    fixed = EliteProConfig(candidate_count=90, max_tickets=14)
+    fixed_engine = EliteProRecommendationEngine(fixed)
+    fixed_variants = (
+        (fixed_engine._engine(fixed, True, False), None),
+        (fixed_engine._engine(fixed, False, False), None),
+        (fixed_engine._engine(fixed, True, True), None),
+    )
+    assert fixed_engine._adaptive_candidate_weights(DATASET, fixed_variants) == (1.0 / 3.0,) * 3
+
+
+def test_elite_rejects_invalid_candidate_adaptation_settings():
+    for kwargs in (
+        {"candidate_calibration_draws": -1},
+        {"candidate_calibration_candidate_count": 13},
+        {"candidate_adaptive_shrinkage": -0.1},
+        {"candidate_adaptive_shrinkage": 1.1},
+    ):
+        try:
+            EliteProConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")

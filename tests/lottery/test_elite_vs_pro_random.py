@@ -306,3 +306,55 @@ def test_portfolio_hit_threshold_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for thresholds in counts.values() for values in thresholds.values())
     assert all(value == value for thresholds in counts.values() for values in thresholds.values() for value in values)
+
+
+def test_elite_tail_focused_portfolio_selection_walk_forward_diagnostic():
+    """Compare portfolio settings aimed at preserving multi-hit tail outcomes."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(200, max(100, len(draws) // 6))
+    start = len(draws) - holdout
+    variants = {
+        "current": (4, 0.035, 0.018),
+        "tighter_overlap": (3, 0.035, 0.018),
+        "coverage_heavier": (4, 0.060, 0.018),
+    }
+    results = {
+        name: {threshold: [] for threshold in (3, 4, 5)}
+        for name in variants
+    }
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, (max_overlap, coverage_weight, overlap_penalty) in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_overlap=max_overlap,
+                max_tickets=14,
+                portfolio_coverage_weight=coverage_weight,
+                portfolio_overlap_penalty=overlap_penalty,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=102000 + offset)
+            hits = _hits(result.recommended_tickets, target.numbers)
+            for threshold in results[name]:
+                results[name][threshold].append(int(max(hits) >= threshold))
+
+    print("Elite tail-focused portfolio diagnostic:")
+    for name, thresholds in results.items():
+        print(
+            f"  {name}: "
+            + ", ".join(f"{threshold}+={mean(values):.4f}" for threshold, values in thresholds.items())
+        )
+
+    assert all(
+        len(values) == holdout
+        for thresholds in results.values()
+        for values in thresholds.values()
+    )
+    assert all(
+        value == value
+        for thresholds in results.values()
+        for values in thresholds.values()
+        for value in values
+    )

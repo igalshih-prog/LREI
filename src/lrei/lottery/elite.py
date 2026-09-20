@@ -24,6 +24,10 @@ class EliteProConfig(ProConfig):
     candidate_rank_weight: float = 1.0 / 3.0
     candidate_raw_weight: float = 1.0 / 3.0
     candidate_ewma_weight: float = 1.0 / 3.0
+    adaptive_candidate_weights: bool = False
+    candidate_calibration_draws: int = 20
+    candidate_calibration_candidate_count: int = 100
+    candidate_adaptive_shrinkage: float = 0.50
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -47,6 +51,12 @@ class EliteProConfig(ProConfig):
             raise ValueError("candidate ensemble weights must be non-negative")
         if sum(candidate_weights) <= 0:
             raise ValueError("candidate ensemble weights must have positive total")
+        if self.candidate_calibration_draws < 0:
+            raise ValueError("candidate_calibration_draws must be non-negative")
+        if self.candidate_calibration_candidate_count < self.max_tickets:
+            raise ValueError("candidate_calibration_candidate_count must cover max_tickets")
+        if not 0.0 <= self.candidate_adaptive_shrinkage <= 1.0:
+            raise ValueError("candidate_adaptive_shrinkage must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -119,6 +129,50 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         total = sum(blended)
         return tuple(x / total for x in blended)
 
+    def _adaptive_candidate_weights(self, dataset: LotteryDataset, engines) -> tuple[float, float, float]:
+        """Calibrate candidate-source weights from a trailing walk-forward slice."""
+        default = (self.config.candidate_rank_weight, self.config.candidate_raw_weight, self.config.candidate_ewma_weight)
+        if not self.config.adaptive_candidate_weights:
+            return default
+        if len(dataset) < self.config.candidate_calibration_draws + 20 or self.config.candidate_calibration_draws <= 0:
+            return default
+        validation_size = min(self.config.candidate_calibration_draws, len(dataset) - 20)
+        train = LotteryDataset(dataset.draws[:-validation_size])
+        validation = dataset.draws[-validation_size:]
+        if not train.draws:
+            return default
+        frequencies = self._frequency(train)
+        recent_3 = self._window_frequency(train, 3)
+        recent_1 = self._window_frequency(train, 1)
+        recent_draws = self._recent_draw_frequency(train, 60)
+        ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+        pair_counts = self._combination_counts(train, 2)
+        triple_counts = self._combination_counts(train, 3)
+        structure = self._structure_profile(train)
+        source_scores = (
+            engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        )
+        rng = random.Random(13579 + len(dataset))
+        performance = []
+        for scores in source_scores:
+            candidates = [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_calibration_candidate_count)]
+            portfolio = self._select_portfolio(candidates, scores, frequencies, pair_counts, triple_counts, structure)
+            if not portfolio:
+                performance.append(0.05)
+                continue
+            mean_hits = mean(mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio) for draw in validation)
+            performance.append(max(0.05, mean_hits / (6.0 * 6.0 / 37.0)))
+        default_total = sum(default)
+        prior = [x / default_total for x in default]
+        performance_total = sum(performance)
+        learned = [x / performance_total for x in performance]
+        shrink = self.config.candidate_adaptive_shrinkage
+        blended = [(1.0 - shrink) * p + shrink * l for p, l in zip(prior, learned)]
+        total = sum(blended)
+        return tuple(x / total for x in blended)
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
@@ -157,7 +211,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
 
         candidates = []
         variant_specs = ((rank_engine, rank_scores), (raw_engine, raw_scores), (ewma_engine, ewma_scores))
-        candidate_weights = (self.config.candidate_rank_weight, self.config.candidate_raw_weight, self.config.candidate_ewma_weight)
+        candidate_weights = self._adaptive_candidate_weights(dataset, engines)
         total_candidate_weight = sum(candidate_weights)
         allocations = [int(self.config.candidate_count * weight / total_candidate_weight) for weight in candidate_weights]
         for index in range(self.config.candidate_count - sum(allocations)):

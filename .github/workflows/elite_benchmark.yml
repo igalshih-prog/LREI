@@ -15,7 +15,7 @@ on:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +26,6 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Run Elite vs Pro vs random benchmark
-        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_against_pro_and_multiple_random_baselines_walk_forward or elite_robust_baseline_walk_forward_diagnostic or elite_candidate_allocation_robust_walk_forward_diagnostic or elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_number_signal_strength_robust_walk_forward_diagnostic"
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_against_pro_and_multiple_random_baselines_walk_forward or elite_robust_baseline_walk_forward_diagnostic or elite_candidate_allocation_robust_walk_forward_diagnostic or elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic"
       - name: Run Elite candidate diversity diagnostic
         run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_pool_diversity or weighting_ablation_diagnostic or candidate_allocation_ablation_diagnostic"

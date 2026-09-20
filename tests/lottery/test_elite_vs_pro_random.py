@@ -235,7 +235,7 @@ def test_elite_number_signal_strength_robust_walk_forward_diagnostic():
     draws = list(dataset.draws)
     holdout = min(60, max(40, len(draws) // 18))
     start = len(draws) - holdout
-    strengths = (0.0, 0.50, 0.75, 1.0)
+    strengths = (0.0, 0.25, 0.40, 0.50, 0.60, 0.75)
     results = {strength: [] for strength in strengths}
 
     for offset, target in enumerate(draws[start:]):

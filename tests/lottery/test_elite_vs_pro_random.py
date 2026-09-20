@@ -358,3 +358,39 @@ def test_elite_tail_focused_portfolio_selection_walk_forward_diagnostic():
         for values in thresholds.values()
         for value in values
     )
+
+
+def test_elite_momentum_signal_robust_walk_forward_diagnostic():
+    """Measure whether recent-vs-prior frequency momentum helps on unseen draws."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    strengths = (0.0, 0.10, 0.20, 0.30, 0.40)
+    results = {strength: [] for strength in strengths}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for strength in strengths:
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                momentum_strength=strength,
+                momentum_window=60,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=103000 + offset)
+            results[strength].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    baseline = results[0.0]
+    for strength in strengths:
+        difference = [value - base for value, base in zip(results[strength], baseline)]
+        ci = _bootstrap_ci(difference, seed=20260926 + int(strength * 100))
+        print(f"Elite momentum strength {strength:.2f}: hits={mean(results[strength]):.4f}")
+        if strength:
+            print(f"  vs 0.00={mean(difference):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(value == value for values in results.values() for value in values)

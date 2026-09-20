@@ -1,5 +1,6 @@
 name: Elite benchmark
 # Elite benchmark is intentionally retriggered with workflow changes.
+# 2026-09-20: rerun the full walk-forward diagnostics after the latest tail-focused analysis.
 
 on:
   push:

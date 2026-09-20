@@ -262,3 +262,47 @@ def test_elite_number_signal_strength_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(value == value for values in results.values() for value in values)
+
+
+def test_portfolio_hit_threshold_walk_forward_diagnostic():
+    """Measure the frequency of 3+, 4+, and 5+ hit tickets on unseen draws."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    engines = {
+        "elite": EliteProRecommendationEngine(),
+        "pro": ProRecommendationEngine(),
+    }
+    counts = {name: {threshold: [] for threshold in (3, 4, 5)} for name in engines}
+    counts["random"] = {threshold: [] for threshold in (3, 4, 5)}
+    rng = random.Random(20260925)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, engine in engines.items():
+            result = engine.recommend(history, seed=101000 + offset)
+            hits = _hits(result.recommended_tickets[:14], target.numbers)
+            for threshold in counts[name]:
+                counts[name][threshold].append(int(max(hits) >= threshold))
+
+        random_hits = [
+            _hits(_random_portfolio(rng), target.numbers)
+            for _ in range(5)
+        ]
+        for threshold in counts["random"]:
+            counts["random"][threshold].append(
+                mean(int(max(hits) >= threshold) for hits in random_hits)
+            )
+
+    print("Portfolio hit-threshold diagnostic:")
+    for name, thresholds in counts.items():
+        parts = [
+            f"{threshold}+={mean(values):.4f}"
+            for threshold, values in thresholds.items()
+        ]
+        print(f"  {name}: " + ", ".join(parts))
+
+    assert all(len(values) == holdout for thresholds in counts.values() for values in thresholds.values())
+    assert all(value == value for thresholds in counts.values() for values in thresholds.values() for value in values)

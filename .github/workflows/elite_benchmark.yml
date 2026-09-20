@@ -1,6 +1,6 @@
 name: Elite benchmark
-# Elite benchmark is intentionally retriggered with workflow changes.
-# 2026-09-20: rerun the full walk-forward diagnostics after the latest tail-focused analysis.
+# 2026-09-20: split expensive Elite diagnostics into parallel jobs so long
+# walk-forward experiments do not cancel the whole benchmark suite.
 
 on:
   push:
@@ -14,9 +14,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  benchmark:
+  core:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,7 +26,35 @@ jobs:
           python-version: "3.11"
       - name: Install
         run: pip install -e . pytest
-      - name: Run Elite vs Pro vs random benchmark
-        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_against_pro_and_multiple_random_baselines_walk_forward or elite_robust_baseline_walk_forward_diagnostic or elite_candidate_allocation_robust_walk_forward_diagnostic or elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic"
-      - name: Run Elite candidate diversity diagnostic
+      - name: Run core Elite benchmark
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_against_pro_and_multiple_random_baselines_walk_forward"
+
+  robust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run robust walk-forward diagnostics
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic or number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or tail_focused_portfolio_selection_walk_forward_diagnostic"
+
+  ablations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run Elite candidate diagnostics
         run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_pool_diversity or weighting_ablation_diagnostic or candidate_allocation_ablation_diagnostic"

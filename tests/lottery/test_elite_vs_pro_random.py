@@ -227,3 +227,38 @@ def test_elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_number_signal_strength_robust_walk_forward_diagnostic():
+    """Measure whether stronger historical number signals help on unseen draws."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    strengths = (0.0, 0.50, 0.75, 1.0)
+    results = {strength: [] for strength in strengths}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for strength in strengths:
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                number_signal_strength=strength,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[strength].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    baseline = results[0.0]
+    for strength in strengths:
+        difference = [value - base for value, base in zip(results[strength], baseline)]
+        ci = _bootstrap_ci(difference, seed=20260924 + int(strength * 100))
+        print(f"Elite number-signal strength {strength:.2f}: hits={mean(results[strength]):.4f}")
+        if strength:
+            print(f"  vs 0.00={mean(difference):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(value == value for values in results.values() for value in values)

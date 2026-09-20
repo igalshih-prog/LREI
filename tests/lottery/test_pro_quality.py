@@ -245,3 +245,43 @@ def test_pro_number_signal_calibration_diagnostic():
     assert len(top_hits) == holdout
     assert all(0 <= value <= top_k for value in top_hits)
     assert all(0 <= value <= top_k for value in bottom_hits)
+
+
+def test_pro_affinity_prior_robust_walk_forward_diagnostic():
+    """Compare Bayesian affinity priors on a longer unseen holdout."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "prior_0": 0.0,
+        "prior_5": 5.0,
+        "prior_15": 15.0,
+        "prior_30": 30.0,
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, prior in variants.items():
+            config = ProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                affinity_prior_strength=prior,
+            )
+            result = ProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    print("Pro affinity-prior robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

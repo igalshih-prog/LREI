@@ -3,7 +3,7 @@ from pathlib import Path
 from statistics import mean
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
-from lrei.lottery.elite import EliteProRecommendationEngine
+from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 
 

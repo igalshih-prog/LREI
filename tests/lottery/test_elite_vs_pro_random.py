@@ -521,3 +521,45 @@ def test_elite_score_calibration_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_adaptive_momentum_robust_walk_forward_diagnostic():
+    """Compare learned momentum strength with fixed no-momentum baseline."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    results = {"off": [], "adaptive": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        configs = {
+            "off": {"adaptive_momentum": False, "momentum_strength": 0.0},
+            "adaptive": {
+                "adaptive_momentum": True,
+                "momentum_strength": 0.0,
+                "momentum_candidates": (0.0, 0.10, 0.20, 0.30),
+                "momentum_calibration_draws": 20,
+            },
+        }
+        for name, params in configs.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                **params,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=104000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    difference = [adaptive - off for adaptive, off in zip(results["adaptive"], results["off"])]
+    ci = _bootstrap_ci(difference, seed=20260932)
+
+    print("Elite adaptive-momentum robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  adaptive - off={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

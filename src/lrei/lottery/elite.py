@@ -38,6 +38,7 @@ class EliteProConfig(ProConfig):
     score_calibration_draws: int = 30
     score_calibration_bins: int = 5
     score_calibration_shrinkage: float = 0.75
+    consensus_strength: float = 0.0
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -81,6 +82,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("score_calibration_bins must be between 2 and 10")
         if not 0.0 <= self.score_calibration_shrinkage <= 1.0:
             raise ValueError("score_calibration_shrinkage must be between 0 and 1")
+        if not 0.0 <= self.consensus_strength <= 1.0:
+            raise ValueError("consensus_strength must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -351,6 +354,15 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 + selected_momentum * momentum.get(n, 0.5)
                 for n, score in base_ensemble.items()
             }
+        if self.config.consensus_strength > 0.0:
+            signal_maps = (rank_map, raw_map, ewma_map)
+            adjusted = {}
+            for n, score in base_ensemble.items():
+                values = [signal_maps[i].get(n, 0.5) for i in range(3)]
+                disagreement = max(values) - min(values)
+                consensus = max(0.0, min(1.0, score - 0.35 * disagreement))
+                adjusted[n] = (1.0 - self.config.consensus_strength) * score + self.config.consensus_strength * consensus
+            base_ensemble = adjusted
         ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))
         ensemble_scores = self._calibrate_ensemble_scores(dataset, engines, ensemble_scores)
 

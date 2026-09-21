@@ -31,6 +31,10 @@ class EliteProConfig(ProConfig):
     candidate_adaptive_shrinkage: float = 0.50
     momentum_strength: float = 0.0
     momentum_window: int = 60
+    score_calibration: bool = False
+    score_calibration_draws: int = 30
+    score_calibration_bins: int = 5
+    score_calibration_shrinkage: float = 0.75
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -64,6 +68,12 @@ class EliteProConfig(ProConfig):
             raise ValueError("momentum_strength must be between 0 and 1")
         if self.momentum_window < 10:
             raise ValueError("momentum_window must be at least 10")
+        if self.score_calibration_draws < 0:
+            raise ValueError("score_calibration_draws must be non-negative")
+        if self.score_calibration_bins < 2 or self.score_calibration_bins > 10:
+            raise ValueError("score_calibration_bins must be between 2 and 10")
+        if not 0.0 <= self.score_calibration_shrinkage <= 1.0:
+            raise ValueError("score_calibration_shrinkage must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -180,6 +190,61 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         total = sum(blended)
         return tuple(x / total for x in blended)
 
+    def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, current_scores):
+        """Calibrate score bands against trailing walk-forward hit rates, with shrinkage."""
+        if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
+            return current_scores
+        if len(dataset) < self.config.score_calibration_draws + 25:
+            return current_scores
+        validation_size = min(self.config.score_calibration_draws, len(dataset) - 25)
+        train_end = len(dataset) - validation_size
+        train_draws = dataset.draws[:train_end]
+        validation = dataset.draws[train_end:]
+        if not train_draws:
+            return current_scores
+        history = LotteryDataset(train_draws)
+        bins = [[] for _ in range(self.config.score_calibration_bins)]
+        hits = [0 for _ in range(self.config.score_calibration_bins)]
+        counts = [0 for _ in range(self.config.score_calibration_bins)]
+        for offset, target in enumerate(validation):
+            prefix = LotteryDataset(train_draws + tuple(validation[:offset]))
+            frequencies = self._frequency(prefix)
+            recent_3 = self._window_frequency(prefix, 3)
+            recent_1 = self._window_frequency(prefix, 1)
+            recent_draws = self._recent_draw_frequency(prefix, 60)
+            ewma = self._ewma_frequency(prefix, self.config.ewma_half_life)
+            variants = (
+                engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+            )
+            weights = self._adaptive_weights(prefix, engines)
+            maps = [{s.number: s.score for s in scores} for scores in variants]
+            for number in range(1, 38):
+                score = sum(weights[i] * maps[i].get(number, 0.5) for i in range(3))
+                rank = min(self.config.score_calibration_bins - 1, int(score * self.config.score_calibration_bins))
+                counts[rank] += 1
+                if number in target.numbers:
+                    hits[rank] += 1
+        baseline = 6.0 / 37.0
+        rates = [
+            (1.0 - self.config.score_calibration_shrinkage) * (hits[i] / counts[i] if counts[i] else baseline)
+            + self.config.score_calibration_shrinkage * baseline
+            for i in range(self.config.score_calibration_bins)
+        ]
+        max_rate = max(rates) if rates else baseline
+        if max_rate <= 0:
+            return current_scores
+        scale = baseline / max_rate
+        calibrated = tuple(
+            NumberScore(
+                number=s.number,
+                score=max(0.0, min(1.0, rates[min(self.config.score_calibration_bins - 1, int(s.score * self.config.score_calibration_bins))] * scale))
+            )
+            for s in current_scores
+        )
+        return calibrated
+
     @staticmethod
     def _momentum_scores(dataset: LotteryDataset, window: int) -> dict[int, float]:
         """Compare recent appearance rates with the immediately preceding window."""
@@ -237,6 +302,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 for n, score in base_ensemble.items()
             }
         ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))
+        ensemble_scores = self._calibrate_ensemble_scores(dataset, engines, ensemble_scores)
 
         pair_counts = self._combination_counts(dataset, 2)
         triple_counts = self._combination_counts(dataset, 3)

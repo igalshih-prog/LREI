@@ -766,3 +766,56 @@ def test_elite_multi_origin_robust_walk_forward_diagnostic():
 
     assert len(paired) == len(origins) * holdout
     assert all(value == value for value in paired)
+
+
+def test_final_engine_comparison_robust_walk_forward():
+    """Final apples-to-apples comparison of all production candidates."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    names = ("regular", "pro", "elite", "elite_adaptive", "random")
+    results = {name: [] for name in names}
+    best_results = {name: [] for name in names}
+    random_rng = random.Random(20260924)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        engines = {
+            "regular": RecommendationEngine(),
+            "pro": ProRecommendationEngine(),
+            "elite": EliteProRecommendationEngine(),
+            "elite_adaptive": EliteProRecommendationEngine(
+                __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                    adaptive_candidate_weights=True,
+                    candidate_calibration_draws=20,
+                    candidate_calibration_candidate_count=100,
+                )
+            ),
+        }
+        for name, engine in engines.items():
+            if name == "regular":
+                result = engine.recommend(LotteryStatistics.from_dataset(history), ticket_count=14, seed=99000 + offset)
+            else:
+                result = engine.recommend(history, seed=99000 + offset)
+            hits = _hits(result.recommended_tickets, target.numbers)
+            results[name].append(mean(hits))
+            best_results[name].append(max(hits))
+
+        random_hits = _hits(_random_portfolio(random_rng), target.numbers)
+        results["random"].append(mean(random_hits))
+        best_results["random"].append(max(random_hits))
+
+    print("FINAL engine comparison:")
+    for name in names:
+        print(f"  {name}: mean_hits={mean(results[name]):.4f}, best_ticket={mean(best_results[name]):.4f}")
+    for name in ("regular", "pro", "elite", "elite_adaptive"):
+        diff = [a - b for a, b in zip(results[name], results["random"])]
+        ci = _bootstrap_ci(diff, seed=20260925 + names.index(name))
+        print(f"  {name} - random={mean(diff):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

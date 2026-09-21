@@ -269,3 +269,36 @@ def test_elite_consensus_scoring_is_opt_in_and_validated():
     first = EliteProRecommendationEngine(configured).recommend(DATASET, seed=4242)
     second = EliteProRecommendationEngine(configured).recommend(DATASET, seed=4242)
     assert first.recommended_tickets == second.recommended_tickets
+
+
+def test_elite_signal_enhancement_walk_forward_diagnostic():
+    """Compare opt-in momentum, consensus, and score calibration against current Elite."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(50, max(30, len(draws) // 20))
+    start = len(draws) - holdout
+    variants = {
+        "current": dict(),
+        "momentum_adaptive": dict(adaptive_momentum=True, momentum_calibration_draws=20),
+        "consensus": dict(consensus_strength=0.50),
+        "score_calibration": dict(score_calibration=True, score_calibration_draws=30, score_calibration_bins=5),
+        "momentum_consensus": dict(adaptive_momentum=True, momentum_calibration_draws=20, consensus_strength=0.50),
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = EliteProConfig(candidate_count=200, max_tickets=14, **kwargs)
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    print("Elite signal-enhancement diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

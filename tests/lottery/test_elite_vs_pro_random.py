@@ -596,3 +596,39 @@ def test_elite_consensus_scoring_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(value == value for values in results.values() for value in values)
+
+
+def test_elite_feature_ablation_walk_forward_diagnostic():
+    """Compare opt-in Elite features on a longer chronological holdout."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(70, max(45, len(draws) // 16))
+    start = len(draws) - holdout
+    variants = {
+        "baseline": {},
+        "consensus": {"consensus_strength": 0.50},
+        "momentum": {"adaptive_momentum": True, "momentum_calibration_draws": 20},
+        "score_calibration": {"score_calibration": True, "score_calibration_draws": 25},
+        "adaptive_candidates": {"adaptive_candidate_weights": True, "candidate_calibration_draws": 20},
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                **kwargs,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    print("Elite feature ablation:")
+    baseline_mean = mean(results["baseline"])
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}, delta={mean(values) - baseline_mean:+.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

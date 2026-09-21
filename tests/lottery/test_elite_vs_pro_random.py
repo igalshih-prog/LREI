@@ -679,3 +679,47 @@ def test_elite_signal_enhancement_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_prize_tier_robust_walk_forward_diagnostic():
+    """Measure whether Elite changes the distribution of high-hit tickets, not only the mean."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+    tiers = (3, 4, 5, 6)
+    elite_counts = {tier: [] for tier in tiers}
+    random_counts = {tier: [] for tier in tiers}
+    paired = {tier: [] for tier in tiers}
+    engine = EliteProRecommendationEngine()
+    baseline_rng = random.Random(20260934)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        elite = engine.recommend(history, seed=106000 + offset)
+        elite_hits = _hits(elite.recommended_tickets, target.numbers)
+        random_hits = [
+            hit
+            for _ in range(random_portfolios_per_draw)
+            for hit in _hits(_random_portfolio(baseline_rng), target.numbers)
+        ]
+        for tier in tiers:
+            elite_value = sum(hit >= tier for hit in elite_hits)
+            random_value = sum(hit >= tier for hit in random_hits) / random_portfolios_per_draw
+            elite_counts[tier].append(elite_value)
+            random_counts[tier].append(random_value)
+            paired[tier].append(elite_value - random_value)
+
+    print("Elite prize-tier robust diagnostic:")
+    for tier in tiers:
+        ci = _bootstrap_ci(paired[tier], seed=20260940 + tier)
+        print(
+            f"  >= {tier} hits: Elite={mean(elite_counts[tier]):.4f}, "
+            f"Random={mean(random_counts[tier]):.4f}, "
+            f"delta={mean(paired[tier]):+.4f}, "
+            f"95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+        )
+
+    assert all(len(values) == holdout for values in paired.values())
+    assert all(value == value for values in paired.values() for value in values)

@@ -39,7 +39,6 @@ class EliteProConfig(ProConfig):
     score_calibration_bins: int = 5
     score_calibration_shrinkage: float = 0.75
     consensus_strength: float = 0.0
-    consensus_strength: float = 0.0
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:

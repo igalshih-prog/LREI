@@ -632,3 +632,50 @@ def test_elite_feature_ablation_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_signal_enhancement_robust_walk_forward_diagnostic():
+    """Compare opt-in signal enhancements on a chronological holdout."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "current": {},
+        "momentum_adaptive": {
+            "adaptive_momentum": True,
+            "momentum_calibration_draws": 20,
+        },
+        "score_calibration": {
+            "score_calibration": True,
+            "score_calibration_draws": 30,
+            "score_calibration_bins": 5,
+        },
+        "consensus": {
+            "consensus_strength": 0.50,
+        },
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = EliteProConfig(candidate_count=200, max_tickets=14, **kwargs)
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    baseline = results["current"]
+    print("Elite signal-enhancement robust diagnostic:")
+    for name, values in results.items():
+        difference = [value - base for value, base in zip(values, baseline)]
+        ci = _bootstrap_ci(difference, seed=20260924 + list(variants).index(name))
+        print(f"  {name}: hits={mean(values):.4f}")
+        if name != "current":
+            print(f"    vs current={mean(difference):+.4f}")
+            print(f"    95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

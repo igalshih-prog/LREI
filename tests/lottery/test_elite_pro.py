@@ -252,3 +252,20 @@ def test_elite_rejects_invalid_candidate_adaptation_settings():
             pass
         else:
             raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_elite_consensus_scoring_is_opt_in_and_validated():
+    base = EliteProConfig(candidate_count=90, max_tickets=14)
+    assert base.consensus_strength == 0.0
+    for value in (-0.1, 1.1):
+        try:
+            EliteProConfig(consensus_strength=value)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Expected ValueError for invalid consensus_strength")
+
+    configured = EliteProConfig(candidate_count=90, max_tickets=14, consensus_strength=0.4)
+    first = EliteProRecommendationEngine(configured).recommend(DATASET, seed=4242)
+    second = EliteProRecommendationEngine(configured).recommend(DATASET, seed=4242)
+    assert first.recommended_tickets == second.recommended_tickets

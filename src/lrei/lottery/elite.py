@@ -31,6 +31,9 @@ class EliteProConfig(ProConfig):
     candidate_adaptive_shrinkage: float = 0.50
     momentum_strength: float = 0.0
     momentum_window: int = 60
+    adaptive_momentum: bool = False
+    momentum_candidates: tuple[float, ...] = (0.0, 0.10, 0.20, 0.30)
+    momentum_calibration_draws: int = 20
     score_calibration: bool = False
     score_calibration_draws: int = 30
     score_calibration_bins: int = 5
@@ -68,6 +71,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("momentum_strength must be between 0 and 1")
         if self.momentum_window < 10:
             raise ValueError("momentum_window must be at least 10")
+        if self.momentum_calibration_draws < 0:
+            raise ValueError("momentum_calibration_draws must be non-negative")
+        if not self.momentum_candidates or any(not 0.0 <= value <= 1.0 for value in self.momentum_candidates):
+            raise ValueError("momentum_candidates must contain values between 0 and 1")
         if self.score_calibration_draws < 0:
             raise ValueError("score_calibration_draws must be non-negative")
         if self.score_calibration_bins < 2 or self.score_calibration_bins > 10:
@@ -245,6 +252,48 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         )
         return calibrated
 
+    def _adaptive_momentum_strength(self, dataset: LotteryDataset) -> float:
+        """Select momentum strength from a trailing walk-forward validation slice."""
+        if not self.config.adaptive_momentum or self.config.momentum_calibration_draws <= 0:
+            return self.config.momentum_strength
+        if len(dataset) < self.config.momentum_calibration_draws + 25:
+            return self.config.momentum_strength
+        validation_size = min(self.config.momentum_calibration_draws, len(dataset) - 25)
+        train_draws = dataset.draws[:-validation_size]
+        validation = dataset.draws[-validation_size:]
+        if not train_draws:
+            return self.config.momentum_strength
+        history = LotteryDataset(train_draws)
+        frequencies = self._frequency(history)
+        recent_3 = self._window_frequency(history, 3)
+        recent_1 = self._window_frequency(history, 1)
+        recent_draws = self._recent_draw_frequency(history, 60)
+        ewma = self._ewma_frequency(history, self.config.ewma_half_life)
+        rank_engine = self._engine(self.config, True, False)
+        raw_engine = self._engine(self.config, False, False)
+        ewma_engine = self._engine(self.config, True, True)
+        engines = ((rank_engine, None), (raw_engine, None), (ewma_engine, None))
+        variants = (
+            rank_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            raw_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        )
+        weights = self._adaptive_weights(history, engines)
+        maps = [{s.number: s.score for s in scores} for scores in variants)
+        base = {n: sum(weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
+        pair_counts = self._combination_counts(history, 2)
+        triple_counts = self._combination_counts(history, 3)
+        structure = self._structure_profile(history)
+        momentum = self._momentum_scores(history, self.config.momentum_window)
+        rng = random.Random(24680 + len(dataset))
+        results = {}
+        for strength in self.config.momentum_candidates:
+            adjusted = tuple(NumberScore(number=n, score=(1.0 - strength) * score + strength * momentum.get(n, 0.5)) for n, score in base.items())
+            candidates = [self._generate_candidate(adjusted, pair_counts, triple_counts, structure, rng) for _ in range(min(100, self.config.candidate_count))]
+            portfolio = self._select_portfolio(candidates, adjusted, frequencies, pair_counts, triple_counts, structure)
+            results[strength] = mean(mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio) for draw in validation) if portfolio else 0.0
+        return max(results, key=results.get)
+
     @staticmethod
     def _momentum_scores(dataset: LotteryDataset, window: int) -> dict[int, float]:
         """Compare recent appearance rates with the immediately preceding window."""
@@ -294,11 +343,12 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             n: weights[0] * rank_map[n] + weights[1] * raw_map[n] + weights[2] * ewma_map[n]
             for n in sorted(rank_map)
         }
+        selected_momentum = self._adaptive_momentum_strength(dataset)
         momentum = self._momentum_scores(dataset, self.config.momentum_window)
-        if self.config.momentum_strength > 0.0 and momentum:
+        if selected_momentum > 0.0 and momentum:
             base_ensemble = {
-                n: (1.0 - self.config.momentum_strength) * score
-                + self.config.momentum_strength * momentum.get(n, 0.5)
+                n: (1.0 - selected_momentum) * score
+                + selected_momentum * momentum.get(n, 0.5)
                 for n, score in base_ensemble.items()
             }
         ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))

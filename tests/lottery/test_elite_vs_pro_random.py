@@ -436,3 +436,46 @@ def test_elite_portfolio_objective_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_momentum_ablation_robust_walk_forward_diagnostic():
+    """Measure whether a recent-vs-prior momentum signal adds stable walk-forward value."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "off": 0.0,
+        "light": 0.10,
+        "medium": 0.20,
+        "strong": 0.35,
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, strength in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                momentum_strength=strength,
+                momentum_window=60,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    print("Elite momentum robust ablation:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    for name in ("light", "medium", "strong"):
+        difference = [value - base for value, base in zip(results[name], results["off"])]
+        ci = _bootstrap_ci(difference, seed=20260930 + len(name))
+        print(f"  {name} - off={mean(difference):+.4f}")
+        print(f"  {name} 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

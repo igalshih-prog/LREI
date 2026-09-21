@@ -279,7 +279,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
         )
         weights = self._adaptive_weights(history, engines)
-        maps = [{s.number: s.score for s in scores} for scores in variants)
+        maps = [{s.number: s.score for s in scores} for scores in variants]
         base = {n: sum(weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
         pair_counts = self._combination_counts(history, 2)
         triple_counts = self._combination_counts(history, 3)

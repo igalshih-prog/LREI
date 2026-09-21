@@ -723,3 +723,46 @@ def test_elite_prize_tier_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in paired.values())
     assert all(value == value for values in paired.values() for value in values)
+
+
+def test_elite_multi_origin_robust_walk_forward_diagnostic():
+    """Evaluate Elite across several historical origins to detect regime-specific overfitting."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 40
+    origins = [
+        len(draws) - 40,
+        len(draws) - 120,
+        len(draws) - 200,
+        len(draws) - 280,
+    ]
+    origins = [origin for origin in origins if origin >= 250 and origin + holdout <= len(draws)]
+    elite_results = []
+    random_results = []
+    paired = []
+
+    for origin_index, start in enumerate(origins):
+        baseline_rng = random.Random(203000 + origin_index)
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            elite = EliteProRecommendationEngine().recommend(history, seed=107000 + origin_index * 100 + offset)
+            elite_mean = mean(_hits(elite.recommended_tickets, target.numbers))
+            random_mean = mean(
+                hit
+                for _ in range(5)
+                for hit in _hits(_random_portfolio(baseline_rng), target.numbers)
+            )
+            elite_results.append(elite_mean)
+            random_results.append(random_mean)
+            paired.append(elite_mean - random_mean)
+
+    ci = _bootstrap_ci(paired, seed=20260941)
+    print("Elite multi-origin robust diagnostic:")
+    print(f"  origins={len(origins)}, holdout_per_origin={holdout}")
+    print(f"  Elite mean hits/ticket={mean(elite_results):.4f}")
+    print(f"  Random mean hits/ticket={mean(random_results):.4f}")
+    print(f"  Elite-Random={mean(paired):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(paired) == len(origins) * holdout
+    assert all(value == value for value in paired)

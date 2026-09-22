@@ -84,8 +84,6 @@ class EliteProConfig(ProConfig):
             raise ValueError("score_calibration_shrinkage must be between 0 and 1")
         if not 0.0 <= self.consensus_strength <= 1.0:
             raise ValueError("consensus_strength must be between 0 and 1")
-        if not 0.0 <= self.consensus_strength <= 1.0:
-            raise ValueError("consensus_strength must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):

@@ -916,3 +916,55 @@ def test_elite_against_diversified_random_baseline_walk_forward():
 
     assert len(paired) == holdout
     assert all(value == value for value in paired)
+
+
+def test_elite_momentum_robust_baseline_diagnostic():
+    """Measure the promising adaptive-momentum variant directly against random."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 3
+    variants = {
+        "current": {},
+        "momentum_adaptive": {"adaptive_momentum": True, "momentum_calibration_draws": 20},
+    }
+    results = {name: [] for name in variants}
+    random_means = []
+    paired = {name: [] for name in variants}
+
+    baseline_rng = random.Random(20260925)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=120,
+                max_tickets=14,
+                **kwargs,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99200 + offset)
+            mean_hits = mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            results[name].append(mean_hits)
+
+        random_results = [
+            _hits(_random_portfolio(baseline_rng), target.numbers)
+            for _ in range(random_portfolios_per_draw)
+        ]
+        random_mean = mean(hit for result in random_results for hit in result)
+        random_means.append(random_mean)
+        for name in variants:
+            paired[name].append(results[name][-1] - random_mean)
+
+    print("Elite momentum robust baseline diagnostic:")
+    print(f"  holdout={holdout}")
+    print(f"  Random mean hits/ticket={mean(random_means):.4f}")
+    for name in variants:
+        ci = _bootstrap_ci(paired[name], seed=20260925 + list(variants).index(name))
+        print(f"  {name} mean hits/ticket={mean(results[name]):.4f}")
+        print(f"  {name} - Random={mean(paired[name]):+.4f}")
+        print(f"  {name} vs Random 95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert len(random_means) == holdout

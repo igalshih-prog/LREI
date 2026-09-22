@@ -819,3 +819,45 @@ def test_final_engine_comparison_robust_walk_forward():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_adaptive_candidate_allocation_long_robust_diagnostic():
+    """Longer walk-forward check for adaptive candidate allocation."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(60, len(draws) // 12))
+    start = len(draws) - holdout
+    results = {"equal": [], "adaptive": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        configs = {
+            "equal": dict(adaptive_candidate_weights=False),
+            "adaptive": dict(
+                adaptive_candidate_weights=True,
+                candidate_calibration_draws=20,
+                candidate_calibration_candidate_count=75,
+                candidate_adaptive_shrinkage=0.50,
+            ),
+        }
+        for name, options in configs.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=150,
+                max_tickets=14,
+                **options,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99000 + offset)
+            results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    difference = [adaptive - equal for adaptive, equal in zip(results["adaptive"], results["equal"])]
+    ci = _bootstrap_ci(difference, seed=20260924)
+
+    print("Elite adaptive candidate-allocation long robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  adaptive - equal={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

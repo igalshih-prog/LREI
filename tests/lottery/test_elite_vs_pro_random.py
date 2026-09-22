@@ -19,6 +19,20 @@ def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
     )
 
 
+
+def _random_diversified_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14, max_overlap=4):
+    """Generate a random 14-ticket portfolio with the same overlap cap as Elite/Pro."""
+    tickets = []
+    attempts = 0
+    while len(tickets) < ticket_count and attempts < 10000:
+        attempts += 1
+        ticket = tuple(sorted(rng.sample(range(1, max_number + 1), ticket_size)))
+        if all(len(set(ticket) & set(other)) <= max_overlap for other in tickets):
+            tickets.append(ticket)
+    if len(tickets) != ticket_count:
+        raise AssertionError("Could not build constrained random portfolio")
+    return tuple(tickets)
+
 def _bootstrap_ci(values, seed=20260917, samples=5000):
     rng = random.Random(seed)
     estimates = []
@@ -861,3 +875,44 @@ def test_elite_adaptive_candidate_allocation_long_robust_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_against_diversified_random_baseline_walk_forward():
+    """Compare Elite with random portfolios subject to the same overlap constraint."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    elite_results = []
+    random_results = []
+    paired = []
+    rng = random.Random(20260942)
+
+    engine = EliteProRecommendationEngine()
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        elite = engine.recommend(history, seed=108000 + offset)
+        elite_mean = mean(_hits(elite.recommended_tickets, target.numbers))
+        random_portfolios = [
+            _random_diversified_portfolio(rng)
+            for _ in range(5)
+        ]
+        random_mean = mean(
+            hit
+            for portfolio in random_portfolios
+            for hit in _hits(portfolio, target.numbers)
+        )
+        elite_results.append(elite_mean)
+        random_results.append(random_mean)
+        paired.append(elite_mean - random_mean)
+
+    ci = _bootstrap_ci(paired, seed=20260943)
+    print("Elite vs diversified-random robust diagnostic:")
+    print(f"  holdout={holdout}")
+    print(f"  Elite mean hits/ticket={mean(elite_results):.4f}")
+    print(f"  Diversified random mean hits/ticket={mean(random_results):.4f}")
+    print(f"  Elite-random={mean(paired):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(paired) == holdout
+    assert all(value == value for value in paired)

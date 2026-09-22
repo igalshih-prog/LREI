@@ -302,3 +302,67 @@ def test_elite_signal_enhancement_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_model_selection_robust_walk_forward_diagnostic():
+    """Compare candidate Elite configurations on a longer chronological holdout."""
+    from statistics import mean
+    from random import Random
+    from lrei.lottery.dataset import LotteryDataset
+    from lrei.lottery.elite import EliteProConfig
+
+    draws = list(DATASET.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "current": {},
+        "momentum_adaptive": {"adaptive_momentum": True, "momentum_calibration_draws": 20},
+        "consensus": {"consensus_strength": 0.50},
+        "score_calibration": {"score_calibration": True, "score_calibration_draws": 30, "score_calibration_bins": 5},
+        "adaptive_candidates": {
+            "adaptive_candidate_weights": True,
+            "candidate_calibration_draws": 20,
+            "candidate_calibration_candidate_count": 100,
+            "candidate_adaptive_shrinkage": 0.50,
+        },
+        "momentum_consensus": {
+            "adaptive_momentum": True,
+            "momentum_calibration_draws": 20,
+            "consensus_strength": 0.50,
+        },
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = EliteProConfig(candidate_count=200, max_tickets=14, **kwargs)
+            result = EliteProRecommendationEngine(config).recommend(history, seed=99100 + offset)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    current = results["current"]
+    print("Elite model-selection robust diagnostic:")
+    for name, values in sorted(results.items(), key=lambda item: mean(item[1]), reverse=True):
+        difference = [value - base for value, base in zip(values, current)]
+        print(f"  {name}: hits={mean(values):.4f}, vs_current={mean(difference):+.4f}")
+
+    def bootstrap_ci(values, seed=20260924, samples=5000):
+        rng = Random(seed)
+        estimates = []
+        for _ in range(samples):
+            estimates.append(mean(values[rng.randrange(len(values))] for _ in values))
+        estimates.sort()
+        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+
+    for name, values in results.items():
+        if name == "current":
+            continue
+        difference = [value - base for value, base in zip(values, current)]
+        ci = bootstrap_ci(difference, seed=20260924 + list(variants).index(name))
+        print(f"    {name} 95% CI vs current=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

@@ -74,3 +74,19 @@ jobs:
         run: pip install -e . pytest
       - name: Run robust Elite model-selection diagnostic
         run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "elite_model_selection_robust_walk_forward_diagnostic"
+
+
+  calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run multi-origin score calibration diagnostic
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "score_calibration_multi_origin_robust_diagnostic"

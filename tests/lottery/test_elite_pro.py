@@ -402,3 +402,43 @@ def test_elite_score_calibration_multi_origin_robust_diagnostic():
 
     assert len(difference) == block * len(origins)
     assert all(value == value for value in difference)
+
+
+def test_elite_recent_affinity_multi_origin_robust_diagnostic():
+    """Compare current all-history affinity with an opt-in recent-affinity blend."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 30
+    origins = [len(draws) - 90, len(draws) - 60, len(draws) - 30]
+    results = {"current": [], "recent_affinity": []}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws[:start + offset])
+            actual = set(target.numbers)
+            for name, weight in (("current", 0.0), ("recent_affinity", 0.35)):
+                config = EliteProConfig(
+                    candidate_count=150,
+                    max_tickets=14,
+                    affinity_recent_weight=weight,
+                )
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=99600 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    difference = [
+        recent - current
+        for recent, current in zip(results["recent_affinity"], results["current"])
+    ]
+    print("Elite recent-affinity multi-origin robust diagnostic:")
+    print(f"  current={mean(results['current']):.4f}")
+    print(f"  recent_affinity={mean(results['recent_affinity']):.4f}")
+    print(f"  recent-current={mean(difference):+.4f}")
+
+    assert len(difference) == block * len(origins)
+    assert all(value == value for value in difference)

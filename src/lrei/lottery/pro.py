@@ -27,6 +27,7 @@ class ProConfig:
     use_ewma: bool = False
     ewma_half_life: float = 36.0
     affinity_prior_strength: float = 0.0
+    affinity_recent_weight: float = 0.0
     number_signal_strength: float = 0.75
     portfolio_coverage_weight: float = 0.035
     portfolio_overlap_penalty: float = 0.018
@@ -47,6 +48,8 @@ class ProRecommendationEngine:
             raise ValueError("ewma_half_life must be positive")
         if self.config.affinity_prior_strength < 0:
             raise ValueError("affinity_prior_strength must be non-negative")
+        if not 0.0 <= self.config.affinity_recent_weight <= 1.0:
+            raise ValueError("affinity_recent_weight must be between 0 and 1")
         if not 0.0 <= self.config.number_signal_strength <= 1.0:
             raise ValueError("number_signal_strength must be between 0 and 1")
         if self.config.portfolio_coverage_weight < 0:
@@ -78,15 +81,14 @@ class ProRecommendationEngine:
         recent_draws = self._recent_draw_frequency(dataset, 60)
         ewma = self._ewma_frequency(dataset, self.config.ewma_half_life) if self.config.use_ewma else {}
         scores = self._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma)
-        pair_counts = self._combination_counts(dataset, 2)
-        triple_counts = self._combination_counts(dataset, 3)
+        pair_counts, triple_counts, affinity_draw_count = self._affinity_counts(dataset)
         structure = self._structure_profile(dataset)
         rng = random.Random(seed)
         generated = [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_count)]
-        recommended = self._select_portfolio(generated, scores, frequencies, pair_counts, triple_counts, structure)
+        recommended = self._select_portfolio(generated, scores, frequencies, pair_counts, triple_counts, structure, affinity_draw_count)
         if len(recommended) < self.config.max_tickets:
             expanded = generated + [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_count)]
-            recommended = self._select_portfolio(expanded, scores, frequencies, pair_counts, triple_counts, structure)
+            recommended = self._select_portfolio(expanded, scores, frequencies, pair_counts, triple_counts, structure, affinity_draw_count)
         recommended = tuple(recommended[: self.config.max_tickets])
         if len(recommended) != self.config.max_tickets:
             raise ValueError("Pro optimizer could not produce the configured number of tickets")
@@ -175,6 +177,23 @@ class ProRecommendationEngine:
             score = 0.5 + self.config.number_signal_strength * (score - 0.5)
             result.append(NumberScore(number=n, score=score))
         return tuple(result)
+
+    def _affinity_counts(self, dataset):
+        """Blend all-history and recent three-year pair/triple evidence."""
+        all_pairs = self._combination_counts(dataset, 2)
+        all_triples = self._combination_counts(dataset, 3)
+        weight = self.config.affinity_recent_weight
+        if weight <= 0.0:
+            return all_pairs, all_triples, max(1, len(dataset))
+        recent = LotteryDataset(dataset.draws[-max(1, round(len(dataset) * 0.30)):])
+        recent_pairs = self._combination_counts(recent, 2)
+        recent_triples = self._combination_counts(recent, 3)
+        keys2 = set(all_pairs) | set(recent_pairs)
+        keys3 = set(all_triples) | set(recent_triples)
+        pairs = {combo: (1.0 - weight) * all_pairs.get(combo, 0.0) + weight * recent_pairs.get(combo, 0.0) for combo in keys2}
+        triples = {combo: (1.0 - weight) * all_triples.get(combo, 0.0) + weight * recent_triples.get(combo, 0.0) for combo in keys3}
+        draw_count = (1.0 - weight) * len(dataset) + weight * len(recent)
+        return pairs, triples, max(draw_count, 1.0)
 
     @staticmethod
     def _combination_counts(dataset, size):
@@ -304,10 +323,10 @@ class ProRecommendationEngine:
                 current_score = best_score
         return tuple(current)
 
-    def _select_portfolio(self, generated, scores, frequencies, pair_counts, triple_counts, structure):
+    def _select_portfolio(self, generated, scores, frequencies, pair_counts, triple_counts, structure, affinity_draw_count=None):
         candidates = list(dict.fromkeys(tuple(sorted(t)) for t in generated))
         score_map = {x.number: x.score for x in scores}
-        draw_count = max(1, round(sum(frequencies.values()) / 6))
+        draw_count = affinity_draw_count if affinity_draw_count is not None else max(1, round(sum(frequencies.values()) / 6))
         base = {t: self._candidate_score(t, score_map, pair_counts, triple_counts, frequencies, draw_count, structure, self.config.affinity_prior_strength) for t in candidates}
         selected, selected_numbers = [], set()
         while len(selected) < self.config.max_tickets:

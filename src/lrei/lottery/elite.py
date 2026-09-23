@@ -103,6 +103,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             use_ewma=use_ewma,
             ewma_half_life=config.ewma_half_life,
             affinity_prior_strength=config.affinity_prior_strength,
+            affinity_recent_weight=config.affinity_recent_weight,
             number_signal_strength=config.number_signal_strength,
             pair_bonus_strength=config.pair_bonus_strength,
             triple_bonus_strength=config.triple_bonus_strength,

@@ -442,3 +442,47 @@ def test_elite_recent_affinity_multi_origin_robust_diagnostic():
 
     assert len(difference) == block * len(origins)
     assert all(value == value for value in difference)
+
+
+def test_elite_momentum_multi_origin_robust_diagnostic():
+    """Check adaptive momentum across three chronological origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 30
+    origins = [len(draws) - 90, len(draws) - 60, len(draws) - 30]
+    results = {"current": [], "momentum_adaptive": []}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in (
+                ("current", {}),
+                ("momentum_adaptive", {
+                    "adaptive_momentum": True,
+                    "momentum_calibration_draws": 20,
+                }),
+            ):
+                config = EliteProConfig(candidate_count=150, max_tickets=14, **kwargs)
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=99700 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    difference = [
+        momentum - current
+        for momentum, current in zip(
+            results["momentum_adaptive"], results["current"]
+        )
+    ]
+    print("Elite momentum multi-origin robust diagnostic:")
+    print(f"  current={mean(results['current']):.4f}")
+    print(f"  momentum_adaptive={mean(results['momentum_adaptive']):.4f}")
+    print(f"  momentum-current={mean(difference):+.4f}")
+
+    assert len(difference) == block * len(origins)
+    assert all(value == value for value in difference)

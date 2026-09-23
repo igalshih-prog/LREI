@@ -486,3 +486,49 @@ def test_elite_momentum_multi_origin_robust_diagnostic():
 
     assert len(difference) == block * len(origins)
     assert all(value == value for value in difference)
+
+
+def test_elite_top_model_multi_origin_robust_diagnostic():
+    """Validate the strongest recent Elite variants across independent time origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 25
+    origins = [len(draws) - 100, len(draws) - 75, len(draws) - 50]
+    variants = {
+        "current": {},
+        "momentum_adaptive": {
+            "adaptive_momentum": True,
+            "momentum_calibration_draws": 20,
+        },
+        "consensus": {"consensus_strength": 0.50},
+    }
+    results = {name: [] for name in variants}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in variants.items():
+                config = EliteProConfig(candidate_count=120, max_tickets=14, **kwargs)
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=100000 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    print("Elite top-model multi-origin diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    for name in ("momentum_adaptive", "consensus"):
+        difference = [
+            candidate - current
+            for candidate, current in zip(results[name], results["current"])
+        ]
+        print(f"  {name} - current={mean(difference):+.4f}")
+
+    assert all(len(values) == block * len(origins) for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

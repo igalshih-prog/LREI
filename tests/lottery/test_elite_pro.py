@@ -366,3 +366,39 @@ def test_elite_model_selection_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_score_calibration_multi_origin_robust_diagnostic():
+    """Check score calibration across three chronological origins, not only the latest holdout."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 30
+    origins = [len(draws) - 90, len(draws) - 60, len(draws) - 30]
+    results = {"current": [], "score_calibration": []}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in (
+                ("current", {}),
+                ("score_calibration", {
+                    "score_calibration": True,
+                    "score_calibration_draws": 30,
+                    "score_calibration_bins": 5,
+                }),
+            ):
+                config = EliteProConfig(candidate_count=150, max_tickets=14, **kwargs)
+                result = EliteProRecommendationEngine(config).recommend(history, seed=99500 + start + offset)
+                results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
+
+    difference = [cal - current for cal, current in zip(results["score_calibration"], results["current"])]
+    print("Elite score-calibration multi-origin robust diagnostic:")
+    print(f"  current={mean(results['current']):.4f}")
+    print(f"  calibrated={mean(results['score_calibration']):.4f}")
+    print(f"  calibrated-current={mean(difference):+.4f}")
+
+    assert len(difference) == block * len(origins)
+    assert all(value == value for value in difference)

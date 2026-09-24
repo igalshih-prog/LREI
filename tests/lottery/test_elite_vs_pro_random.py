@@ -995,9 +995,13 @@ def test_elite_tail_hit_robust_walk_forward_diagnostic():
 
         for threshold in thresholds:
             elite_counts[threshold].append(sum(hit >= threshold for hit in elite_hits))
-            random_counts[threshold].append(sum(hit >= threshold for hit in random_hits))
+            # Normalize the five random portfolios back to the same 14-ticket
+            # portfolio size as Elite before comparing tail-hit counts.
+            random_counts[threshold].append(
+                sum(hit >= threshold for hit in random_hits) / random_portfolios_per_draw
+            )
 
-    print("Elite tail-hit robust diagnostic:")
+    print("Elite tail-hit robust diagnostic (normalized to 14 tickets):")
     for threshold in thresholds:
         elite_rate = mean(elite_counts[threshold])
         random_rate = mean(random_counts[threshold])

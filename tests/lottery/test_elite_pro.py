@@ -532,3 +532,50 @@ def test_elite_top_model_multi_origin_robust_diagnostic():
 
     assert all(len(values) == block * len(origins) for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_candidate_calibration_origin_ablation_diagnostic():
+    """Compare one-origin and multi-origin adaptive candidate calibration."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "single_origin": 1,
+        "multi_origin": 3,
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, origins in variants.items():
+            config = EliteProConfig(
+                candidate_count=150,
+                max_tickets=14,
+                adaptive_candidate_weights=True,
+                candidate_calibration_draws=20,
+                candidate_calibration_candidate_count=75,
+                candidate_calibration_origins=origins,
+                candidate_adaptive_shrinkage=0.50,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=101000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        multi - single
+        for multi, single in zip(results["multi_origin"], results["single_origin"])
+    ]
+    print("Elite candidate-calibration origin ablation:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  multi_origin - single_origin={mean(difference):+.4f}")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

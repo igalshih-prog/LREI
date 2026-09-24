@@ -579,3 +579,39 @@ def test_elite_candidate_calibration_origin_ablation_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_number_signal_strength_multi_origin_robust_diagnostic():
+    """Test score-signal strength across independent chronological origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 30
+    origins = [len(draws) - 90, len(draws) - 60, len(draws) - 30]
+    strengths = (0.0, 0.25, 0.50, 0.75)
+    results = {strength: [] for strength in strengths}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws[:start + offset])
+            actual = set(target.numbers)
+            for strength in strengths:
+                config = EliteProConfig(
+                    candidate_count=150,
+                    max_tickets=14,
+                    number_signal_strength=strength,
+                )
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=102000 + start + offset
+                )
+                results[strength].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    print("Elite number-signal strength multi-origin robust diagnostic:")
+    for strength in strengths:
+        print(f"  strength={strength:.2f}: hits={mean(results[strength]):.4f}")
+
+    assert all(len(values) == block * len(origins) for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

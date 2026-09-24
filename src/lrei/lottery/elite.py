@@ -304,6 +304,65 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             return {n: 0.5 for n in numbers}
         return {n: (raw[n] - low) / (high - low) for n in numbers}
 
+    def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
+        """Optionally calibrate ensemble scores from trailing historical outcomes."""
+        if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
+            return scores
+        if len(dataset) < self.config.score_calibration_draws + 25:
+            return scores
+
+        validation_size = min(self.config.score_calibration_draws, len(dataset) - 25)
+        train = LotteryDataset(dataset.draws[:-validation_size])
+        validation = dataset.draws[-validation_size:]
+        if not train.draws:
+            return scores
+
+        frequencies = self._frequency(train)
+        recent_3 = self._window_frequency(train, 3)
+        recent_1 = self._window_frequency(train, 1)
+        recent_draws = self._recent_draw_frequency(train, 60)
+        ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+        variants = (
+            engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        )
+        weights = self._adaptive_weights(train, engines)
+        maps = [{item.number: item.score for item in variant} for variant in variants]
+        current_map = {item.number: item.score for item in scores}
+        training_scores = {
+            number: sum(weights[index] * maps[index].get(number, 0.5) for index in range(3))
+            for number in current_map
+        }
+        bins = self.config.score_calibration_bins
+        ordered = sorted(training_scores, key=lambda number: (training_scores[number], number))
+        bin_rates = []
+        for index in range(bins):
+            left = (len(ordered) * index) // bins
+            right = (len(ordered) * (index + 1)) // bins
+            members = ordered[left:right] or ordered[-1:]
+            hits = 0
+            opportunities = 0
+            for draw in validation:
+                actual = set(draw.numbers)
+                hits += sum(number in actual for number in members)
+                opportunities += len(members)
+            rate = hits / opportunities if opportunities else 6.0 / 37.0
+            bin_rates.append(rate)
+
+        baseline = 6.0 / 37.0
+        max_rate = max(bin_rates) if bin_rates else baseline
+        calibrated = {}
+        shrink = self.config.score_calibration_shrinkage
+        for number, score in current_map.items():
+            rank = ordered.index(number) if number in ordered else 0
+            bin_index = min(bins - 1, (rank * bins) // max(1, len(ordered)))
+            rate = bin_rates[bin_index]
+            normalized = 0.5 + 0.5 * ((rate - baseline) / max(abs(max_rate - baseline), 1e-9))
+            normalized = max(0.0, min(1.0, normalized))
+            calibrated[number] = (1.0 - shrink) * score + shrink * normalized
+        return tuple(NumberScore(number=number, score=calibrated[number]) for number in sorted(calibrated))
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")

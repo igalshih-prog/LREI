@@ -240,6 +240,70 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         total = sum(blended)
         return tuple(x / total for x in blended)
 
+    def _adaptive_momentum_strength(self, dataset: LotteryDataset) -> float:
+        """Select momentum strength from a trailing walk-forward validation slice."""
+        if not self.config.adaptive_momentum or self.config.momentum_calibration_draws <= 0:
+            return self.config.momentum_strength
+        if len(dataset) < self.config.momentum_calibration_draws + 25:
+            return self.config.momentum_strength
+        validation_size = min(self.config.momentum_calibration_draws, len(dataset) - 25)
+        train_draws = dataset.draws[:-validation_size]
+        validation = dataset.draws[-validation_size:]
+        if not train_draws:
+            return self.config.momentum_strength
+        history = LotteryDataset(train_draws)
+        frequencies = self._frequency(history)
+        recent_3 = self._window_frequency(history, 3)
+        recent_1 = self._window_frequency(history, 1)
+        recent_draws = self._recent_draw_frequency(history, 60)
+        ewma = self._ewma_frequency(history, self.config.ewma_half_life)
+        rank_engine = self._engine(self.config, True, False)
+        raw_engine = self._engine(self.config, False, False)
+        ewma_engine = self._engine(self.config, True, True)
+        engines = ((rank_engine, None), (raw_engine, None), (ewma_engine, None))
+        variants = (
+            rank_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            raw_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+            ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        )
+        weights = self._adaptive_weights(history, engines)
+        maps = [{s.number: s.score for s in scores} for scores in variants]
+        base = {n: sum(weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
+        pair_counts = self._combination_counts(history, 2)
+        triple_counts = self._combination_counts(history, 3)
+        structure = self._structure_profile(history)
+        momentum = self._momentum_scores(history, self.config.momentum_window)
+        rng = random.Random(24680 + len(dataset))
+        results = {}
+        for strength in self.config.momentum_candidates:
+            adjusted = tuple(NumberScore(number=n, score=(1.0 - strength) * score + strength * momentum.get(n, 0.5)) for n, score in base.items())
+            candidates = [self._generate_candidate(adjusted, pair_counts, triple_counts, structure, rng) for _ in range(min(100, self.config.candidate_count))]
+            portfolio = self._select_portfolio(candidates, adjusted, frequencies, pair_counts, triple_counts, structure)
+            results[strength] = mean(mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio) for draw in validation) if portfolio else 0.0
+        return max(results, key=results.get)
+
+    @staticmethod
+    def _momentum_scores(dataset: LotteryDataset, window: int) -> dict[int, float]:
+        """Compare recent appearance rates with the immediately preceding window."""
+        if len(dataset) < window * 2:
+            return {}
+        recent = dataset.draws[-window:]
+        previous = dataset.draws[-window * 2:-window]
+        recent_counts = {}
+        previous_counts = {}
+        for draw in recent:
+            for number in draw.numbers:
+                recent_counts[number] = recent_counts.get(number, 0) + 1
+        for draw in previous:
+            for number in draw.numbers:
+                previous_counts[number] = previous_counts.get(number, 0) + 1
+        numbers = sorted(set(recent_counts) | set(previous_counts))
+        raw = {n: recent_counts.get(n, 0) - previous_counts.get(n, 0) for n in numbers}
+        low, high = min(raw.values()), max(raw.values())
+        if high == low:
+            return {n: 0.5 for n in numbers}
+        return {n: (raw[n] - low) / (high - low) for n in numbers}
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")

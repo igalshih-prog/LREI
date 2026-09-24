@@ -28,6 +28,7 @@ class EliteProConfig(ProConfig):
     adaptive_candidate_weights: bool = False
     candidate_calibration_draws: int = 20
     candidate_calibration_candidate_count: int = 100
+    candidate_calibration_origins: int = 1
     candidate_adaptive_shrinkage: float = 0.50
     momentum_strength: float = 0.0
     momentum_window: int = 60
@@ -66,6 +67,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("candidate_calibration_draws must be non-negative")
         if self.candidate_calibration_candidate_count < self.max_tickets:
             raise ValueError("candidate_calibration_candidate_count must cover max_tickets")
+        if self.candidate_calibration_origins < 1:
+            raise ValueError("candidate_calibration_origins must be at least 1")
         if not 0.0 <= self.candidate_adaptive_shrinkage <= 1.0:
             raise ValueError("candidate_adaptive_shrinkage must be between 0 and 1")
         if not 0.0 <= self.momentum_strength <= 1.0:
@@ -158,40 +161,68 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         return tuple(x / total for x in blended)
 
     def _adaptive_candidate_weights(self, dataset: LotteryDataset, engines) -> tuple[float, float, float]:
-        """Calibrate candidate-source weights from a trailing walk-forward slice."""
-        default = (self.config.candidate_rank_weight, self.config.candidate_raw_weight, self.config.candidate_ewma_weight)
+        """Calibrate candidate-source weights across trailing chronological origins."""
+        default = (
+            self.config.candidate_rank_weight,
+            self.config.candidate_raw_weight,
+            self.config.candidate_ewma_weight,
+        )
         if not self.config.adaptive_candidate_weights:
             return default
-        if len(dataset) < self.config.candidate_calibration_draws + 20 or self.config.candidate_calibration_draws <= 0:
+        block = self.config.candidate_calibration_draws
+        if block <= 0 or len(dataset) < block + 20:
             return default
-        validation_size = min(self.config.candidate_calibration_draws, len(dataset) - 20)
-        train = LotteryDataset(dataset.draws[:-validation_size])
-        validation = dataset.draws[-validation_size:]
-        if not train.draws:
-            return default
-        frequencies = self._frequency(train)
-        recent_3 = self._window_frequency(train, 3)
-        recent_1 = self._window_frequency(train, 1)
-        recent_draws = self._recent_draw_frequency(train, 60)
-        ewma = self._ewma_frequency(train, self.config.ewma_half_life)
-        pair_counts = self._combination_counts(train, 2)
-        triple_counts = self._combination_counts(train, 3)
-        structure = self._structure_profile(train)
-        source_scores = (
-            engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
-        )
-        rng = random.Random(13579 + len(dataset))
-        performance = []
-        for scores in source_scores:
-            candidates = [self._generate_candidate(scores, pair_counts, triple_counts, structure, rng) for _ in range(self.config.candidate_calibration_candidate_count)]
-            portfolio = self._select_portfolio(candidates, scores, frequencies, pair_counts, triple_counts, structure)
-            if not portfolio:
-                performance.append(0.05)
+
+        origin_count = min(self.config.candidate_calibration_origins, max(1, (len(dataset) - 20) // block))
+        performance_totals = [0.0, 0.0, 0.0]
+        origin_used = 0
+
+        for origin in range(origin_count):
+            validation_end = len(dataset) - origin * block
+            validation_start = validation_end - block
+            if validation_start < 20:
+                break
+            train = LotteryDataset(dataset.draws[:validation_start])
+            validation = dataset.draws[validation_start:validation_end]
+            if not train.draws or not validation:
                 continue
-            mean_hits = mean(mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio) for draw in validation)
-            performance.append(max(0.05, mean_hits / (6.0 * 6.0 / 37.0)))
+
+            frequencies = self._frequency(train)
+            recent_3 = self._window_frequency(train, 3)
+            recent_1 = self._window_frequency(train, 1)
+            recent_draws = self._recent_draw_frequency(train, 60)
+            ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+            pair_counts = self._combination_counts(train, 2)
+            triple_counts = self._combination_counts(train, 3)
+            structure = self._structure_profile(train)
+            source_scores = (
+                engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+            )
+            rng = random.Random(13579 + validation_start)
+            for index, scores in enumerate(source_scores):
+                candidates = [
+                    self._generate_candidate(scores, pair_counts, triple_counts, structure, rng)
+                    for _ in range(self.config.candidate_calibration_candidate_count)
+                ]
+                portfolio = self._select_portfolio(
+                    candidates, scores, frequencies, pair_counts, triple_counts, structure
+                )
+                if not portfolio:
+                    performance_totals[index] += 0.05
+                    continue
+                mean_hits = mean(
+                    mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio)
+                    for draw in validation
+                )
+                performance_totals[index] += max(0.05, mean_hits / (6.0 * 6.0 / 37.0))
+            origin_used += 1
+
+        if origin_used == 0:
+            return default
+
+        performance = [value / origin_used for value in performance_totals]
         default_total = sum(default)
         prior = [x / default_total for x in default]
         performance_total = sum(performance)

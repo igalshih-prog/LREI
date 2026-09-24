@@ -968,3 +968,44 @@ def test_elite_momentum_robust_baseline_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert len(random_means) == holdout
+
+
+def test_elite_tail_hit_robust_walk_forward_diagnostic():
+    """Measure portfolio tail hits (3+, 4+, 5+, 6) against random portfolios."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+    thresholds = (3, 4, 5, 6)
+    elite_counts = {threshold: [] for threshold in thresholds}
+    random_counts = {threshold: [] for threshold in thresholds}
+    engine = EliteProRecommendationEngine()
+    baseline_rng = random.Random(20260924)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        elite = engine.recommend(history, seed=99100 + offset)
+        elite_hits = _hits(elite.recommended_tickets, target.numbers)
+        random_results = [
+            _hits(_random_portfolio(baseline_rng), target.numbers)
+            for _ in range(random_portfolios_per_draw)
+        ]
+        random_hits = [hit for result in random_results for hit in result]
+
+        for threshold in thresholds:
+            elite_counts[threshold].append(sum(hit >= threshold for hit in elite_hits))
+            random_counts[threshold].append(sum(hit >= threshold for hit in random_hits))
+
+    print("Elite tail-hit robust diagnostic:")
+    for threshold in thresholds:
+        elite_rate = mean(elite_counts[threshold])
+        random_rate = mean(random_counts[threshold])
+        print(
+            f"  {threshold}+ hits/draw: Elite={elite_rate:.4f} "
+            f"Random={random_rate:.4f} difference={elite_rate-random_rate:+.4f}"
+        )
+
+    assert all(len(values) == holdout for values in elite_counts.values())
+    assert all(len(values) == holdout for values in random_counts.values())
+    assert all(all(value >= 0 for value in values) for values in elite_counts.values())

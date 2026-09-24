@@ -73,7 +73,7 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Run robust Elite model-selection diagnostic
-        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "elite_model_selection_robust_walk_forward_diagnostic or elite_top_model_multi_origin_robust_diagnostic"
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "elite_model_selection_robust_walk_forward_diagnostic or elite_top_model_multi_origin_robust_diagnostic or elite_candidate_calibration_origin_ablation_diagnostic"
 
 
   calibration:

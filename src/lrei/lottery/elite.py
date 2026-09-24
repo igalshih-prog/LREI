@@ -68,6 +68,8 @@ class EliteProConfig(ProConfig):
         if self.candidate_calibration_candidate_count < self.max_tickets:
             raise ValueError("candidate_calibration_candidate_count must cover max_tickets")
         if self.candidate_calibration_origins < 1:
+            raise ValueError("candidate_calibration_origins must be positive")
+        if self.candidate_calibration_origins < 1:
             raise ValueError("candidate_calibration_origins must be at least 1")
         if not 0.0 <= self.candidate_adaptive_shrinkage <= 1.0:
             raise ValueError("candidate_adaptive_shrinkage must be between 0 and 1")
@@ -161,7 +163,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         return tuple(x / total for x in blended)
 
     def _adaptive_candidate_weights(self, dataset: LotteryDataset, engines) -> tuple[float, float, float]:
-        """Calibrate candidate-source weights across trailing chronological origins."""
+        """Calibrate candidate-source weights from multiple trailing walk-forward origins."""
         default = (
             self.config.candidate_rank_weight,
             self.config.candidate_raw_weight,
@@ -169,21 +171,24 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         )
         if not self.config.adaptive_candidate_weights:
             return default
-        block = self.config.candidate_calibration_draws
-        if block <= 0 or len(dataset) < block + 20:
+        if self.config.candidate_calibration_draws <= 0:
+            return default
+        validation_size = self.config.candidate_calibration_draws
+        minimum_train = 20
+        if len(dataset) < validation_size + minimum_train:
             return default
 
-        origin_count = min(self.config.candidate_calibration_origins, max(1, (len(dataset) - 20) // block))
-        performance_totals = [0.0, 0.0, 0.0]
-        origin_used = 0
-
-        for origin in range(origin_count):
-            validation_end = len(dataset) - origin * block
-            validation_start = validation_end - block
-            if validation_start < 20:
+        source_performance = [[], [], []]
+        max_origins = min(
+            self.config.candidate_calibration_origins,
+            max(1, (len(dataset) - minimum_train) // validation_size),
+        )
+        for origin_index in range(max_origins):
+            origin = len(dataset) - origin_index * validation_size
+            if origin - validation_size < minimum_train:
                 break
-            train = LotteryDataset(dataset.draws[:validation_start])
-            validation = dataset.draws[validation_start:validation_end]
+            train = LotteryDataset(dataset.draws[:origin - validation_size])
+            validation = dataset.draws[origin - validation_size:origin]
             if not train.draws or not validation:
                 continue
 
@@ -200,156 +205,40 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
                 engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
             )
-            rng = random.Random(13579 + validation_start)
-            for index, scores in enumerate(source_scores):
+            rng = random.Random(13579 + len(dataset) + origin_index)
+            baseline = 6.0 * 6.0 / 37.0
+            for source_index, scores in enumerate(source_scores):
                 candidates = [
-                    self._generate_candidate(scores, pair_counts, triple_counts, structure, rng)
+                    self._generate_candidate(
+                        scores, pair_counts, triple_counts, structure, rng
+                    )
                     for _ in range(self.config.candidate_calibration_candidate_count)
                 ]
                 portfolio = self._select_portfolio(
                     candidates, scores, frequencies, pair_counts, triple_counts, structure
                 )
                 if not portfolio:
-                    performance_totals[index] += 0.05
+                    source_performance[source_index].append(0.05)
                     continue
                 mean_hits = mean(
                     mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio)
                     for draw in validation
                 )
-                performance_totals[index] += max(0.05, mean_hits / (6.0 * 6.0 / 37.0))
-            origin_used += 1
+                source_performance[source_index].append(max(0.05, mean_hits / baseline))
 
-        if origin_used == 0:
+        if not all(source_performance):
             return default
-
-        performance = [value / origin_used for value in performance_totals]
+        performance = [mean(values) for values in source_performance]
         default_total = sum(default)
         prior = [x / default_total for x in default]
         performance_total = sum(performance)
+        if performance_total <= 0:
+            return default
         learned = [x / performance_total for x in performance]
         shrink = self.config.candidate_adaptive_shrinkage
         blended = [(1.0 - shrink) * p + shrink * l for p, l in zip(prior, learned)]
         total = sum(blended)
         return tuple(x / total for x in blended)
-
-    def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, current_scores):
-        """Calibrate score bands against trailing walk-forward hit rates, with shrinkage."""
-        if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
-            return current_scores
-        if len(dataset) < self.config.score_calibration_draws + 25:
-            return current_scores
-        validation_size = min(self.config.score_calibration_draws, len(dataset) - 25)
-        train_end = len(dataset) - validation_size
-        train_draws = dataset.draws[:train_end]
-        validation = dataset.draws[train_end:]
-        if not train_draws:
-            return current_scores
-        history = LotteryDataset(train_draws)
-        bins = [[] for _ in range(self.config.score_calibration_bins)]
-        hits = [0 for _ in range(self.config.score_calibration_bins)]
-        counts = [0 for _ in range(self.config.score_calibration_bins)]
-        for offset, target in enumerate(validation):
-            prefix = LotteryDataset(train_draws + tuple(validation[:offset]))
-            frequencies = self._frequency(prefix)
-            recent_3 = self._window_frequency(prefix, 3)
-            recent_1 = self._window_frequency(prefix, 1)
-            recent_draws = self._recent_draw_frequency(prefix, 60)
-            ewma = self._ewma_frequency(prefix, self.config.ewma_half_life)
-            variants = (
-                engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-                engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-                engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
-            )
-            weights = self._adaptive_weights(prefix, engines)
-            maps = [{s.number: s.score for s in scores} for scores in variants]
-            for number in range(1, 38):
-                score = sum(weights[i] * maps[i].get(number, 0.5) for i in range(3))
-                rank = min(self.config.score_calibration_bins - 1, int(score * self.config.score_calibration_bins))
-                counts[rank] += 1
-                if number in target.numbers:
-                    hits[rank] += 1
-        baseline = 6.0 / 37.0
-        rates = [
-            (1.0 - self.config.score_calibration_shrinkage) * (hits[i] / counts[i] if counts[i] else baseline)
-            + self.config.score_calibration_shrinkage * baseline
-            for i in range(self.config.score_calibration_bins)
-        ]
-        max_rate = max(rates) if rates else baseline
-        if max_rate <= 0:
-            return current_scores
-        scale = baseline / max_rate
-        calibrated = tuple(
-            NumberScore(
-                number=s.number,
-                score=max(0.0, min(1.0, rates[min(self.config.score_calibration_bins - 1, int(s.score * self.config.score_calibration_bins))] * scale))
-            )
-            for s in current_scores
-        )
-        return calibrated
-
-    def _adaptive_momentum_strength(self, dataset: LotteryDataset) -> float:
-        """Select momentum strength from a trailing walk-forward validation slice."""
-        if not self.config.adaptive_momentum or self.config.momentum_calibration_draws <= 0:
-            return self.config.momentum_strength
-        if len(dataset) < self.config.momentum_calibration_draws + 25:
-            return self.config.momentum_strength
-        validation_size = min(self.config.momentum_calibration_draws, len(dataset) - 25)
-        train_draws = dataset.draws[:-validation_size]
-        validation = dataset.draws[-validation_size:]
-        if not train_draws:
-            return self.config.momentum_strength
-        history = LotteryDataset(train_draws)
-        frequencies = self._frequency(history)
-        recent_3 = self._window_frequency(history, 3)
-        recent_1 = self._window_frequency(history, 1)
-        recent_draws = self._recent_draw_frequency(history, 60)
-        ewma = self._ewma_frequency(history, self.config.ewma_half_life)
-        rank_engine = self._engine(self.config, True, False)
-        raw_engine = self._engine(self.config, False, False)
-        ewma_engine = self._engine(self.config, True, True)
-        engines = ((rank_engine, None), (raw_engine, None), (ewma_engine, None))
-        variants = (
-            rank_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            raw_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
-        )
-        weights = self._adaptive_weights(history, engines)
-        maps = [{s.number: s.score for s in scores} for scores in variants]
-        base = {n: sum(weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
-        pair_counts = self._combination_counts(history, 2)
-        triple_counts = self._combination_counts(history, 3)
-        structure = self._structure_profile(history)
-        momentum = self._momentum_scores(history, self.config.momentum_window)
-        rng = random.Random(24680 + len(dataset))
-        results = {}
-        for strength in self.config.momentum_candidates:
-            adjusted = tuple(NumberScore(number=n, score=(1.0 - strength) * score + strength * momentum.get(n, 0.5)) for n, score in base.items())
-            candidates = [self._generate_candidate(adjusted, pair_counts, triple_counts, structure, rng) for _ in range(min(100, self.config.candidate_count))]
-            portfolio = self._select_portfolio(candidates, adjusted, frequencies, pair_counts, triple_counts, structure)
-            results[strength] = mean(mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio) for draw in validation) if portfolio else 0.0
-        return max(results, key=results.get)
-
-    @staticmethod
-    def _momentum_scores(dataset: LotteryDataset, window: int) -> dict[int, float]:
-        """Compare recent appearance rates with the immediately preceding window."""
-        if len(dataset) < window * 2:
-            return {}
-        recent = dataset.draws[-window:]
-        previous = dataset.draws[-window * 2:-window]
-        recent_counts = {}
-        previous_counts = {}
-        for draw in recent:
-            for number in draw.numbers:
-                recent_counts[number] = recent_counts.get(number, 0) + 1
-        for draw in previous:
-            for number in draw.numbers:
-                previous_counts[number] = previous_counts.get(number, 0) + 1
-        numbers = sorted(set(recent_counts) | set(previous_counts))
-        raw = {n: recent_counts.get(n, 0) - previous_counts.get(n, 0) for n in numbers}
-        low, high = min(raw.values()), max(raw.values())
-        if high == low:
-            return {n: 0.5 for n in numbers}
-        return {n: (raw[n] - low) / (high - low) for n in numbers}
 
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:

@@ -68,8 +68,6 @@ class EliteProConfig(ProConfig):
         if self.candidate_calibration_candidate_count < self.max_tickets:
             raise ValueError("candidate_calibration_candidate_count must cover max_tickets")
         if self.candidate_calibration_origins < 1:
-            raise ValueError("candidate_calibration_origins must be positive")
-        if self.candidate_calibration_origins < 1:
             raise ValueError("candidate_calibration_origins must be at least 1")
         if not 0.0 <= self.candidate_adaptive_shrinkage <= 1.0:
             raise ValueError("candidate_adaptive_shrinkage must be between 0 and 1")

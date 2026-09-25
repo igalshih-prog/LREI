@@ -41,6 +41,12 @@ class EliteProConfig(ProConfig):
     score_calibration_bins: int = 5
     score_calibration_shrinkage: float = 0.75
     consensus_strength: float = 0.0
+    gap_strength: float = 0.0
+    gap_mode: str = "recency"
+    adaptive_gap: bool = False
+    gap_candidates: tuple[float, ...] = (0.0, 0.10, 0.20, 0.30)
+    gap_calibration_draws: int = 20
+    gap_calibration_origins: int = 3
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -90,6 +96,14 @@ class EliteProConfig(ProConfig):
             raise ValueError("score_calibration_shrinkage must be between 0 and 1")
         if not 0.0 <= self.consensus_strength <= 1.0:
             raise ValueError("consensus_strength must be between 0 and 1")
+        if not 0.0 <= self.gap_strength <= 1.0:
+            raise ValueError("gap_strength must be between 0 and 1")
+        if self.gap_mode not in ("recency", "overdue"):
+            raise ValueError("gap_mode must be 'recency' or 'overdue'")
+        if not self.gap_candidates or any(not 0.0 <= value <= 1.0 for value in self.gap_candidates):
+            raise ValueError("gap_candidates must contain values between 0 and 1")
+        if self.gap_calibration_draws < 0 or self.gap_calibration_origins < 1:
+            raise ValueError("gap calibration settings are invalid")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -323,6 +337,62 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             return {n: 0.5 for n in numbers}
         return {n: (raw[n] - low) / (high - low) for n in numbers}
 
+    @staticmethod
+    def _gap_scores(dataset: LotteryDataset, mode: str = "recency") -> dict[int, float]:
+        numbers = sorted({n for draw in dataset for n in draw.numbers})
+        if not numbers:
+            return {}
+        last_seen = {n: -1 for n in numbers}
+        for index, draw in enumerate(dataset.draws):
+            for n in draw.numbers:
+                last_seen[n] = index
+        latest = len(dataset.draws) - 1
+        gaps = {n: latest - last_seen[n] for n in numbers}
+        low, high = min(gaps.values()), max(gaps.values())
+        if high == low:
+            return {n: 0.5 for n in numbers}
+        normalized = {n: (gaps[n] - low) / (high - low) for n in numbers}
+        return {n: (1.0 - normalized[n]) if mode == "recency" else normalized[n] for n in numbers}
+
+    def _adaptive_gap_strength(self, dataset: LotteryDataset) -> float:
+        if not self.config.adaptive_gap or self.config.gap_calibration_draws <= 0:
+            return self.config.gap_strength
+        block = self.config.gap_calibration_draws
+        minimum_train = 30
+        if len(dataset) < block + minimum_train:
+            return self.config.gap_strength
+        origins = min(self.config.gap_calibration_origins, max(1, (len(dataset) - minimum_train) // block))
+        results = {strength: [] for strength in self.config.gap_candidates}
+        for origin_index in range(origins):
+            end = len(dataset) - origin_index * block
+            if end - block < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:end - block])
+            validation = dataset.draws[end - block:end]
+            frequencies = self._frequency(train)
+            recent_3 = self._window_frequency(train, 3)
+            recent_1 = self._window_frequency(train, 1)
+            recent_draws = self._recent_draw_frequency(train, 60)
+            ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+            rank_engine = self._engine(self.config, True, False)
+            raw_engine = self._engine(self.config, False, False)
+            ewma_engine = self._engine(self.config, True, True)
+            engines = ((rank_engine, None), (raw_engine, None), (ewma_engine, None))
+            weights = self._adaptive_weights(train, engines)
+            maps = [
+                {s.number: s.score for s in rank_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {})},
+                {s.number: s.score for s in raw_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {})},
+                {s.number: s.score for s in ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma)},
+            ]
+            base = {n: sum(weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
+            gap = self._gap_scores(train, self.config.gap_mode)
+            for strength in self.config.gap_candidates:
+                adjusted = {n: (1.0 - strength) * score + strength * gap.get(n, 0.5) for n, score in base.items()}
+                ordered = sorted(adjusted, key=lambda n: (-adjusted[n], n))[:self.config.calibration_top_k]
+                results[strength].extend(len(set(ordered) & set(draw.numbers)) for draw in validation)
+        valid = {k: mean(v) for k, v in results.items() if v}
+        return max(valid, key=valid.get) if valid else self.config.gap_strength
+
     def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
         """Optionally calibrate ensemble scores from trailing historical outcomes."""
         if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
@@ -417,6 +487,10 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 + selected_momentum * momentum.get(n, 0.5)
                 for n, score in base_ensemble.items()
             }
+        selected_gap = self._adaptive_gap_strength(dataset)
+        if selected_gap > 0.0:
+            gap = self._gap_scores(dataset, self.config.gap_mode)
+            base_ensemble = {n: (1.0 - selected_gap) * score + selected_gap * gap.get(n, 0.5) for n, score in base_ensemble.items()}
         if self.config.consensus_strength > 0.0:
             signal_maps = (rank_map, raw_map, ewma_map)
             adjusted = {}

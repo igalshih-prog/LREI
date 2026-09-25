@@ -245,6 +245,7 @@ def test_elite_rejects_invalid_candidate_adaptation_settings():
         {"candidate_calibration_candidate_count": 13},
         {"candidate_adaptive_shrinkage": -0.1},
         {"candidate_adaptive_shrinkage": 1.1},
+        {"calibration_origins": 0},
     ):
         try:
             EliteProConfig(**kwargs)

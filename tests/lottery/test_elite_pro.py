@@ -707,3 +707,51 @@ def test_elite_signal_calibration_origin_ablation_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_gap_signal_multi_origin_robust_diagnostic():
+    """Compare recency/overdue gap signals against the current Elite baseline."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 30
+    origins = [len(draws) - 90, len(draws) - 60, len(draws) - 30]
+    variants = {
+        "current": {},
+        "gap_recency": {"gap_strength": 0.20, "gap_mode": "recency"},
+        "gap_overdue": {"gap_strength": 0.20, "gap_mode": "overdue"},
+        "gap_adaptive_recency": {
+            "adaptive_gap": True,
+            "gap_mode": "recency",
+            "gap_calibration_draws": 20,
+            "gap_calibration_origins": 3,
+        },
+        "gap_adaptive_overdue": {
+            "adaptive_gap": True,
+            "gap_mode": "overdue",
+            "gap_calibration_draws": 20,
+            "gap_calibration_origins": 3,
+        },
+    }
+    results = {name: [] for name in variants}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in variants.items():
+                config = EliteProConfig(candidate_count=150, max_tickets=14, **kwargs)
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=104000 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    print("Elite gap-signal multi-origin diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == block * len(origins) for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for value in results.values())

@@ -662,3 +662,47 @@ def test_elite_adaptive_candidate_weights_multi_origin_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_signal_calibration_origin_ablation_diagnostic():
+    """Compare one-origin and multi-origin Rank/Raw/EWMA calibration."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "one_origin": 1,
+        "three_origins": 3,
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, origins in variants.items():
+            config = EliteProConfig(
+                candidate_count=150,
+                max_tickets=14,
+                calibration_draws=20,
+                calibration_origins=origins,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=103000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        multi - single
+        for multi, single in zip(results["three_origins"], results["one_origin"])
+    ]
+    print("Elite signal-calibration origin ablation:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  three-origins - one-origin={mean(difference):+.4f}")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

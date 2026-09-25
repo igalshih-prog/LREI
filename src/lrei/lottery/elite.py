@@ -21,6 +21,7 @@ class EliteProConfig(ProConfig):
     adaptive_weights: bool = True
     calibration_draws: int = 30
     calibration_top_k: int = 10
+    calibration_origins: int = 1
     adaptive_shrinkage: float = 0.50
     candidate_rank_weight: float = 1.0 / 3.0
     candidate_raw_weight: float = 1.0 / 3.0
@@ -56,6 +57,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("calibration_draws must be non-negative")
         if self.calibration_top_k < 1 or self.calibration_top_k > 37:
             raise ValueError("calibration_top_k must be between 1 and 37")
+        if self.calibration_origins < 1:
+            raise ValueError("calibration_origins must be at least 1")
         if not 0.0 <= self.adaptive_shrinkage <= 1.0:
             raise ValueError("adaptive_shrinkage must be between 0 and 1")
         candidate_weights = (self.candidate_rank_weight, self.candidate_raw_weight, self.candidate_ewma_weight)
@@ -120,40 +123,58 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         return len(predicted.intersection(draw.numbers))
 
     def _adaptive_weights(self, dataset: LotteryDataset, engines) -> tuple[float, float, float]:
-        """Calibrate weights from a trailing walk-forward validation slice."""
+        """Calibrate signal weights from multiple trailing walk-forward origins."""
         default = (self.config.rank_weight, self.config.raw_weight, self.config.ewma_weight)
-        if not self.config.adaptive_weights or len(dataset) < self.config.calibration_draws + 20:
+        if not self.config.adaptive_weights or self.config.calibration_draws <= 0:
+            return default
+        validation_size = self.config.calibration_draws
+        minimum_train = 20
+        if len(dataset) < validation_size + minimum_train:
             return default
 
-        validation_size = min(self.config.calibration_draws, len(dataset) - 20)
-        if validation_size <= 0:
-            return default
-        train = LotteryDataset(dataset.draws[:-validation_size])
-        validation = dataset.draws[-validation_size:]
-        if not train.draws:
-            return default
-
-        frequencies = self._frequency(train)
-        recent_3 = self._window_frequency(train, 3)
-        recent_1 = self._window_frequency(train, 1)
-        recent_draws = self._recent_draw_frequency(train, 60)
-        ewma = self._ewma_frequency(train, self.config.ewma_half_life)
-
-        scores_by_variant = (
-            engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        source_performance = [[], [], []]
+        max_origins = min(
+            self.config.calibration_origins,
+            max(1, (len(dataset) - minimum_train) // validation_size),
         )
-        baseline = self.config.calibration_top_k * 6.0 / 37.0
-        performance = []
-        for scores in scores_by_variant:
-            hits = sum(self._top_k_hits(scores, draw, self.config.calibration_top_k) for draw in validation)
-            mean_hits = hits / len(validation)
-            performance.append(max(0.05, mean_hits / max(baseline, 1e-9)))
+        for origin_index in range(max_origins):
+            origin = len(dataset) - origin_index * validation_size
+            if origin - validation_size < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:origin - validation_size])
+            validation = dataset.draws[origin - validation_size:origin]
+            if not train.draws or not validation:
+                continue
 
+            frequencies = self._frequency(train)
+            recent_3 = self._window_frequency(train, 3)
+            recent_1 = self._window_frequency(train, 1)
+            recent_draws = self._recent_draw_frequency(train, 60)
+            ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+            scores_by_variant = (
+                engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+            )
+            baseline = self.config.calibration_top_k * 6.0 / 37.0
+            for source_index, scores in enumerate(scores_by_variant):
+                hits = sum(
+                    self._top_k_hits(scores, draw, self.config.calibration_top_k)
+                    for draw in validation
+                )
+                mean_hits = hits / len(validation)
+                source_performance[source_index].append(
+                    max(0.05, mean_hits / max(baseline, 1e-9))
+                )
+
+        if not all(source_performance):
+            return default
+        performance = [mean(values) for values in source_performance]
         default_total = sum(default)
         prior = [x / default_total for x in default]
         performance_total = sum(performance)
+        if performance_total <= 0:
+            return default
         learned = [x / performance_total for x in performance]
         shrink = self.config.adaptive_shrinkage
         blended = [(1.0 - shrink) * p + shrink * l for p, l in zip(prior, learned)]

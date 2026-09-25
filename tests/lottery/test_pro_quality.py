@@ -285,3 +285,53 @@ def test_pro_affinity_prior_robust_walk_forward_diagnostic():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_pro_candidate_score_weight_robust_walk_forward_diagnostic():
+    """Compare candidate score component weights on an unseen holdout."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+    from lrei.lottery.pro import ProConfig, ProRecommendationEngine
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "current": (0.58, 0.22, 0.20),
+        "number_heavy": (0.70, 0.15, 0.15),
+        "affinity_heavy": (0.45, 0.40, 0.15),
+        "structure_heavy": (0.45, 0.15, 0.40),
+        "balanced": (1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0),
+    }
+    results = {name: [] for name in variants}
+
+    def candidate_score(self, ticket, score_map, pair_counts, triple_counts, frequencies, draw_count, profile, prior_strength=0.0):
+        number_score = sum(score_map.get(n, 0.0) for n in ticket) / len(ticket)
+        affinity = self._affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count, prior_strength)
+        structure = self._structure_score(ticket, profile)
+        weights = getattr(self, "_diagnostic_candidate_weights", variants["current"])
+        return weights[0] * number_score + weights[1] * affinity + weights[2] * structure
+
+    original = ProRecommendationEngine._candidate_score
+    ProRecommendationEngine._candidate_score = candidate_score
+    try:
+        for offset, target in enumerate(draws[start:]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, weights in variants.items():
+                engine = ProRecommendationEngine(ProConfig(candidate_count=200, max_tickets=14))
+                engine._diagnostic_candidate_weights = weights
+                result = engine.recommend(history, seed=99100 + offset)
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+    finally:
+        ProRecommendationEngine._candidate_score = original
+
+    print("Pro candidate-score weight robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

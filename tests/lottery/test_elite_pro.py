@@ -615,3 +615,50 @@ def test_elite_number_signal_strength_multi_origin_robust_diagnostic():
 
     assert all(len(values) == block * len(origins) for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_adaptive_candidate_weights_multi_origin_diagnostic():
+    """Compare one-origin and three-origin candidate-source calibration."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "one_origin": 1,
+        "three_origins": 3,
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, origins in variants.items():
+            config = EliteProConfig(
+                candidate_count=150,
+                max_tickets=14,
+                adaptive_candidate_weights=True,
+                candidate_calibration_draws=20,
+                candidate_calibration_candidate_count=75,
+                candidate_calibration_origins=origins,
+                candidate_adaptive_shrinkage=0.50,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=99700 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        three - one
+        for three, one in zip(results["three_origins"], results["one_origin"])
+    ]
+    print("Elite adaptive candidate multi-origin diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  three-origins - one-origin={mean(difference):+.4f}")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

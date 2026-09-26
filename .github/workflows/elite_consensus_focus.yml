@@ -1,0 +1,27 @@
+name: Elite consensus focus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lrei/lottery/**"
+      - "data/lottery.csv"
+      - "tests/lottery/test_elite_vs_pro_random.py"
+      - ".github/workflows/elite_consensus_focus.yml"
+  workflow_dispatch:
+
+jobs:
+  consensus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run focused consensus diagnostic
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_consensus_robust_walk_forward_diagnostic"

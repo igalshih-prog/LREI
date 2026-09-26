@@ -1062,3 +1062,41 @@ def test_elite_hit_tail_distribution_robust_diagnostic():
     assert all(len(values) == holdout for values in paired.values())
     assert all(all(0.0 <= value <= 1.0 for value in values) for values in elite_rates.values())
     assert all(all(0.0 <= value <= 1.0 for value in values) for values in random_rates.values())
+
+
+def test_elite_consensus_robust_walk_forward_diagnostic():
+    """Compare production Elite with opt-in consensus on a long walk-forward holdout."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(60, len(draws) // 12))
+    start = len(draws) - holdout
+    results = {"current": [], "consensus": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        configs = {
+            "current": EliteProRecommendationEngine(),
+            "consensus": EliteProRecommendationEngine(
+                __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                    consensus_strength=0.50,
+                )
+            ),
+        }
+        for name, engine in configs.items():
+            result = engine.recommend(history, seed=99000 + offset)
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [b - a for a, b in zip(results["current"], results["consensus"])]
+    ci = _bootstrap_ci(difference, seed=20260924)
+
+    print("Elite consensus robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  consensus - current={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

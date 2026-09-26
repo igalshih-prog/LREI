@@ -42,7 +42,7 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Run robust walk-forward diagnostics
-        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic or number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic or elite_consensus_scoring_robust_walk_forward_diagnostic or elite_signal_enhancement_robust_walk_forward_diagnostic or elite_prize_tier_robust_walk_forward_diagnostic"
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic or number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic or elite_consensus_scoring_robust_walk_forward_diagnostic or elite_signal_enhancement_robust_walk_forward_diagnostic or elite_prize_tier_robust_walk_forward_diagnostic or elite_hit_tail_distribution_robust_diagnostic"
 
   ablations:
     runs-on: ubuntu-latest

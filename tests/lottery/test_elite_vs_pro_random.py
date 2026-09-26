@@ -1013,3 +1013,52 @@ def test_elite_tail_hit_robust_walk_forward_diagnostic():
     assert all(len(values) == holdout for values in elite_counts.values())
     assert all(len(values) == holdout for values in random_counts.values())
     assert all(all(value >= 0 for value in values) for values in elite_counts.values())
+
+
+def test_elite_hit_tail_distribution_robust_diagnostic():
+    """Measure 3+/4+/5+/6-hit portfolio rates against repeated random baselines."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+
+    elite_rates = {threshold: [] for threshold in (3, 4, 5, 6)}
+    random_rates = {threshold: [] for threshold in (3, 4, 5, 6)}
+    paired = {threshold: [] for threshold in (3, 4, 5, 6)}
+
+    engine = EliteProRecommendationEngine()
+    baseline_rng = random.Random(20260925)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        elite = engine.recommend(history, seed=105000 + offset)
+        elite_hits = _hits(elite.recommended_tickets, target.numbers)
+        random_results = [
+            _hits(_random_portfolio(baseline_rng), target.numbers)
+            for _ in range(random_portfolios_per_draw)
+        ]
+
+        for threshold in (3, 4, 5, 6):
+            elite_rate = sum(hit >= threshold for hit in elite_hits) / len(elite_hits)
+            random_rate = mean(
+                sum(hit >= threshold for hit in result) / len(result)
+                for result in random_results
+            )
+            elite_rates[threshold].append(elite_rate)
+            random_rates[threshold].append(random_rate)
+            paired[threshold].append(elite_rate - random_rate)
+
+    print("Elite hit-tail robust diagnostic:")
+    for threshold in (3, 4, 5, 6):
+        ci = _bootstrap_ci(paired[threshold], seed=20260925 + threshold)
+        print(
+            f"  {threshold}+: Elite={mean(elite_rates[threshold]):.4f}, "
+            f"Random={mean(random_rates[threshold]):.4f}, "
+            f"diff={mean(paired[threshold]):+.4f}, "
+            f"95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+        )
+
+    assert all(len(values) == holdout for values in paired.values())
+    assert all(all(0.0 <= value <= 1.0 for value in values) for values in elite_rates.values())
+    assert all(all(0.0 <= value <= 1.0 for value in values) for values in random_rates.values())

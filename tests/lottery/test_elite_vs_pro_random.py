@@ -1100,3 +1100,57 @@ def test_elite_consensus_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_tail_hit_rate_diagnostic():
+    """Measure rare high-hit outcomes, not only average hits per ticket."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "current": {},
+        "consensus_light": {"consensus_strength": 0.25},
+        "consensus_medium": {"consensus_strength": 0.50},
+        "adaptive_candidates": {
+            "adaptive_candidate_weights": True,
+            "candidate_calibration_draws": 20,
+            "candidate_calibration_candidate_count": 100,
+        },
+    }
+    results = {
+        name: {threshold: [] for threshold in (3, 4, 5, 6)}
+        for name in variants
+    }
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                **kwargs,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=106000 + offset)
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            best = max(hits)
+            for threshold in results[name]:
+                results[name][threshold].append(1 if best >= threshold else 0)
+
+    print("Elite tail-hit diagnostic:")
+    for name in variants:
+        rates = {
+            threshold: mean(results[name][threshold])
+            for threshold in results[name]
+        }
+        print(
+            f"  {name}: >=3={rates[3]:.4f}, >=4={rates[4]:.4f}, "
+            f">=5={rates[5]:.4f}, =6={rates[6]:.4f}"
+        )
+
+    assert all(
+        len(values) == holdout
+        for variant in results.values()
+        for values in variant.values()
+    )

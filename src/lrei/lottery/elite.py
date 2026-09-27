@@ -55,6 +55,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("ewma_half_life must be positive")
         if self.affinity_prior_strength < 0:
             raise ValueError("affinity_prior_strength must be non-negative")
+        if not 0.0 <= self.affinity_recent_weight <= 1.0:
+            raise ValueError("affinity_recent_weight must be between 0 and 1")
         if self.rank_weight < 0 or self.raw_weight < 0 or self.ewma_weight < 0:
             raise ValueError("ensemble weights must be non-negative")
         if self.rank_weight + self.raw_weight + self.ewma_weight <= 0:
@@ -98,6 +100,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("consensus_strength must be between 0 and 1")
         if not 0.0 <= self.gap_strength <= 1.0:
             raise ValueError("gap_strength must be between 0 and 1")
+        if self.portfolio_pair_coverage_weight < 0:
+            raise ValueError("portfolio_pair_coverage_weight must be non-negative")
+        if self.portfolio_triple_coverage_weight < 0:
+            raise ValueError("portfolio_triple_coverage_weight must be non-negative")
         if self.gap_mode not in ("recency", "overdue"):
             raise ValueError("gap_mode must be 'recency' or 'overdue'")
         if not self.gap_candidates or any(not 0.0 <= value <= 1.0 for value in self.gap_candidates):
@@ -125,6 +131,10 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             affinity_prior_strength=config.affinity_prior_strength,
             affinity_recent_weight=config.affinity_recent_weight,
             number_signal_strength=config.number_signal_strength,
+            portfolio_coverage_weight=config.portfolio_coverage_weight,
+            portfolio_overlap_penalty=config.portfolio_overlap_penalty,
+            portfolio_pair_coverage_weight=config.portfolio_pair_coverage_weight,
+            portfolio_triple_coverage_weight=config.portfolio_triple_coverage_weight,
             pair_bonus_strength=config.pair_bonus_strength,
             triple_bonus_strength=config.triple_bonus_strength,
             structural_gate_probability=config.structural_gate_probability,

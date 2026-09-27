@@ -31,6 +31,8 @@ class ProConfig:
     number_signal_strength: float = 0.75
     portfolio_coverage_weight: float = 0.035
     portfolio_overlap_penalty: float = 0.018
+    portfolio_pair_coverage_weight: float = 0.0
+    portfolio_triple_coverage_weight: float = 0.0
     pair_bonus_strength: float = 0.35
     triple_bonus_strength: float = 0.15
     structural_gate_probability: float = 0.72
@@ -56,6 +58,10 @@ class ProRecommendationEngine:
             raise ValueError("portfolio_coverage_weight must be non-negative")
         if self.config.portfolio_overlap_penalty < 0:
             raise ValueError("portfolio_overlap_penalty must be non-negative")
+        if self.config.portfolio_pair_coverage_weight < 0:
+            raise ValueError("portfolio_pair_coverage_weight must be non-negative")
+        if self.config.portfolio_triple_coverage_weight < 0:
+            raise ValueError("portfolio_triple_coverage_weight must be non-negative")
         if self.config.pair_bonus_strength < 0:
             raise ValueError("pair_bonus_strength must be non-negative")
         if self.config.triple_bonus_strength < 0:
@@ -287,13 +293,25 @@ class ProRecommendationEngine:
         affinity = cls._affinity_score(ticket, pair_counts, triple_counts, frequencies, draw_count, prior_strength)
         return 0.58 * number_score + 0.22 * affinity + 0.20 * cls._structure_score(ticket, profile)
 
+    @staticmethod
+    def _portfolio_combination_coverage(selected, size):
+        return len({combo for ticket in selected for combo in combinations(sorted(ticket), size)})
+
     def _portfolio_objective(self, selected, base):
         if not selected:
             return 0.0
         unique_count = len(set().union(*(set(t) for t in selected)))
         pair_overlaps = [self.optimizer.overlap(left, right) for left, right in combinations(selected, 2)]
         mean_overlap = sum(pair_overlaps) / len(pair_overlaps) if pair_overlaps else 0.0
-        return sum(base[t] for t in selected) + self.config.portfolio_coverage_weight * unique_count - self.config.portfolio_overlap_penalty * mean_overlap
+        pair_coverage = self._portfolio_combination_coverage(selected, 2)
+        triple_coverage = self._portfolio_combination_coverage(selected, 3)
+        return (
+            sum(base[t] for t in selected)
+            + self.config.portfolio_coverage_weight * unique_count
+            + self.config.portfolio_pair_coverage_weight * pair_coverage
+            + self.config.portfolio_triple_coverage_weight * triple_coverage
+            - self.config.portfolio_overlap_penalty * mean_overlap
+        )
 
     def _refine_portfolio(self, selected, candidates, base):
         """Improve the greedy portfolio with one deterministic local-swap pass."""
@@ -335,7 +353,19 @@ class ProRecommendationEngine:
             def value(t):
                 new = len(set(t) - selected_numbers)
                 overlap = sum(self.optimizer.overlap(t, prior) for prior in selected) / len(selected) if selected else 0.0
-                return base[t] + self.config.portfolio_coverage_weight * new - self.config.portfolio_overlap_penalty * overlap
+                pair_new = len(set(combinations(sorted(t), 2)) - {
+                    combo for prior in selected for combo in combinations(sorted(prior), 2)
+                })
+                triple_new = len(set(combinations(sorted(t), 3)) - {
+                    combo for prior in selected for combo in combinations(sorted(prior), 3)
+                })
+                return (
+                    base[t]
+                    + self.config.portfolio_coverage_weight * new
+                    + self.config.portfolio_pair_coverage_weight * pair_new
+                    + self.config.portfolio_triple_coverage_weight * triple_new
+                    - self.config.portfolio_overlap_penalty * overlap
+                )
             best = max(compatible, key=lambda t: (value(t), tuple(-n for n in t)))
             selected.append(best)
             selected_numbers.update(best)

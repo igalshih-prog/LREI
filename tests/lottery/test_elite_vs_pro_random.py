@@ -224,7 +224,8 @@ def test_elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic():
                 max_tickets=14,
                 adaptive_candidate_weights=adaptive,
                 candidate_calibration_draws=20,
-                candidate_calibration_candidate_count=100,
+                candidate_calibration_candidate_count=75,
+                candidate_calibration_origins=3,
                 candidate_adaptive_shrinkage=0.50,
             )
             result = EliteProRecommendationEngine(config).recommend(history, seed=98000 + offset)

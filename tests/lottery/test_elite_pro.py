@@ -755,3 +755,68 @@ def test_elite_gap_signal_multi_origin_robust_diagnostic():
 
     assert all(len(values) == block * len(origins) for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for value in results.values())
+
+
+def test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic():
+    """Compare pair/triple-aware portfolio construction with the current portfolio."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "current": (0.0, 0.0),
+        "pair_triple": (0.0020, 0.0008),
+    }
+    results = {name: [] for name in variants}
+    pair_cover = {name: [] for name in variants}
+    triple_cover = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, (pair_weight, triple_weight) in variants.items():
+            config = EliteProConfig(
+                candidate_count=150,
+                max_tickets=14,
+                portfolio_pair_coverage_weight=pair_weight,
+                portfolio_triple_coverage_weight=triple_weight,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=105000 + offset
+            )
+            tickets = result.recommended_tickets
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in tickets)
+            )
+            pair_cover[name].append(
+                len({
+                    combo
+                    for ticket in tickets
+                    for combo in __import__("itertools").combinations(sorted(ticket), 2)
+                })
+            )
+            triple_cover[name].append(
+                len({
+                    combo
+                    for ticket in tickets
+                    for combo in __import__("itertools").combinations(sorted(ticket), 3)
+                })
+            )
+
+    difference = [
+        pair_triple - current
+        for pair_triple, current in zip(results["pair_triple"], results["current"])
+    ]
+    print("Elite pair/triple portfolio coverage diagnostic:")
+    for name in variants:
+        print(
+            f"  {name}: hits={mean(results[name]):.4f}, "
+            f"pairs={mean(pair_cover[name]):.2f}, "
+            f"triples={mean(triple_cover[name]):.2f}"
+        )
+    print(f"  pair_triple - current={mean(difference):+.4f}")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

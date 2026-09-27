@@ -46,7 +46,9 @@ Elite Pro is the advanced ensemble layer used by the application's Pro mode. It 
 - adaptive walk-forward weighting
 - the Pro candidate and portfolio-selection pipeline
 
-Elite Pro also returns exactly **14 recommended tickets**.\n\nIts candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights.
+Elite Pro also returns exactly **14 recommended tickets**.
+
+Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. An additional adaptive candidate-allocation mechanism is available as an **opt-in experimental mode** and is evaluated separately before any production default is changed.
 
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 
@@ -84,6 +86,7 @@ The repository contains separate benchmarks for:
 - Pro vs multiple random baselines
 - Elite Pro vs Pro vs multiple random baselines
 - Pro signal/feature ablations
+- Elite candidate-allocation experiments, including longer walk-forward diagnostics
 
 Benchmarks report metrics such as average hits per ticket, best-ticket hits, coverage-related behavior, paired differences, and bootstrap confidence intervals where applicable.
 

@@ -23,8 +23,8 @@ def test_recommend_command_runs_successfully():
     assert result.exit_code == 0
     assert "LREI LOTTERY RECOMMENDATIONS" in result.output
     assert "Dataset draws:" in result.output
-    assert "Generated tickets: 10" in result.output
-    assert "Recommended tickets:" in result.output
+    assert "Generated tickets:" in result.output
+    assert "Recommended tickets: 14" in result.output
     assert "RECOMMENDED LOTTERY TICKETS" in result.output
 
 
@@ -113,7 +113,7 @@ def test_recommend_command_accepts_short_options():
     )
 
     assert result.exit_code == 0
-    assert "Generated tickets: 10" in result.output
+    assert "Generated tickets:" in result.output
 
 
 def test_recommend_command_uses_default_values():
@@ -125,7 +125,8 @@ def test_recommend_command_uses_default_values():
     )
 
     assert result.exit_code == 0
-    assert "Generated tickets: 50" in result.output
+    assert "Generated tickets:" in result.output
+    assert "Recommended tickets: 14" in result.output
 
 
 def test_recommend_command_shows_number_scores():

@@ -1,4 +1,5 @@
 name: Elite benchmark
+# 2026-09-28: rerun full Elite model-selection suite on current production head.
 # 2026-09-20: split expensive Elite diagnostics into parallel jobs so long
 # walk-forward experiments do not cancel the whole benchmark suite.
 

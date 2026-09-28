@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 
@@ -12,6 +12,8 @@ from lrei.database import Database
 from lrei.logging import configure_logging
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.recommendation import RecommendationEngine
+from lrei.lottery.pro import ProRecommendationEngine
+from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
 app = typer.Typer(
@@ -115,6 +117,13 @@ def recommend(
             help="Random seed for reproducible results.",
         ),
     ] = 42,
+    mode: Annotated[
+        Literal["regular", "pro", "elite"],
+        typer.Option(
+            "--mode",
+            help="Recommendation engine: regular, pro, or elite.",
+        ),
+    ] = "elite",
 ) -> None:
     """Generate lottery recommendations from historical data."""
 
@@ -136,18 +145,29 @@ def recommend(
 
     statistics = LotteryStatistics.from_dataset(dataset)
 
-    engine = RecommendationEngine()
-
-    result = engine.recommend(
-        statistics=statistics,
-        ticket_count=tickets,
-        seed=seed,
-    )
+    if mode == "elite":
+        result = EliteProRecommendationEngine().recommend(
+            dataset,
+            seed=seed,
+        )
+    elif mode == "pro":
+        result = ProRecommendationEngine().recommend(
+            dataset,
+            seed=seed,
+        )
+    else:
+        engine = RecommendationEngine()
+        result = engine.recommend(
+            statistics=statistics,
+            ticket_count=tickets,
+            seed=seed,
+        )
 
     typer.echo()
     typer.echo("=" * 70)
     typer.echo("LREI LOTTERY RECOMMENDATIONS")
     typer.echo("=" * 70)
+    typer.echo(f"Engine mode: {mode}")
     typer.echo(f"Dataset draws: {len(dataset)}")
     typer.echo(
         f"Generated tickets: "

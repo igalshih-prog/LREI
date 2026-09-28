@@ -109,7 +109,7 @@ def recommend(
             "-t",
             help="Number of lottery tickets to generate.",
         ),
-    ] = 50,
+    ] = 14,
     seed: Annotated[
         int,
         typer.Option(

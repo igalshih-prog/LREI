@@ -207,7 +207,7 @@ def test_elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic():
     """Compare opt-in adaptive candidate allocation with equal allocation."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
-    holdout = min(60, max(40, len(draws) // 18))
+    holdout = min(95, max(50, len(draws) // 12))
     start = len(draws) - holdout
     variants = {
         "equal": False,
@@ -807,7 +807,7 @@ def test_final_engine_comparison_robust_walk_forward():
                 __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
                     adaptive_candidate_weights=True,
                     candidate_calibration_draws=20,
-                    candidate_calibration_candidate_count=100,
+                    candidate_calibration_candidate_count=120,
                 )
             ),
         }

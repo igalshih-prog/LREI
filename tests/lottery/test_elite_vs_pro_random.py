@@ -1155,3 +1155,41 @@ def test_elite_tail_hit_rate_diagnostic():
         for variant in results.values()
         for values in variant.values()
     )
+
+
+def test_elite_overlap_limit_tail_robust_walk_forward_diagnostic():
+    """Test whether allowing tighter ticket overlap changes rare high-hit rates."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = (4, 5, 6)
+    results = {limit: {threshold: [] for threshold in (3, 4, 5, 6)} for limit in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for limit in variants:
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=300,
+                max_overlap=limit,
+                max_tickets=14,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=107000 + offset)
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            for threshold in results[limit]:
+                results[limit][threshold].append(1 if max(hits) >= threshold else 0)
+
+    print("Elite overlap-limit tail diagnostic:")
+    for limit in variants:
+        rates = {threshold: mean(results[limit][threshold]) for threshold in results[limit]}
+        print(
+            f"  max_overlap={limit}: >=3={rates[3]:.4f}, >=4={rates[4]:.4f}, "
+            f">=5={rates[5]:.4f}, =6={rates[6]:.4f}"
+        )
+
+    assert all(
+        len(values) == holdout
+        for variant in results.values()
+        for values in variant.values()
+    )

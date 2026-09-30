@@ -1193,3 +1193,69 @@ def test_elite_overlap_limit_tail_robust_walk_forward_diagnostic():
         for variant in results.values()
         for values in variant.values()
     )
+
+
+def test_clean_model_selection_regular_pro_elite_walk_forward():
+    """Compare the currently supported production engines on the same holdout."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+    from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+
+    draws = list(DATASET.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "regular": "regular",
+        "pro": "pro",
+        "elite_equal": "elite_equal",
+        "elite_adaptive_candidates": "elite_adaptive_candidates",
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+
+        engines = {
+            "regular": RecommendationEngine(),
+            "pro": ProRecommendationEngine(),
+            "elite_equal": EliteProRecommendationEngine(EliteProConfig(
+                candidate_count=200, max_tickets=14,
+            )),
+            "elite_adaptive_candidates": EliteProRecommendationEngine(EliteProConfig(
+                candidate_count=200, max_tickets=14,
+                adaptive_candidate_weights=True,
+                candidate_calibration_draws=20,
+                candidate_calibration_candidate_count=100,
+                candidate_adaptive_shrinkage=0.50,
+            )),
+        }
+
+        for name, engine in engines.items():
+            if name == "regular":
+                result = engine.recommend(
+                    LotteryStatistics.from_dataset(history),
+                    ticket_count=50,
+                    seed=110000 + offset,
+                )
+            else:
+                result = engine.recommend(history, seed=110000 + offset)
+
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    print("Clean production model selection:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    baseline = results["regular"]
+    for name, values in results.items():
+        if name == "regular":
+            continue
+        difference = [candidate - base for candidate, base in zip(values, baseline)]
+        ci = _bootstrap_ci(difference, seed=20260930 + list(variants).index(name))
+        print(f"  {name} - regular={mean(difference):+.4f}, 95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(all(0 <= value <= 6 for value in values) for values in results.values())

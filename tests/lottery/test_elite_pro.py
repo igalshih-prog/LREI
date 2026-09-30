@@ -274,6 +274,49 @@ def test_elite_consensus_scoring_is_opt_in_and_validated():
     assert first.recommended_tickets == second.recommended_tickets
 
 
+def test_elite_adaptive_consensus_multi_origin_robust_diagnostic():
+    """Compare opt-in adaptive consensus with the current scoring across multiple origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 20
+    origins = [len(draws) - 60, len(draws) - 40, len(draws) - 20]
+    results = {"current": [], "adaptive_consensus": []}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in (
+                ("current", {}),
+                ("adaptive_consensus", {
+                    "adaptive_consensus": True,
+                    "consensus_calibration_draws": 20,
+                    "consensus_calibration_origins": 3,
+                }),
+            ):
+                config = EliteProConfig(candidate_count=150, max_tickets=14, **kwargs)
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=99800 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    difference = [
+        adaptive - current
+        for adaptive, current in zip(results["adaptive_consensus"], results["current"])
+    ]
+    print("Elite adaptive-consensus multi-origin diagnostic:")
+    print(f"  current={mean(results['current']):.4f}")
+    print(f"  adaptive_consensus={mean(results['adaptive_consensus']):.4f}")
+    print(f"  adaptive-current={mean(difference):+.4f}")
+
+    assert len(difference) == block * len(origins)
+    assert all(value == value for value in difference)
+
+
 def test_elite_signal_enhancement_walk_forward_diagnostic():
     """Compare opt-in momentum, consensus, and score calibration against current Elite."""
     from statistics import mean

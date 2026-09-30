@@ -26,7 +26,7 @@ class EliteProConfig(ProConfig):
     candidate_rank_weight: float = 1.0 / 3.0
     candidate_raw_weight: float = 1.0 / 3.0
     candidate_ewma_weight: float = 1.0 / 3.0
-    adaptive_candidate_weights: bool = False
+    adaptive_candidate_weights: bool = True
     candidate_calibration_draws: int = 20
     candidate_calibration_candidate_count: int = 100
     candidate_calibration_origins: int = 1

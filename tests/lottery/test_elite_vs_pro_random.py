@@ -1201,7 +1201,8 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
     from lrei.lottery.statistics import LotteryStatistics
     from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
-    draws = list(DATASET.draws)
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
     holdout = min(95, max(50, len(draws) // 12))
     start = len(draws) - holdout
     variants = {

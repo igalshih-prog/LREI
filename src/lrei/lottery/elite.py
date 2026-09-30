@@ -41,6 +41,10 @@ class EliteProConfig(ProConfig):
     score_calibration_bins: int = 5
     score_calibration_shrinkage: float = 0.75
     consensus_strength: float = 0.0
+    adaptive_consensus: bool = False
+    consensus_candidates: tuple[float, ...] = (0.0, 0.25, 0.50, 0.75)
+    consensus_calibration_draws: int = 20
+    consensus_calibration_origins: int = 3
     gap_strength: float = 0.0
     gap_mode: str = "recency"
     adaptive_gap: bool = False
@@ -98,6 +102,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("score_calibration_shrinkage must be between 0 and 1")
         if not 0.0 <= self.consensus_strength <= 1.0:
             raise ValueError("consensus_strength must be between 0 and 1")
+        if not self.consensus_candidates or any(not 0.0 <= value <= 1.0 for value in self.consensus_candidates):
+            raise ValueError("consensus_candidates must contain values between 0 and 1")
+        if self.consensus_calibration_draws < 0 or self.consensus_calibration_origins < 1:
+            raise ValueError("consensus calibration settings are invalid")
         if not 0.0 <= self.gap_strength <= 1.0:
             raise ValueError("gap_strength must be between 0 and 1")
         if self.portfolio_pair_coverage_weight < 0:

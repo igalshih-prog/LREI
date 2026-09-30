@@ -865,3 +865,71 @@ def test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_feature_stack_multi_origin_diagnostic():
+    """Compare adaptive feature layers and their combined stack on independent origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 20
+    origins = [len(draws) - 80, len(draws) - 60, len(draws) - 40]
+    variants = {
+        "baseline": {},
+        "momentum": {
+            "adaptive_momentum": True,
+            "momentum_calibration_draws": 20,
+        },
+        "gap": {
+            "adaptive_gap": True,
+            "gap_calibration_draws": 20,
+            "gap_calibration_origins": 2,
+        },
+        "consensus": {
+            "adaptive_consensus": True,
+            "consensus_calibration_draws": 20,
+            "consensus_calibration_origins": 2,
+        },
+        "all_adaptive": {
+            "adaptive_momentum": True,
+            "momentum_calibration_draws": 20,
+            "adaptive_gap": True,
+            "gap_calibration_draws": 20,
+            "gap_calibration_origins": 2,
+            "adaptive_consensus": True,
+            "consensus_calibration_draws": 20,
+            "consensus_calibration_origins": 2,
+        },
+    }
+    results = {name: [] for name in variants}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws[:start + offset])
+            actual = set(target.numbers)
+            for name, kwargs in variants.items():
+                config = EliteProConfig(
+                    candidate_count=150,
+                    max_tickets=14,
+                    **kwargs,
+                )
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=106000 + start + offset
+                )
+                results[name].append(
+                    mean(
+                        len(set(ticket) & actual)
+                        for ticket in result.recommended_tickets
+                    )
+                )
+
+    print("Elite feature-stack multi-origin diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+
+    assert all(len(values) == block * len(origins) for values in results.values())
+    assert all(
+        all(0 <= value <= 6 for value in values)
+        for values in results.values()
+    )

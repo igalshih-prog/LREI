@@ -546,14 +546,15 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         if selected_gap > 0.0:
             gap = self._gap_scores(dataset, self.config.gap_mode)
             base_ensemble = {n: (1.0 - selected_gap) * score + selected_gap * gap.get(n, 0.5) for n, score in base_ensemble.items()}
-        if self.config.consensus_strength > 0.0:
+        selected_consensus = self._adaptive_consensus_strength(dataset, engines, weights)
+        if selected_consensus > 0.0:
             signal_maps = (rank_map, raw_map, ewma_map)
             adjusted = {}
             for n, score in base_ensemble.items():
                 values = [signal_maps[i].get(n, 0.5) for i in range(3)]
                 disagreement = max(values) - min(values)
                 consensus = max(0.0, min(1.0, score - 0.35 * disagreement))
-                adjusted[n] = (1.0 - self.config.consensus_strength) * score + self.config.consensus_strength * consensus
+                adjusted[n] = (1.0 - selected_consensus) * score + selected_consensus * consensus
             base_ensemble = adjusted
         ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))
         ensemble_scores = self._calibrate_ensemble_scores(dataset, engines, ensemble_scores)

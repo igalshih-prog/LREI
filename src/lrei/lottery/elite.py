@@ -406,6 +406,48 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         valid = {k: mean(v) for k, v in results.items() if v}
         return max(valid, key=valid.get) if valid else self.config.gap_strength
 
+    def _adaptive_consensus_strength(self, dataset: LotteryDataset, engines, default_weights) -> float:
+        """Select consensus strength from multiple trailing walk-forward origins."""
+        if not self.config.adaptive_consensus or self.config.consensus_calibration_draws <= 0:
+            return self.config.consensus_strength
+        block = self.config.consensus_calibration_draws
+        minimum_train = 40
+        if len(dataset) < block + minimum_train:
+            return self.config.consensus_strength
+        origins = min(self.config.consensus_calibration_origins, max(1, (len(dataset) - minimum_train) // block))
+        results = {strength: [] for strength in self.config.consensus_candidates}
+        for origin_index in range(origins):
+            end = len(dataset) - origin_index * block
+            if end - block < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:end - block])
+            validation = dataset.draws[end - block:end]
+            frequencies = self._frequency(train)
+            recent_3 = self._window_frequency(train, 3)
+            recent_1 = self._window_frequency(train, 1)
+            recent_draws = self._recent_draw_frequency(train, 60)
+            ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+            rank_engine = self._engine(self.config, True, False)
+            raw_engine = self._engine(self.config, False, False)
+            ewma_engine = self._engine(self.config, True, True)
+            variants = (
+                rank_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                raw_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                ewma_engine._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+            )
+            maps = [{item.number: item.score for item in variant} for variant in variants]
+            base = {n: sum(default_weights[i] * maps[i].get(n, 0.5) for i in range(3)) for n in maps[0]}
+            for strength in self.config.consensus_candidates:
+                adjusted = {}
+                for n, score in base.items():
+                    values = [maps[i].get(n, 0.5) for i in range(3)]
+                    disagreement = max(values) - min(values)
+                    consensus = max(0.0, min(1.0, score - 0.35 * disagreement))
+                    adjusted[n] = (1.0 - strength) * score + strength * consensus
+                ordered = sorted(adjusted, key=lambda n: (-adjusted[n], n))[:self.config.calibration_top_k]
+                results[strength].extend(len(set(ordered) & set(draw.numbers)) for draw in validation)
+        valid = {strength: mean(values) for strength, values in results.items() if values}
+        return max(valid, key=valid.get) if valid else self.config.consensus_strength
     def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
         """Optionally calibrate ensemble scores from trailing historical outcomes."""
         if not self.config.score_calibration or self.config.score_calibration_draws <= 0:

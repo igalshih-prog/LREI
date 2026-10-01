@@ -229,7 +229,7 @@ def test_elite_adaptive_candidate_weights_are_normalized_and_can_be_disabled():
     assert all(weight >= 0.0 for weight in weights)
     assert abs(sum(weights) - 1.0) < 1e-12
 
-    fixed = EliteProConfig(candidate_count=90, max_tickets=14)
+    fixed = EliteProConfig(candidate_count=90, max_tickets=14, adaptive_candidate_weights=False)
     fixed_engine = EliteProRecommendationEngine(fixed)
     fixed_variants = (
         (fixed_engine._engine(fixed, True, False), None),

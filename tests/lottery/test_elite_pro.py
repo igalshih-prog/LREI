@@ -944,3 +944,48 @@ def test_elite_consensus_config_regression():
     assert config.consensus_strength == 0.0
     assert config.consensus_calibration_draws > 0
     assert config.consensus_calibration_origins >= 1
+
+
+def test_elite_adaptive_feature_stack_multi_origin_diagnostic():
+    """Compare the opt-in meta-selector with a fixed baseline on independent origins."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    block = 20
+    origins = [len(draws) - 80, len(draws) - 60, len(draws) - 40]
+    results = {"baseline": [], "adaptive_stack": []}
+
+    for start in origins:
+        for offset, target in enumerate(draws[start:start + block]):
+            history = LotteryDataset(draws[:start + offset])
+            actual = set(target.numbers)
+            configs = {
+                "baseline": EliteProConfig(candidate_count=120, max_tickets=14),
+                "adaptive_stack": EliteProConfig(
+                    candidate_count=120,
+                    max_tickets=14,
+                    adaptive_feature_stack=True,
+                    feature_stack_calibration_draws=20,
+                    feature_stack_calibration_origins=3,
+                ),
+            }
+            for name, config in configs.items():
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=121000 + start + offset
+                )
+                results[name].append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+
+    difference = [
+        adaptive - baseline
+        for adaptive, baseline in zip(results["adaptive_stack"], results["baseline"])
+    ]
+    print("Elite adaptive feature-stack diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  adaptive_stack - baseline={mean(difference):+.4f}")
+
+    assert len(difference) == block * len(origins)
+    assert all(value == value for value in difference)

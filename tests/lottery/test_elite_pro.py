@@ -933,3 +933,14 @@ def test_elite_feature_stack_multi_origin_diagnostic():
         all(0 <= value <= 6 for value in values)
         for values in results.values()
     )
+
+
+def test_elite_consensus_config_regression():
+    """Consensus settings must exist and remain opt-in by default."""
+    from lrei.lottery.elite import EliteProConfig
+
+    config = EliteProConfig()
+    assert config.adaptive_consensus is False
+    assert config.consensus_strength == 0.0
+    assert config.consensus_calibration_draws > 0
+    assert config.consensus_calibration_origins >= 1

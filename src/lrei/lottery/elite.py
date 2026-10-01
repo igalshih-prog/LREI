@@ -51,6 +51,9 @@ class EliteProConfig(ProConfig):
     gap_candidates: tuple[float, ...] = (0.0, 0.10, 0.20, 0.30)
     gap_calibration_draws: int = 20
     gap_calibration_origins: int = 3
+    adaptive_feature_stack: bool = False
+    feature_stack_calibration_draws: int = 20
+    feature_stack_calibration_origins: int = 3
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -118,6 +121,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("gap_candidates must contain values between 0 and 1")
         if self.gap_calibration_draws < 0 or self.gap_calibration_origins < 1:
             raise ValueError("gap calibration settings are invalid")
+        if self.feature_stack_calibration_draws < 0 or self.feature_stack_calibration_origins < 1:
+            raise ValueError("feature stack calibration settings are invalid")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -456,6 +461,55 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 results[strength].extend(len(set(ordered) & set(draw.numbers)) for draw in validation)
         valid = {strength: mean(values) for strength, values in results.items() if values}
         return max(valid, key=valid.get) if valid else self.config.consensus_strength
+    def _adaptive_feature_stack(self, dataset: LotteryDataset) -> str:
+        """Select a feature combination from trailing multi-origin validation."""
+        if not self.config.adaptive_feature_stack or self.config.feature_stack_calibration_draws <= 0:
+            return "baseline"
+        block = self.config.feature_stack_calibration_draws
+        minimum_train = 50
+        if len(dataset) < block + minimum_train:
+            return "baseline"
+        origins = min(
+            self.config.feature_stack_calibration_origins,
+            max(1, (len(dataset) - minimum_train) // block),
+        )
+        variants = ("baseline", "momentum", "gap", "consensus", "all_adaptive")
+        results = {name: [] for name in variants}
+        for origin_index in range(origins):
+            end = len(dataset) - origin_index * block
+            if end - block < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:end - block])
+            validation = dataset.draws[end - block:end]
+            if not train.draws:
+                continue
+            configs = {
+                "baseline": {},
+                "momentum": {"adaptive_momentum": True, "momentum_calibration_draws": block},
+                "gap": {"adaptive_gap": True, "gap_calibration_draws": block, "gap_calibration_origins": min(3, origins)},
+                "consensus": {"adaptive_consensus": True, "consensus_calibration_draws": block, "consensus_calibration_origins": min(3, origins)},
+                "all_adaptive": {
+                    "adaptive_momentum": True, "momentum_calibration_draws": block,
+                    "adaptive_gap": True, "gap_calibration_draws": block, "gap_calibration_origins": min(3, origins),
+                    "adaptive_consensus": True, "consensus_calibration_draws": block, "consensus_calibration_origins": min(3, origins),
+                },
+            }
+            for name, kwargs in configs.items():
+                cfg = EliteProConfig(
+                    candidate_count=min(120, self.config.candidate_count),
+                    max_tickets=self.config.max_tickets,
+                    **kwargs,
+                )
+                result = EliteProRecommendationEngine(cfg).recommend(train, seed=120000 + end + origin_index)
+                results[name].append(
+                    mean(
+                        mean(len(set(ticket) & set(draw.numbers)) for ticket in result.recommended_tickets)
+                        for draw in validation
+                    )
+                )
+        valid = {name: mean(values) for name, values in results.items() if values}
+        return max(valid, key=valid.get) if valid else "baseline"
+
     def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
         """Optionally calibrate ensemble scores from trailing historical outcomes."""
         if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
@@ -542,7 +596,21 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             n: weights[0] * rank_map[n] + weights[1] * raw_map[n] + weights[2] * ewma_map[n]
             for n in sorted(rank_map)
         }
-        selected_momentum = self._adaptive_momentum_strength(dataset)
+        selected_stack = self._adaptive_feature_stack(dataset)
+        if selected_stack != "baseline":
+            stack_config = {
+                "momentum": {"adaptive_momentum": True},
+                "gap": {"adaptive_gap": True},
+                "consensus": {"adaptive_consensus": True},
+                "all_adaptive": {"adaptive_momentum": True, "adaptive_gap": True, "adaptive_consensus": True},
+            }[selected_stack]
+            selected_momentum = self._adaptive_momentum_strength(dataset) if stack_config.get("adaptive_momentum") else self.config.momentum_strength
+            selected_gap = self._adaptive_gap_strength(dataset) if stack_config.get("adaptive_gap") else self.config.gap_strength
+            selected_consensus = self._adaptive_consensus_strength(dataset, engines, weights) if stack_config.get("adaptive_consensus") else self.config.consensus_strength
+        else:
+            selected_momentum = self.config.momentum_strength
+            selected_gap = self.config.gap_strength
+            selected_consensus = self.config.consensus_strength
         momentum = self._momentum_scores(dataset, self.config.momentum_window)
         if selected_momentum > 0.0 and momentum:
             base_ensemble = {
@@ -550,11 +618,9 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 + selected_momentum * momentum.get(n, 0.5)
                 for n, score in base_ensemble.items()
             }
-        selected_gap = self._adaptive_gap_strength(dataset)
         if selected_gap > 0.0:
             gap = self._gap_scores(dataset, self.config.gap_mode)
             base_ensemble = {n: (1.0 - selected_gap) * score + selected_gap * gap.get(n, 0.5) for n, score in base_ensemble.items()}
-        selected_consensus = self._adaptive_consensus_strength(dataset, engines, weights)
         if selected_consensus > 0.0:
             signal_maps = (rank_map, raw_map, ewma_map)
             adjusted = {}

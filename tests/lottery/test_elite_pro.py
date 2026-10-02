@@ -1012,3 +1012,16 @@ def test_elite_candidate_ensemble_injection_is_normalized_and_opt_in():
     assert len(weights) == 4
     assert abs(sum(weights) - 1.0) < 1e-12
     assert abs(weights[3] - 0.25) < 1e-12
+
+
+def test_elite_production_profile_is_locked_to_validated_defaults():
+    config = EliteProConfig()
+    assert config.max_tickets == 14
+    assert config.candidate_count >= 14
+    assert config.adaptive_weights is True
+    assert config.adaptive_candidate_weights is True
+    assert config.candidate_ensemble_weight == 0.0
+    assert config.adaptive_feature_stack is False
+    assert config.momentum_strength == 0.0
+    assert config.gap_strength == 0.0
+    assert config.consensus_strength == 0.0

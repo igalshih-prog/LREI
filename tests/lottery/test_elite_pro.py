@@ -989,3 +989,26 @@ def test_elite_adaptive_feature_stack_multi_origin_diagnostic():
 
     assert len(difference) == block * len(origins)
     assert all(value == value for value in difference)
+
+
+def test_elite_candidate_ensemble_injection_is_normalized_and_opt_in():
+    base = EliteProConfig(candidate_count=90, max_tickets=14)
+    engine = EliteProRecommendationEngine(base)
+    variants = (
+        (engine._engine(base, True, False), None),
+        (engine._engine(base, False, False), None),
+        (engine._engine(base, True, True), None),
+    )
+    assert engine._candidate_allocations(DATASET, variants)[3] == 0.0
+
+    injected = EliteProConfig(candidate_count=90, max_tickets=14, candidate_ensemble_weight=0.25)
+    injected_engine = EliteProRecommendationEngine(injected)
+    injected_variants = (
+        (injected_engine._engine(injected, True, False), None),
+        (injected_engine._engine(injected, False, False), None),
+        (injected_engine._engine(injected, True, True), None),
+    )
+    weights = injected_engine._candidate_allocations(DATASET, injected_variants)
+    assert len(weights) == 4
+    assert abs(sum(weights) - 1.0) < 1e-12
+    assert abs(weights[3] - 0.25) < 1e-12

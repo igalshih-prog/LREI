@@ -1260,3 +1260,43 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
+
+
+def test_elite_ensemble_candidate_injection_robust_walk_forward_diagnostic():
+    """Test whether injecting adjusted ensemble candidates improves portfolio hits."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    results = {"current": [], "ensemble_25": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, weight in (("current", 0.0), ("ensemble_25", 0.25)):
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                candidate_ensemble_weight=weight,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=120000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        injected - current
+        for injected, current in zip(results["ensemble_25"], results["current"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20260931)
+
+    print("Elite ensemble-candidate injection robust diagnostic:")
+    print(f"  current={mean(results['current']):.4f}")
+    print(f"  ensemble_25={mean(results['ensemble_25']):.4f}")
+    print(f"  ensemble_25-current={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

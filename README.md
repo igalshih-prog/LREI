@@ -48,7 +48,7 @@ Elite Pro is the advanced ensemble layer used by the application's Pro mode. It 
 
 Elite Pro also returns exactly **14 recommended tickets**.
 
-Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. An additional adaptive candidate-allocation mechanism is available as an **opt-in experimental mode** and is evaluated separately before any production default is changed.
+Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. Elite uses adaptive candidate allocation across rank, raw-frequency, and EWMA sources. Ensemble-score candidate injection remains an **opt-in experimental mode** and is evaluated separately before changing its production weight.
 
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 

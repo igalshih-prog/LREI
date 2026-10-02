@@ -26,6 +26,7 @@ class EliteProConfig(ProConfig):
     candidate_rank_weight: float = 1.0 / 3.0
     candidate_raw_weight: float = 1.0 / 3.0
     candidate_ewma_weight: float = 1.0 / 3.0
+    candidate_ensemble_weight: float = 0.0
     adaptive_candidate_weights: bool = True
     candidate_calibration_draws: int = 20
     candidate_calibration_candidate_count: int = 100
@@ -81,6 +82,8 @@ class EliteProConfig(ProConfig):
             raise ValueError("candidate ensemble weights must be non-negative")
         if sum(candidate_weights) <= 0:
             raise ValueError("candidate ensemble weights must have positive total")
+        if not 0.0 <= self.candidate_ensemble_weight <= 1.0:
+            raise ValueError("candidate_ensemble_weight must be between 0 and 1")
         if self.candidate_calibration_draws < 0:
             raise ValueError("candidate_calibration_draws must be non-negative")
         if self.candidate_calibration_candidate_count < self.max_tickets:
@@ -574,6 +577,16 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             calibrated[number] = (1.0 - shrink) * score + shrink * normalized
         return tuple(NumberScore(number=number, score=calibrated[number]) for number in sorted(calibrated))
 
+    def _candidate_allocations(self, dataset: LotteryDataset, engines) -> tuple[float, float, float, float]:
+        """Return normalized Rank/Raw/EWMA/ensemble candidate-source weights."""
+        source = self._adaptive_candidate_weights(dataset, engines)
+        ensemble_weight = self.config.candidate_ensemble_weight
+        source_total = sum(source)
+        if source_total <= 0:
+            return (0.0, 0.0, 0.0, 1.0)
+        scale = 1.0 - ensemble_weight
+        return tuple(scale * weight / source_total for weight in source) + (ensemble_weight,)
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
@@ -644,10 +657,9 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         rng = random.Random(seed)
 
         candidates = []
-        variant_specs = ((rank_engine, rank_scores), (raw_engine, raw_scores), (ewma_engine, ewma_scores))
-        candidate_weights = self._adaptive_candidate_weights(dataset, engines)
-        total_candidate_weight = sum(candidate_weights)
-        allocations = [int(self.config.candidate_count * weight / total_candidate_weight) for weight in candidate_weights]
+        variant_specs = ((rank_engine, rank_scores), (raw_engine, raw_scores), (ewma_engine, ewma_scores), (None, ensemble_scores))
+        candidate_weights = self._candidate_allocations(dataset, engines)
+        allocations = [int(self.config.candidate_count * weight) for weight in candidate_weights]
         for index in range(self.config.candidate_count - sum(allocations)):
             allocations[index % len(allocations)] += 1
         for (engine, scores), count in zip(variant_specs, allocations):

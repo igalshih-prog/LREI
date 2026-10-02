@@ -483,16 +483,21 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             validation = dataset.draws[end - block:end]
             if not train.draws:
                 continue
+            # Keep this meta-diagnostic focused on feature-stack selection.
+            # Nested candidates must not trigger their own adaptive calibrations,
+            # otherwise calibration becomes recursive and can explode runtime.
+            common = {"adaptive_weights": False, "adaptive_candidate_weights": False}
             configs = {
-                "baseline": {},
-                "momentum": {"adaptive_momentum": True, "momentum_calibration_draws": block},
-                "gap": {"adaptive_gap": True, "gap_calibration_draws": block, "gap_calibration_origins": min(3, origins)},
-                "consensus": {"adaptive_consensus": True, "consensus_calibration_draws": block, "consensus_calibration_origins": min(3, origins)},
-                "all_adaptive": {
-                    "adaptive_momentum": True, "momentum_calibration_draws": block,
-                    "adaptive_gap": True, "gap_calibration_draws": block, "gap_calibration_origins": min(3, origins),
-                    "adaptive_consensus": True, "consensus_calibration_draws": block, "consensus_calibration_origins": min(3, origins),
-                },
+                "baseline": dict(common),
+                "momentum": dict(common, adaptive_momentum=True, momentum_calibration_draws=block),
+                "gap": dict(common, adaptive_gap=True, gap_calibration_draws=block, gap_calibration_origins=min(3, origins)),
+                "consensus": dict(common, adaptive_consensus=True, consensus_calibration_draws=block, consensus_calibration_origins=min(3, origins)),
+                "all_adaptive": dict(
+                    common,
+                    adaptive_momentum=True, momentum_calibration_draws=block,
+                    adaptive_gap=True, gap_calibration_draws=block, gap_calibration_origins=min(3, origins),
+                    adaptive_consensus=True, consensus_calibration_draws=block, consensus_calibration_origins=min(3, origins),
+                ),
             }
             for name, kwargs in configs.items():
                 cfg = EliteProConfig(

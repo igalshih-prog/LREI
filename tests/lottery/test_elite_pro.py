@@ -1017,6 +1017,21 @@ def test_elite_candidate_ensemble_injection_is_normalized_and_opt_in():
     assert abs(weights[3] - 0.25) < 1e-12
 
 
+def test_elite_feature_stack_stability_gate_defaults_and_validation():
+    config = EliteProConfig()
+    assert config.feature_stack_min_improvement == 0.01
+    assert config.feature_stack_min_origin_win_rate == 0.60
+    for kwargs in (
+        {"feature_stack_min_improvement": -0.01},
+        {"feature_stack_min_origin_win_rate": -0.1},
+        {"feature_stack_min_origin_win_rate": 1.1},
+    ):
+        try:
+            EliteProConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")
 def test_elite_production_profile_is_locked_to_validated_defaults():
     config = EliteProConfig()
     assert config.max_tickets == 14

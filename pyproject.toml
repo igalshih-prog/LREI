@@ -48,6 +48,9 @@ packages = ["src/lrei"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "slow: long-running historical benchmark and diagnostic tests",
+]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
 
 [tool.ruff]

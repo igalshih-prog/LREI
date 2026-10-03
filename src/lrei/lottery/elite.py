@@ -55,6 +55,8 @@ class EliteProConfig(ProConfig):
     adaptive_feature_stack: bool = False
     feature_stack_calibration_draws: int = 20
     feature_stack_calibration_origins: int = 3
+    feature_stack_min_improvement: float = 0.01
+    feature_stack_min_origin_win_rate: float = 0.60
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -126,6 +128,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("gap calibration settings are invalid")
         if self.feature_stack_calibration_draws < 0 or self.feature_stack_calibration_origins < 1:
             raise ValueError("feature stack calibration settings are invalid")
+        if self.feature_stack_min_improvement < 0:
+            raise ValueError("feature_stack_min_improvement must be non-negative")
+        if not 0.0 <= self.feature_stack_min_origin_win_rate <= 1.0:
+            raise ValueError("feature_stack_min_origin_win_rate must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -516,7 +522,29 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                     )
                 )
         valid = {name: mean(values) for name, values in results.items() if values}
-        return max(valid, key=valid.get) if valid else "baseline"
+        if not valid or "baseline" not in valid:
+            return "baseline"
+        baseline_mean = valid["baseline"]
+        eligible = []
+        for name, score in valid.items():
+            if name == "baseline" or score < baseline_mean + self.config.feature_stack_min_improvement:
+                continue
+            origin_wins = 0
+            comparable_origins = 0
+            for origin_index in range(origins):
+                left = origin_index * block
+                right = left + block
+                base_values = results["baseline"][left:right]
+                candidate_values = results[name][left:right]
+                if not base_values or not candidate_values:
+                    continue
+                comparable_origins += 1
+                if mean(candidate_values) > mean(base_values):
+                    origin_wins += 1
+            win_rate = origin_wins / comparable_origins if comparable_origins else 0.0
+            if win_rate >= self.config.feature_stack_min_origin_win_rate:
+                eligible.append((score, name))
+        return max(eligible)[1] if eligible else "baseline"
 
     def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
         """Optionally calibrate ensemble scores from trailing historical outcomes."""

@@ -1,4 +1,7 @@
+import pytest
 from pathlib import Path
+
+pytestmark = pytest.mark.slow
 
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine

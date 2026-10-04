@@ -57,6 +57,9 @@ class EliteProConfig(ProConfig):
     feature_stack_calibration_origins: int = 3
     feature_stack_min_improvement: float = 0.01
     feature_stack_min_origin_win_rate: float = 0.60
+    learned_signal_model: bool = False
+    learned_model_draws: int = 120
+    learned_model_shrinkage: float = 0.50
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -132,6 +135,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("feature_stack_min_improvement must be non-negative")
         if not 0.0 <= self.feature_stack_min_origin_win_rate <= 1.0:
             raise ValueError("feature_stack_min_origin_win_rate must be between 0 and 1")
+        if self.learned_model_draws < 30:
+            raise ValueError("learned_model_draws must be at least 30")
+        if not 0.0 <= self.learned_model_shrinkage <= 1.0:
+            raise ValueError("learned_model_shrinkage must be between 0 and 1")
 
 
 class EliteProRecommendationEngine(ProRecommendationEngine):
@@ -546,6 +553,62 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 eligible.append((score, name))
         return max(eligible)[1] if eligible else "baseline"
 
+    @staticmethod
+    def _learned_feature_scores(dataset: LotteryDataset, window: int = 120) -> dict[int, float]:
+        """Learn a simple out-of-sample feature signal from historical next-draw outcomes."""
+        if len(dataset) < 31:
+            return {}
+        numbers = sorted({n for draw in dataset for n in draw.numbers})
+        rows = []
+        start = max(20, len(dataset) - window)
+        for index in range(start, len(dataset)):
+            history = LotteryDataset(dataset.draws[:index])
+            target = set(dataset.draws[index].numbers)
+            frequencies = ProRecommendationEngine._frequency(history)
+            recent = ProRecommendationEngine._recent_draw_frequency(history, 20)
+            previous = ProRecommendationEngine._recent_draw_frequency(LotteryDataset(history.draws[:-20]) if len(history) > 20 else history, 20)
+            ewma = ProRecommendationEngine._ewma_frequency(history, 36.0)
+            for number in numbers:
+                f = frequencies.get(number, 0) / max(1, len(history))
+                r = recent.get(number, 0) / max(1, min(20, len(history)))
+                p = previous.get(number, 0) / max(1, min(20, len(history)))
+                m = r - p
+                e = ewma.get(number, 0.0)
+                rows.append(((f, r, m, e), 1.0 if number in target else 0.0))
+        if not rows:
+            return {}
+        means = [mean(row[0][i] for row in rows) for i in range(4)]
+        scales = [math.sqrt(mean((row[0][i] - means[i]) ** 2 for row in rows)) or 1.0 for i in range(4)]
+        weights = []
+        for i in range(4):
+            x = [(row[0][i] - means[i]) / scales[i] for row in rows]
+            y = [row[1] for row in rows]
+            x_mean = mean(x)
+            y_mean = mean(y)
+            covariance = mean((a - x_mean) * (b - y_mean) for a, b in zip(x, y))
+            weights.append(covariance)
+        norm = sum(abs(weight) for weight in weights) or 1.0
+        weights = [weight / norm for weight in weights]
+        history = dataset
+        frequencies = ProRecommendationEngine._frequency(history)
+        recent = ProRecommendationEngine._recent_draw_frequency(history, 20)
+        previous_history = LotteryDataset(history.draws[:-20]) if len(history) > 20 else history
+        previous = ProRecommendationEngine._recent_draw_frequency(previous_history, 20)
+        ewma = ProRecommendationEngine._ewma_frequency(history, 36.0)
+        raw = {}
+        for number in numbers:
+            features = (
+                frequencies.get(number, 0) / max(1, len(history)),
+                recent.get(number, 0) / max(1, min(20, len(history))),
+                recent.get(number, 0) / max(1, min(20, len(history))) - previous.get(number, 0) / max(1, min(20, len(history))),
+                ewma.get(number, 0.0),
+            )
+            raw[number] = sum(weight * ((features[i] - means[i]) / scales[i]) for i, weight in enumerate(weights))
+        low, high = min(raw.values()), max(raw.values())
+        if high <= low:
+            return {number: 0.5 for number in numbers}
+        return {number: (raw[number] - low) / (high - low) for number in numbers}
+
     def _calibrate_ensemble_scores(self, dataset: LotteryDataset, engines, scores):
         """Optionally calibrate ensemble scores from trailing historical outcomes."""
         if not self.config.score_calibration or self.config.score_calibration_draws <= 0:
@@ -678,6 +741,13 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             base_ensemble = adjusted
         ensemble_scores = tuple(NumberScore(number=n, score=base_ensemble[n]) for n in sorted(base_ensemble))
         ensemble_scores = self._calibrate_ensemble_scores(dataset, engines, ensemble_scores)
+        if self.config.learned_signal_model:
+            learned = self._learned_feature_scores(dataset, self.config.learned_model_draws)
+            shrink = self.config.learned_model_shrinkage
+            ensemble_scores = tuple(
+                NumberScore(number=item.number, score=(1.0 - shrink) * item.score + shrink * learned.get(item.number, 0.5))
+                for item in ensemble_scores
+            )
 
         pair_counts = self._combination_counts(dataset, 2)
         triple_counts = self._combination_counts(dataset, 3)

@@ -1326,8 +1326,9 @@ def test_elite_meta_model_selection_walk_forward_diagnostic():
                 seed=seed,
             )
         if name == "pro":
-            return ProRecommendationEngine().recommend(history, seed=seed)
-        return EliteProRecommendationEngine().recommend(history, seed=seed)
+            from lrei.lottery.pro import ProConfig
+            return ProRecommendationEngine(ProConfig(candidate_count=120, max_tickets=14)).recommend(history, seed=seed)
+        return EliteProRecommendationEngine(__import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(candidate_count=120, max_tickets=14)).recommend(history, seed=seed)
 
     for offset, target in enumerate(draws[start:]):
         history = LotteryDataset(draws[:start + offset])

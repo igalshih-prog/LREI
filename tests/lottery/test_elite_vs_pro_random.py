@@ -1303,3 +1303,83 @@ def test_elite_ensemble_candidate_injection_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_meta_model_selection_walk_forward_diagnostic():
+    """Compare a trailing-performance model selector with fixed Elite."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    calibration_draws = 20
+    results = {"fixed_elite": [], "meta_selector": []}
+    selections = {"regular": 0, "pro": 0, "elite": 0}
+
+    def recommend_model(name, history, seed):
+        if name == "regular":
+            return RecommendationEngine().recommend(
+                LotteryStatistics.from_dataset(history),
+                ticket_count=50,
+                seed=seed,
+            )
+        if name == "pro":
+            return ProRecommendationEngine().recommend(history, seed=seed)
+        return EliteProRecommendationEngine().recommend(history, seed=seed)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+
+        fixed = recommend_model("elite", history, 130000 + offset)
+        results["fixed_elite"].append(
+            mean(len(set(ticket) & actual) for ticket in fixed.recommended_tickets)
+        )
+
+        if len(history) < calibration_draws + 40:
+            selected = "elite"
+        else:
+            validation = history.draws[-calibration_draws:]
+            train = LotteryDataset(history.draws[:-calibration_draws])
+            model_scores = {}
+            for model_index, name in enumerate(("regular", "pro", "elite")):
+                values = []
+                for validation_index, validation_draw in enumerate(validation):
+                    candidate = recommend_model(
+                        name,
+                        LotteryDataset(train.draws[: len(train.draws)]),
+                        131000 + model_index * 1000 + offset * 31 + validation_index,
+                    )
+                    values.append(
+                        mean(
+                            len(set(ticket) & set(validation_draw.numbers))
+                            for ticket in candidate.recommended_tickets
+                        )
+                    )
+                model_scores[name] = mean(values)
+
+            selected = max(model_scores, key=model_scores.get)
+
+        selections[selected] += 1
+        chosen = recommend_model(selected, history, 132000 + offset)
+        results["meta_selector"].append(
+            mean(len(set(ticket) & actual) for ticket in chosen.recommended_tickets)
+        )
+
+    difference = [
+        meta - elite
+        for meta, elite in zip(results["meta_selector"], results["fixed_elite"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261004)
+
+    print("Elite meta-model selection diagnostic:")
+    print(f"  fixed_elite={mean(results['fixed_elite']):.4f}")
+    print(f"  meta_selector={mean(results['meta_selector']):.4f}")
+    print(f"  meta-fixed_elite={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+    print(f"  selections={selections}")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

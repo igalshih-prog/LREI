@@ -1384,3 +1384,100 @@ def test_elite_meta_model_selection_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_meta_model_multi_origin_stability_diagnostic():
+    """Stress-test meta model selection across multiple historical origins."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 40
+    origins = [len(draws) - holdout, len(draws) - 2 * holdout, len(draws) - 3 * holdout]
+    calibration_draws = 12
+    results = {"fixed_elite": [], "meta_selector": []}
+    selections = {"regular": 0, "pro": 0, "elite": 0}
+    origin_differences = []
+
+    def recommend_model(name, history, seed):
+        if name == "regular":
+            return RecommendationEngine().recommend(
+                LotteryStatistics.from_dataset(history),
+                ticket_count=50,
+                seed=seed,
+            )
+        if name == "pro":
+            from lrei.lottery.pro import ProConfig
+            return ProRecommendationEngine(
+                ProConfig(candidate_count=100, max_tickets=14)
+            ).recommend(history, seed=seed)
+        return EliteProRecommendationEngine(
+            __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=100, max_tickets=14
+            )
+        ).recommend(history, seed=seed)
+
+    for origin_index, start in enumerate(origins):
+        local_fixed = []
+        local_meta = []
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+
+            fixed = recommend_model("elite", history, 140000 + origin_index * 1000 + offset)
+            local_fixed.append(
+                mean(len(set(ticket) & actual) for ticket in fixed.recommended_tickets)
+            )
+
+            validation = history.draws[-calibration_draws:]
+            train = LotteryDataset(history.draws[:-calibration_draws])
+            model_scores = {}
+            for model_index, name in enumerate(("regular", "pro", "elite")):
+                values = []
+                for validation_index, validation_draw in enumerate(validation):
+                    candidate = recommend_model(
+                        name,
+                        train,
+                        141000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
+                    )
+                    values.append(
+                        mean(
+                            len(set(ticket) & set(validation_draw.numbers))
+                            for ticket in candidate.recommended_tickets
+                        )
+                    )
+                model_scores[name] = mean(values)
+
+            selected = max(model_scores, key=model_scores.get)
+            selections[selected] += 1
+            chosen = recommend_model(
+                selected,
+                history,
+                142000 + origin_index * 1000 + offset,
+            )
+            local_meta.append(
+                mean(len(set(ticket) & actual) for ticket in chosen.recommended_tickets)
+            )
+
+        results["fixed_elite"].extend(local_fixed)
+        results["meta_selector"].extend(local_meta)
+        origin_differences.append(mean(meta - fixed for meta, fixed in zip(local_meta, local_fixed)))
+
+    difference = [
+        meta - fixed
+        for meta, fixed in zip(results["meta_selector"], results["fixed_elite"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261005)
+
+    print("Elite meta-model multi-origin stability diagnostic:")
+    print(f"  origins={len(origins)}, draws_per_origin={holdout}, calibration={calibration_draws}")
+    print(f"  fixed_elite={mean(results['fixed_elite']):.4f}")
+    print(f"  meta_selector={mean(results['meta_selector']):.4f}")
+    print(f"  meta-fixed_elite={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+    print(f"  origin_differences={[round(value, 4) for value in origin_differences]}")
+    print(f"  selections={selections}")
+
+    assert len(difference) == len(origins) * holdout
+    assert all(value == value for value in difference)

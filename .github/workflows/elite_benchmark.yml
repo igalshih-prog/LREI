@@ -75,7 +75,7 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Run clean production model-selection diagnostic
-        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "clean_model_selection_regular_pro_elite_walk_forward or adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_feature_stack_multi_origin_diagnostic"
+        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "clean_model_selection_regular_pro_elite_walk_forward or adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic or elite_feature_stack_multi_origin_diagnostic or elite_meta_model_selection_walk_forward_diagnostic"
 
 
 

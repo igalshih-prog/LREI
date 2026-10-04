@@ -1481,3 +1481,45 @@ def test_elite_meta_model_multi_origin_stability_diagnostic():
 
     assert len(difference) == len(origins) * holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_learned_signal_model_robust_walk_forward_diagnostic():
+    """Compare the opt-in learned historical signal with current Elite."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    results = {"current": [], "learned": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        configs = {
+            "current": EliteProConfig(candidate_count=160, max_tickets=14),
+            "learned": EliteProConfig(
+                candidate_count=160,
+                max_tickets=14,
+                learned_signal_model=True,
+                learned_model_draws=120,
+                learned_model_shrinkage=0.50,
+            ),
+        }
+        for name, config in configs.items():
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=150000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [learned - current for learned, current in zip(results["learned"], results["current"])]
+    ci = _bootstrap_ci(difference, seed=20261006)
+
+    print("Elite learned-signal robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  learned-current={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

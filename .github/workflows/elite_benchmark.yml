@@ -31,20 +31,82 @@ jobs:
       - name: Run core Elite benchmark
         run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_against_pro_and_multiple_random_baselines_walk_forward"
 
-  robust:
+  robust_baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install
-        run: pip install -e . pytest
-      - name: Run robust walk-forward diagnostics
-        run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic or number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic or elite_consensus_scoring_robust_walk_forward_diagnostic or elite_signal_enhancement_robust_walk_forward_diagnostic or elite_prize_tier_robust_walk_forward_diagnostic or elite_hit_tail_distribution_robust_diagnostic or elite_overlap_limit_tail_robust_walk_forward_diagnostic or elite_meta_model_multi_origin_stability_diagnostic or elite_learned_signal_model_robust_walk_forward_diagnostic"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic"
+
+  robust_signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic"
+
+  robust_ensemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_consensus_scoring_robust_walk_forward_diagnostic or elite_signal_enhancement_robust_walk_forward_diagnostic or elite_prize_tier_robust_walk_forward_diagnostic or elite_hit_tail_distribution_robust_diagnostic or elite_overlap_limit_tail_robust_walk_forward_diagnostic"
+
+  robust_model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_meta_model_multi_origin_stability_diagnostic or elite_learned_signal_model_robust_walk_forward_diagnostic"
+
+  model_selection_clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "clean_model_selection_regular_pro_elite_walk_forward"
+
+  model_selection_features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_feature_stack_multi_origin_diagnostic"
+
+  model_selection_meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_meta_model_selection_walk_forward_diagnostic"
 
   ablations:
     runs-on: ubuntu-latest

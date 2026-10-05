@@ -164,6 +164,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             portfolio_overlap_penalty=config.portfolio_overlap_penalty,
             portfolio_pair_coverage_weight=config.portfolio_pair_coverage_weight,
             portfolio_triple_coverage_weight=config.portfolio_triple_coverage_weight,
+            portfolio_tail_weight=config.portfolio_tail_weight,
             pair_bonus_strength=config.pair_bonus_strength,
             triple_bonus_strength=config.triple_bonus_strength,
             structural_gate_probability=config.structural_gate_probability,

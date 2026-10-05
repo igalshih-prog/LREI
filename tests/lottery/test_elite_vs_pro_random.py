@@ -1596,12 +1596,7 @@ def test_learned_logistic_signal_robust_walk_forward_diagnostic():
 
     for offset, target in enumerate(draws[start:]):
         history = LotteryDataset(draws=draws[:start + offset])
-        scores = predict_number_scores(
-            history,
-            training_draws=120,
-            ewma_half_life=36.0,
-            shrinkage=0.50,
-        )
+        scores = predict_number_scores(history, training_draws=120, ewma_half_life=36.0, shrinkage=0.50)
         top6 = sorted(scores, key=lambda number: (-scores[number], number))[:6]
         hits.append(len(set(top6) & set(target.numbers)))
 

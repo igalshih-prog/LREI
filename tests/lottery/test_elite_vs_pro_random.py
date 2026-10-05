@@ -1614,3 +1614,57 @@ def test_learned_logistic_signal_robust_walk_forward_diagnostic():
     assert len(difference) == holdout
     assert all(0 <= value <= 6 for value in hits)
     assert all(value == value for value in difference)
+
+
+def test_elite_consensus_light_multi_origin_stability_diagnostic():
+    """Stress-test Consensus light across three chronological origins."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 30
+    origins = [len(draws) - holdout, len(draws) - 2 * holdout, len(draws) - 3 * holdout]
+    results = {"off": [], "light": []}
+    origin_differences = []
+
+    for origin_index, start in enumerate(origins):
+        local_off = []
+        local_light = []
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, strength in (("off", 0.0), ("light", 0.25)):
+                config = EliteProConfig(
+                    candidate_count=160,
+                    max_tickets=14,
+                    consensus_strength=strength,
+                )
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=160000 + origin_index * 1000 + offset
+                )
+                value = mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                if name == "off":
+                    local_off.append(value)
+                else:
+                    local_light.append(value)
+
+        results["off"].extend(local_off)
+        results["light"].extend(local_light)
+        origin_differences.append(mean(
+            light - off for light, off in zip(local_light, local_off)
+        ))
+
+    difference = [
+        light - off
+        for light, off in zip(results["light"], results["off"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261010)
+
+    print("Elite Consensus light multi-origin stability:")
+    print(f"  origins={len(origins)}, draws_per_origin={holdout}")
+    print(f"  off={mean(results['off']):.4f}")
+    print(f"  light={mean(results['light']):.4f}")
+    print(f"  light-off={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+    print(f"  origin_differences={[round(value, 4) for value in origin_differences]}")
+
+    assert len(difference) == len(origins) * holdout
+    assert all(value == value for value in difference)

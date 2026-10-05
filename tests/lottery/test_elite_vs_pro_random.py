@@ -1805,3 +1805,51 @@ def test_elite_meta_portfolio_multi_model_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_learned_signal_robust_walk_forward_diagnostic():
+    """Measure whether the opt-in learned signal adds stable out-of-sample value."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(70, max(50, len(draws) // 16))
+    start = len(draws) - holdout
+    variants = {
+        "current": {"learned_signal_model": False},
+        "learned": {
+            "learned_signal_model": True,
+            "learned_model_draws": 120,
+            "learned_model_shrinkage": 0.50,
+        },
+    }
+    results = {name: [] for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                **kwargs,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=150000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        learned - current
+        for learned, current in zip(results["learned"], results["current"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261005)
+
+    print("Elite learned-signal robust diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  learned-current={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

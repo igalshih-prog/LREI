@@ -2031,3 +2031,70 @@ def test_elite_tail_weight_jackpot_walk_forward_diagnostic():
         for variant in results.values()
         for values in variant.values()
     )
+
+
+def test_elite_against_constrained_random_jackpot_walk_forward():
+    """Compare Elite with random portfolios using the same overlap constraint."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(180, max(100, len(draws) // 6))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+    rng = random.Random(20261060)
+
+    elite_mean = []
+    random_mean = []
+    elite_best = []
+    random_best = []
+    elite_4plus = []
+    random_4plus = []
+    elite_5plus = []
+    random_5plus = []
+    elite_6 = []
+    random_6 = []
+
+    engine = EliteProRecommendationEngine()
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        elite_hits = _hits(
+            engine.recommend(history, seed=140000 + offset).recommended_tickets,
+            target.numbers,
+        )
+        random_results = [
+            _hits(
+                _random_diversified_portfolio(rng, max_overlap=4),
+                target.numbers,
+            )
+            for _ in range(random_portfolios_per_draw)
+        ]
+        random_flat = [hit for result in random_results for hit in result]
+
+        elite_mean.append(mean(elite_hits))
+        random_mean.append(mean(random_flat))
+        elite_best.append(max(elite_hits))
+        random_best.append(mean(max(result) for result in random_results))
+        elite_4plus.append(int(max(elite_hits) >= 4))
+        random_4plus.append(mean(int(max(result) >= 4) for result in random_results))
+        elite_5plus.append(int(max(elite_hits) >= 5))
+        random_5plus.append(mean(int(max(result) >= 5) for result in random_results))
+        elite_6.append(int(max(elite_hits) == 6))
+        random_6.append(mean(int(max(result) == 6) for result in random_results))
+
+    paired_mean = [e - r for e, r in zip(elite_mean, random_mean)]
+    paired_best = [e - r for e, r in zip(elite_best, random_best)]
+    paired_4 = [e - r for e, r in zip(elite_4plus, random_4plus)]
+    paired_5 = [e - r for e, r in zip(elite_5plus, random_5plus)]
+    paired_6 = [e - r for e, r in zip(elite_6, random_6)]
+
+    print("Elite vs constrained-random jackpot diagnostic:")
+    print(f"  holdout={holdout}, random_portfolios_per_draw={random_portfolios_per_draw}")
+    print(f"  mean hits: Elite={mean(elite_mean):.4f}, random={mean(random_mean):.4f}, diff={mean(paired_mean):+.4f}")
+    print(f"  best ticket: Elite={mean(elite_best):.4f}, random={mean(random_best):.4f}, diff={mean(paired_best):+.4f}")
+    for label, values in (("4+", paired_4), ("5+", paired_5), ("6", paired_6)):
+        ci = _bootstrap_ci(values, seed=20261070 + len(label))
+        print(f"  {label}: diff={mean(values):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(paired_mean) == holdout
+    assert all(value == value for value in paired_mean + paired_best + paired_4 + paired_5 + paired_6)

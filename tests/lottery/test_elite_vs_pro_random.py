@@ -1958,3 +1958,76 @@ def test_elite_jackpot_oriented_robust_diagnostic():
     assert len(random_best) == holdout
     assert all(0 <= value <= 6 for value in elite_best)
     assert all(0 <= value <= 6 for value in random_best)
+
+
+def test_elite_tail_weight_jackpot_walk_forward_diagnostic():
+    """Test portfolio tail-weight settings against the current jackpot-oriented baseline."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(180, max(100, len(draws) // 6))
+    start = len(draws) - holdout
+    variants = {
+        "current": 0.0,
+        "tail_light": 0.03,
+        "tail_medium": 0.06,
+        "tail_strong": 0.10,
+    }
+    thresholds = (4, 5, 6)
+    results = {
+        name: {threshold: [] for threshold in thresholds}
+        for name in variants
+    }
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, tail_weight in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                portfolio_tail_weight=tail_weight,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=130500 + offset
+            )
+            hits = _hits(result.recommended_tickets, target.numbers)
+            for threshold in thresholds:
+                results[name][threshold].append(int(max(hits) >= threshold))
+
+    print("Elite jackpot tail-weight diagnostic:")
+    for name in variants:
+        values = results[name]
+        print(
+            f"  {name}: "
+            + ", ".join(
+                f"{threshold}+={mean(values[threshold]):.4f}"
+                for threshold in thresholds
+            )
+        )
+
+    baseline = results["current"]
+    for name in variants:
+        if name == "current":
+            continue
+        for threshold in thresholds:
+            difference = [
+                candidate - current
+                for candidate, current in zip(
+                    results[name][threshold], baseline[threshold]
+                )
+            ]
+            ci = _bootstrap_ci(
+                difference,
+                seed=20261050 + list(variants).index(name) * 10 + threshold,
+            )
+            print(
+                f"  {name} {threshold}+ vs current="
+                f"{mean(difference):+.4f}, "
+                f"95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+            )
+
+    assert all(
+        len(values) == holdout
+        for variant in results.values()
+        for values in variant.values()
+    )

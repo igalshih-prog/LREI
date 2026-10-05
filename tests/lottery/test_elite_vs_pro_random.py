@@ -1899,3 +1899,62 @@ def test_elite_gap_recency_robust_long_holdout_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_jackpot_oriented_robust_diagnostic():
+    """Compare Elite with random on high-hit outcomes, not only mean hits."""
+    from statistics import mean
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(240, max(120, len(draws) // 5))
+    start = len(draws) - holdout
+    engine = EliteProRecommendationEngine()
+    rng = random.Random(20261005)
+
+    elite_best = []
+    random_best = []
+    elite_4plus = []
+    random_4plus = []
+    elite_5plus = []
+    random_5plus = []
+    elite_6 = []
+    random_6 = []
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+
+        elite_hits = _hits(
+            engine.recommend(history, seed=130000 + offset).recommended_tickets,
+            target.numbers,
+        )
+        random_hits = _hits(
+            _random_portfolio(rng),
+            target.numbers,
+        )
+
+        elite_best.append(max(elite_hits))
+        random_best.append(max(random_hits))
+        elite_4plus.append(sum(hit >= 4 for hit in elite_hits))
+        random_4plus.append(sum(hit >= 4 for hit in random_hits))
+        elite_5plus.append(sum(hit >= 5 for hit in elite_hits))
+        random_5plus.append(sum(hit >= 5 for hit in random_hits))
+        elite_6.append(sum(hit == 6 for hit in elite_hits))
+        random_6.append(sum(hit == 6 for hit in random_hits))
+
+    print("Elite jackpot-oriented robust diagnostic:")
+    print(f"  holdout={holdout}")
+    print(f"  Elite best-ticket mean={mean(elite_best):.4f}")
+    print(f"  Random best-ticket mean={mean(random_best):.4f}")
+    print(f"  Elite 4+ tickets/draw={mean(elite_4plus):.4f}")
+    print(f"  Random 4+ tickets/draw={mean(random_4plus):.4f}")
+    print(f"  Elite 5+ tickets/draw={mean(elite_5plus):.4f}")
+    print(f"  Random 5+ tickets/draw={mean(random_5plus):.4f}")
+    print(f"  Elite 6-hit tickets/draw={mean(elite_6):.4f}")
+    print(f"  Random 6-hit tickets/draw={mean(random_6):.4f}")
+
+    assert len(elite_best) == holdout
+    assert len(random_best) == holdout
+    assert all(0 <= value <= 6 for value in elite_best)
+    assert all(0 <= value <= 6 for value in random_best)

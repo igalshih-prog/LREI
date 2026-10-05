@@ -119,6 +119,20 @@ class EliteProConfig(ProConfig):
             raise ValueError("consensus calibration settings are invalid")
         if not 0.0 <= self.gap_strength <= 1.0:
             raise ValueError("gap_strength must be between 0 and 1")
+        if self.gap_mode not in {"recency", "overdue"}:
+            raise ValueError("gap_mode must be 'recency' or 'overdue'")
+        if self.gap_calibration_draws < 0 or self.gap_calibration_origins < 1:
+            raise ValueError("gap calibration settings are invalid")
+        if self.feature_stack_calibration_draws < 0 or self.feature_stack_calibration_origins < 1:
+            raise ValueError("feature-stack calibration settings are invalid")
+        if self.feature_stack_min_improvement < 0.0:
+            raise ValueError("feature_stack_min_improvement must be non-negative")
+        if not 0.0 <= self.feature_stack_min_origin_win_rate <= 1.0:
+            raise ValueError("feature_stack_min_origin_win_rate must be between 0 and 1")
+        if self.learned_model_draws < 20:
+            raise ValueError("learned_model_draws must be at least 20")
+        if not 0.0 <= self.learned_model_shrinkage <= 1.0:
+            raise ValueError("learned_model_shrinkage must be between 0 and 1")
         if self.portfolio_pair_coverage_weight < 0:
             raise ValueError("portfolio_pair_coverage_weight must be non-negative")
         if self.portfolio_triple_coverage_weight < 0:

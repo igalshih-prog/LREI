@@ -1853,3 +1853,49 @@ def test_elite_learned_signal_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_gap_recency_robust_long_holdout_diagnostic():
+    """Validate fixed gap-recency against the current Elite baseline on a longer holdout."""
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    results = {"current": [], "gap_recency": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, kwargs in (
+            ("current", {}),
+            ("gap_recency", {"gap_strength": 0.20, "gap_mode": "recency"}),
+        ):
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                **kwargs,
+            )
+            result = EliteProRecommendationEngine(config).recommend(
+                history, seed=160000 + offset
+            )
+            results[name].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+
+    difference = [
+        gap - current
+        for gap, current in zip(results["gap_recency"], results["current"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261006)
+
+    print("Elite gap-recency robust long-holdout diagnostic:")
+    for name, values in results.items():
+        print(f"  {name}: hits={mean(values):.4f}")
+    print(f"  gap_recency-current={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

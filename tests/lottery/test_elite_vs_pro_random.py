@@ -1668,3 +1668,140 @@ def test_elite_consensus_light_multi_origin_stability_diagnostic():
 
     assert len(difference) == len(origins) * holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_meta_portfolio_multi_model_walk_forward_diagnostic():
+    """Blend Regular/Pro/Elite portfolios using trailing model performance."""
+    from lrei.lottery.optimizer import LotteryOptimizer, OptimizerConfig
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    calibration_draws = 20
+    results = {"elite": [], "meta_portfolio": []}
+
+    def recommend_model(name, history, seed):
+        if name == "regular":
+            return RecommendationEngine().recommend(
+                LotteryStatistics.from_dataset(history),
+                ticket_count=50,
+                seed=seed,
+            )
+        if name == "pro":
+            from lrei.lottery.pro import ProConfig
+            return ProRecommendationEngine(ProConfig(candidate_count=120, max_tickets=14)).recommend(
+                history, seed=seed
+            )
+        return EliteProRecommendationEngine(
+            __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=120, max_tickets=14
+            )
+        ).recommend(history, seed=seed)
+
+    optimizer = LotteryOptimizer(OptimizerConfig(max_overlap=4, max_tickets=14))
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        elite = recommend_model("elite", history, 140000 + offset)
+        elite_mean = mean(len(set(ticket) & set(target.numbers)) for ticket in elite.recommended_tickets)
+        results["elite"].append(elite_mean)
+
+        if len(history) < calibration_draws + 40:
+            weights = {"regular": 1.0, "pro": 1.0, "elite": 1.0}
+        else:
+            train = LotteryDataset(history.draws[:-calibration_draws])
+            validation = history.draws[-calibration_draws:]
+            model_scores = {}
+            for model_index, name in enumerate(("regular", "pro", "elite")):
+                values = []
+                for validation_index, validation_draw in enumerate(validation):
+                    candidate = recommend_model(
+                        name,
+                        train,
+                        141000 + model_index * 1000 + offset * 31 + validation_index,
+                    )
+                    values.append(
+                        mean(
+                            len(set(ticket) & set(validation_draw.numbers))
+                            for ticket in candidate.recommended_tickets
+                        )
+                    )
+                model_scores[name] = mean(values)
+            baseline = 6.0 * 6.0 / 37.0
+            weights = {
+                name: max(0.20, score / max(baseline, 1e-9))
+                for name, score in model_scores.items()
+            }
+
+        portfolios = {
+            name: recommend_model(name, history, 142000 + index * 10000 + offset)
+            for index, name in enumerate(("regular", "pro", "elite"))
+        }
+        candidates = []
+        for name, result in portfolios.items():
+            weight = weights[name]
+            candidates.extend(
+                (tuple(ticket), weight)
+                for ticket in result.recommended_tickets
+            )
+
+        # Allocate an initial quota from each model, then fill by weighted
+        # quality and portfolio compatibility.
+        total_weight = sum(weights.values())
+        quotas = {
+            name: max(1, round(14 * weights[name] / total_weight))
+            for name in weights
+        }
+        while sum(quotas.values()) > 14:
+            weakest = min(quotas, key=quotas.get)
+            if quotas[weakest] > 1:
+                quotas[weakest] -= 1
+            else:
+                break
+        while sum(quotas.values()) < 14:
+            strongest = max(quotas, key=quotas.get)
+            quotas[strongest] += 1
+
+        selected = []
+        for name in ("regular", "pro", "elite"):
+            source = portfolios[name].recommended_tickets
+            for ticket in source:
+                if len(selected) >= quotas[name]:
+                    break
+                if optimizer.is_compatible(ticket, selected):
+                    selected.append(ticket)
+
+        remaining = [
+            (ticket, weight)
+            for ticket, weight in candidates
+            if ticket not in selected
+        ]
+        remaining.sort(key=lambda item: (item[1], tuple(-n for n in item[0])), reverse=True)
+        for ticket, _ in remaining:
+            if len(selected) >= 14:
+                break
+            if optimizer.is_compatible(ticket, selected):
+                selected.append(ticket)
+
+        assert len(selected) == 14
+        results["meta_portfolio"].append(
+            mean(len(set(ticket) & set(target.numbers)) for ticket in selected)
+        )
+
+    difference = [
+        meta - elite
+        for meta, elite in zip(results["meta_portfolio"], results["elite"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261005)
+
+    print("Elite meta-portfolio multi-model diagnostic:")
+    print(f"  Elite={mean(results['elite']):.4f}")
+    print(f"  Meta-portfolio={mean(results['meta_portfolio']):.4f}")
+    print(f"  Meta-portfolio - Elite={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

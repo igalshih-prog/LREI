@@ -1582,3 +1582,48 @@ def test_elite_tail_weight_robust_walk_forward_diagnostic():
         for values in thresholds.values()
         for value in values
     )
+
+
+def test_learned_logistic_signal_robust_walk_forward_diagnostic():
+    """Compare a dependency-free learned feature model with current Elite."""
+    from lrei.lottery.learned_model import predict_number_scores
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    results = {"elite": [], "learned_top6": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+
+        elite = EliteProRecommendationEngine(
+            EliteProConfig(candidate_count=160, max_tickets=14)
+        ).recommend(history, seed=160000 + offset)
+        results["elite"].append(
+            mean(len(set(ticket) & actual) for ticket in elite.recommended_tickets)
+        )
+
+        scores = predict_number_scores(
+            history,
+            training_draws=120,
+            ewma_half_life=36.0,
+            shrinkage=0.50,
+        )
+        top6 = sorted(scores, key=lambda number: (-scores[number], number))[:6]
+        results["learned_top6"].append(
+            len(set(top6) & actual)
+        )
+
+    difference = [learned - elite for learned, elite in zip(results["learned_top6"], results["elite"])]
+    ci = _bootstrap_ci(difference, seed=20261008)
+
+    print("Learned logistic signal robust diagnostic:")
+    print(f"  Elite mean hits/ticket={mean(results['elite']):.4f}")
+    print(f"  Learned top-6 mean hits={mean(results['learned_top6']):.4f}")
+    print(f"  Learned top-6 - Elite mean={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout
+    assert all(value == value for value in difference)

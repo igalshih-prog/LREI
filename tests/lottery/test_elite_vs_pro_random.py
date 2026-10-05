@@ -1231,6 +1231,7 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
                 adaptive_candidate_weights=True,
                 candidate_calibration_draws=20,
                 candidate_calibration_candidate_count=100,
+                candidate_calibration_origins=3,
                 candidate_adaptive_shrinkage=0.50,
             )),
         }

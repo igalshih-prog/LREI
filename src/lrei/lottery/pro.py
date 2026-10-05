@@ -33,6 +33,7 @@ class ProConfig:
     portfolio_overlap_penalty: float = 0.018
     portfolio_pair_coverage_weight: float = 0.0
     portfolio_triple_coverage_weight: float = 0.0
+    portfolio_tail_weight: float = 0.0
     pair_bonus_strength: float = 0.35
     triple_bonus_strength: float = 0.15
     structural_gate_probability: float = 0.72
@@ -62,6 +63,8 @@ class ProRecommendationEngine:
             raise ValueError("portfolio_pair_coverage_weight must be non-negative")
         if self.config.portfolio_triple_coverage_weight < 0:
             raise ValueError("portfolio_triple_coverage_weight must be non-negative")
+        if self.config.portfolio_tail_weight < 0:
+            raise ValueError("portfolio_tail_weight must be non-negative")
         if self.config.pair_bonus_strength < 0:
             raise ValueError("pair_bonus_strength must be non-negative")
         if self.config.triple_bonus_strength < 0:
@@ -305,11 +308,13 @@ class ProRecommendationEngine:
         mean_overlap = sum(pair_overlaps) / len(pair_overlaps) if pair_overlaps else 0.0
         pair_coverage = self._portfolio_combination_coverage(selected, 2)
         triple_coverage = self._portfolio_combination_coverage(selected, 3)
+        tail_score = sum(base[t] * base[t] for t in selected)
         return (
             sum(base[t] for t in selected)
             + self.config.portfolio_coverage_weight * unique_count
             + self.config.portfolio_pair_coverage_weight * pair_coverage
             + self.config.portfolio_triple_coverage_weight * triple_coverage
+            + self.config.portfolio_tail_weight * tail_score
             - self.config.portfolio_overlap_penalty * mean_overlap
         )
 
@@ -364,6 +369,7 @@ class ProRecommendationEngine:
                     + self.config.portfolio_coverage_weight * new
                     + self.config.portfolio_pair_coverage_weight * pair_new
                     + self.config.portfolio_triple_coverage_weight * triple_new
+                    + self.config.portfolio_tail_weight * base[t] * base[t]
                     - self.config.portfolio_overlap_penalty * overlap
                 )
             best = max(compatible, key=lambda t: (value(t), tuple(-n for n in t)))

@@ -250,7 +250,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         return tuple(x / total for x in blended)
 
     def _adaptive_candidate_weights(self, dataset: LotteryDataset, engines) -> tuple[float, float, float]:
-        """Calibrate candidate-source weights while keeping Elite scoring fixed."""
+        """Calibrate candidate-source weights across multiple trailing walk-forward origins."""
         default = (
             self.config.candidate_rank_weight,
             self.config.candidate_raw_weight,
@@ -258,72 +258,89 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         )
         if not self.config.adaptive_candidate_weights:
             return default
-        if len(dataset) < self.config.candidate_calibration_draws + 20 or self.config.candidate_calibration_draws <= 0:
+        block = self.config.candidate_calibration_draws
+        minimum_train = 20
+        if block <= 0 or len(dataset) < block + minimum_train:
             return default
 
-        validation_size = min(self.config.candidate_calibration_draws, len(dataset) - 20)
-        train = LotteryDataset(dataset.draws[:-validation_size])
-        validation = dataset.draws[-validation_size:]
-        if not train.draws:
-            return default
-
-        frequencies = self._frequency(train)
-        recent_3 = self._window_frequency(train, 3)
-        recent_1 = self._window_frequency(train, 1)
-        recent_draws = self._recent_draw_frequency(train, 60)
-        ewma = self._ewma_frequency(train, self.config.ewma_half_life)
-        pair_counts = self._combination_counts(train, 2)
-        triple_counts = self._combination_counts(train, 3)
-        structure = self._structure_profile(train)
-
-        source_scores = (
-            engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
-            engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+        max_origins = min(
+            self.config.candidate_calibration_origins,
+            max(1, (len(dataset) - minimum_train) // block),
         )
-        number_weights = self._adaptive_weights(train, engines)
-        rank_map = {s.number: s.score for s in source_scores[0]}
-        raw_map = {s.number: s.score for s in source_scores[1]}
-        ewma_map = {s.number: s.score for s in source_scores[2]}
-        ensemble_scores = tuple(
-            NumberScore(
-                number=n,
-                score=number_weights[0] * rank_map[n]
-                + number_weights[1] * raw_map[n]
-                + number_weights[2] * ewma_map[n],
-            )
-            for n in sorted(rank_map)
-        )
+        source_performance = [[], [], []]
 
-        rng = random.Random(13579 + len(dataset))
-        performance = []
-        for scores in source_scores:
-            candidates = [
-                self._generate_candidate(
-                    scores, pair_counts, triple_counts, structure, rng
-                )
-                for _ in range(self.config.candidate_calibration_candidate_count)
-            ]
-            portfolio = self._select_portfolio(
-                candidates,
-                ensemble_scores,
-                frequencies,
-                pair_counts,
-                triple_counts,
-                structure,
-            )
-            if not portfolio:
-                performance.append(0.05)
+        for origin_index in range(max_origins):
+            end = len(dataset) - origin_index * block
+            if end - block < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:end - block])
+            validation = dataset.draws[end - block:end]
+            if not train.draws or not validation:
                 continue
-            mean_hits = mean(
-                mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio)
-                for draw in validation
-            )
-            performance.append(max(0.05, mean_hits / (6.0 * 6.0 / 37.0)))
 
+            frequencies = self._frequency(train)
+            recent_3 = self._window_frequency(train, 3)
+            recent_1 = self._window_frequency(train, 1)
+            recent_draws = self._recent_draw_frequency(train, 60)
+            ewma = self._ewma_frequency(train, self.config.ewma_half_life)
+            pair_counts = self._combination_counts(train, 2)
+            triple_counts = self._combination_counts(train, 3)
+            structure = self._structure_profile(train)
+
+            source_scores = (
+                engines[0][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[1][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, {}),
+                engines[2][0]._individual_scores(frequencies, recent_3, recent_1, recent_draws, ewma),
+            )
+            number_weights = self._adaptive_weights(train, engines)
+            rank_map = {s.number: s.score for s in source_scores[0]}
+            raw_map = {s.number: s.score for s in source_scores[1]}
+            ewma_map = {s.number: s.score for s in source_scores[2]}
+            ensemble_scores = tuple(
+                NumberScore(
+                    number=n,
+                    score=number_weights[0] * rank_map[n]
+                    + number_weights[1] * raw_map[n]
+                    + number_weights[2] * ewma_map[n],
+                )
+                for n in sorted(rank_map)
+            )
+
+            rng = random.Random(13579 + len(dataset) + origin_index)
+            for source_index, scores in enumerate(source_scores):
+                candidates = [
+                    self._generate_candidate(
+                        scores, pair_counts, triple_counts, structure, rng
+                    )
+                    for _ in range(self.config.candidate_calibration_candidate_count)
+                ]
+                portfolio = self._select_portfolio(
+                    candidates,
+                    ensemble_scores,
+                    frequencies,
+                    pair_counts,
+                    triple_counts,
+                    structure,
+                )
+                if not portfolio:
+                    source_performance[source_index].append(0.05)
+                    continue
+                mean_hits = mean(
+                    mean(len(set(ticket) & set(draw.numbers)) for ticket in portfolio)
+                    for draw in validation
+                )
+                source_performance[source_index].append(
+                    max(0.05, mean_hits / (6.0 * 6.0 / 37.0))
+                )
+
+        if not all(source_performance):
+            return default
+        performance = [mean(values) for values in source_performance]
         default_total = sum(default)
         prior = [x / default_total for x in default]
         performance_total = sum(performance)
+        if performance_total <= 0:
+            return default
         learned = [x / performance_total for x in performance]
         shrink = self.config.candidate_adaptive_shrinkage
         blended = [(1.0 - shrink) * p + shrink * l for p, l in zip(prior, learned)]

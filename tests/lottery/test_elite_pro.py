@@ -1047,6 +1047,7 @@ def test_elite_production_profile_is_locked_to_validated_defaults():
     assert config.candidate_count >= 14
     assert config.adaptive_weights is True
     assert config.adaptive_candidate_weights is True
+    assert config.candidate_calibration_origins >= 1
     assert config.candidate_ensemble_weight == 0.0
     assert config.adaptive_feature_stack is False
     assert config.momentum_strength == 0.0

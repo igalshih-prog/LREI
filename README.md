@@ -13,13 +13,17 @@ The project analyzes historical lottery draws, scores numbers using multiple his
 - Rank-normalized and raw-frequency scoring
 - EWMA time-decay signal
 - Pair and triple co-occurrence affinity
+- Recent momentum and gap/overdue signals
+- Cross-signal consensus scoring
+- Optional learned historical signal model
 - Historical structural profile
 - 14-ticket portfolio optimization
 - Strong-number evaluation
 - Chronological walk-forward backtesting
 - Random-baseline comparison
 - Bootstrap confidence intervals for paired benchmarks
-- Ablation testing
+- Ablation testing, including jackpot-oriented tail diagnostics
+- Constrained-random portfolio baselines
 - Reproducible evaluation using seeds
 - Automated testing with GitHub Actions
 - Streamlit application
@@ -48,7 +52,7 @@ Elite Pro is the advanced ensemble layer used by the application's Pro mode. It 
 
 Elite Pro also returns exactly **14 recommended tickets**.
 
-Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. Elite uses adaptive candidate allocation across rank, raw-frequency, and EWMA sources. Ensemble-score candidate injection remains an **opt-in experimental mode** and is evaluated separately before changing its production weight.
+Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. Elite uses adaptive candidate allocation across rank, raw-frequency, and EWMA sources. It can also evaluate an ensemble-score candidate source, but that injection remains an **opt-in experimental mode** and is evaluated separately before changing its production weight. Additional momentum, gap/overdue, consensus, learned-signal, pair/triple coverage, and tail-weight layers are also kept opt-in unless walk-forward diagnostics support promotion.
 
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 
@@ -87,6 +91,8 @@ The repository contains separate benchmarks for:
 - Elite Pro vs Pro vs multiple random baselines
 - Pro signal/feature ablations
 - Elite candidate-allocation experiments, including longer walk-forward diagnostics
+- Jackpot-oriented tail diagnostics (4+, 5+, and 6-hit outcomes)
+- Constrained-random portfolio comparisons using the same overlap limit
 
 Benchmarks report metrics such as average hits per ticket, best-ticket hits, coverage-related behavior, paired differences, and bootstrap confidence intervals where applicable.
 

@@ -251,6 +251,15 @@ def test_elite_rejects_invalid_candidate_adaptation_settings():
         {"calibration_origins": 0},
         {"portfolio_pair_coverage_weight": -0.1},
         {"portfolio_triple_coverage_weight": -0.1},
+        {"gap_mode": "invalid"},
+        {"gap_calibration_draws": -1},
+        {"gap_calibration_origins": 0},
+        {"feature_stack_calibration_draws": -1},
+        {"feature_stack_calibration_origins": 0},
+        {"feature_stack_min_improvement": -0.1},
+        {"feature_stack_min_origin_win_rate": 1.1},
+        {"learned_model_draws": 19},
+        {"learned_model_shrinkage": 1.1},
     ):
         try:
             EliteProConfig(**kwargs)

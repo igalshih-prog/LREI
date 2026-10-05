@@ -1523,3 +1523,62 @@ def test_elite_learned_signal_model_robust_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value == value for value in difference)
+
+
+def test_elite_tail_weight_robust_walk_forward_diagnostic():
+    """Compare an opt-in tail-weighted portfolio objective with the current objective."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(95, max(50, len(draws) // 12))
+    start = len(draws) - holdout
+    variants = {
+        "current": 0.0,
+        "tail_light": 0.05,
+        "tail_strong": 0.10,
+    }
+    results = {name: {threshold: [] for threshold in (3, 4, 5)} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, tail_weight in variants.items():
+            config = __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+                candidate_count=200,
+                max_tickets=14,
+                portfolio_tail_weight=tail_weight,
+            )
+            result = EliteProRecommendationEngine(config).recommend(history, seed=152000 + offset)
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            for threshold in results[name]:
+                results[name][threshold].append(int(max(hits) >= threshold))
+
+    print("Elite tail-weight robust diagnostic:")
+    for name, thresholds in results.items():
+        print(
+            f"  {name}: "
+            + ", ".join(f"{threshold}+={mean(values):.4f}" for threshold, values in thresholds.items())
+        )
+
+    for name in ("tail_light", "tail_strong"):
+        for threshold in (3, 4, 5):
+            difference = [
+                value - base
+                for value, base in zip(results[name][threshold], results["current"][threshold])
+            ]
+            ci = _bootstrap_ci(difference, seed=20261007 + threshold)
+            print(
+                f"  {name} {threshold}+ vs current: "
+                f"{mean(difference):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+            )
+
+    assert all(
+        len(values) == holdout
+        for thresholds in results.values()
+        for values in thresholds.values()
+    )
+    assert all(
+        value == value
+        for thresholds in results.values()
+        for values in thresholds.values()
+        for value in values
+    )

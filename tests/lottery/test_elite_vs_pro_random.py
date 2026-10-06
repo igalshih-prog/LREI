@@ -2099,3 +2099,94 @@ def test_elite_against_constrained_random_jackpot_walk_forward():
 
     assert len(paired_mean) == holdout
     assert all(value == value for value in paired_mean + paired_best + paired_4 + paired_5 + paired_6)
+
+
+def test_elite_meta_model_margin_multi_origin_diagnostic():
+    """Test whether requiring a performance margin makes model selection more stable."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+    from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 30
+    origins = [len(draws) - holdout, len(draws) - 2 * holdout, len(draws) - 3 * holdout]
+    calibration_draws = 10
+    thresholds = (0.00, 0.02, 0.04)
+    results = {threshold: [] for threshold in thresholds}
+    fixed = []
+    origin_differences = {threshold: [] for threshold in thresholds}
+
+    def recommend_model(name, history, seed):
+        if name == "regular":
+            return RecommendationEngine().recommend(
+                LotteryStatistics.from_dataset(history), ticket_count=50, seed=seed
+            )
+        if name == "pro":
+            return ProRecommendationEngine(
+                ProConfig(candidate_count=80, max_tickets=14)
+            ).recommend(history, seed=seed)
+        return EliteProRecommendationEngine(
+            EliteProConfig(candidate_count=80, max_tickets=14)
+        ).recommend(history, seed=seed)
+
+    for origin_index, start in enumerate(origins):
+        local = {threshold: [] for threshold in thresholds}
+        local_fixed = []
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            elite = recommend_model("elite", history, 150000 + origin_index * 1000 + offset)
+            elite_hits = mean(len(set(ticket) & actual) for ticket in elite.recommended_tickets)
+            fixed.append(elite_hits)
+            local_fixed.append(elite_hits)
+
+            validation = history.draws[-calibration_draws:]
+            train = LotteryDataset(history.draws[:-calibration_draws])
+            scores = {}
+            for model_index, name in enumerate(("regular", "pro", "elite")):
+                values = []
+                for validation_index, validation_draw in enumerate(validation):
+                    candidate = recommend_model(
+                        name,
+                        train,
+                        151000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
+                    )
+                    values.append(
+                        mean(
+                            len(set(ticket) & set(validation_draw.numbers))
+                            for ticket in candidate.recommended_tickets
+                        )
+                    )
+                scores[name] = mean(values)
+
+            best_alternative = max(scores["regular"], scores["pro"])
+            alternative = max(
+                ("regular", "pro"),
+                key=lambda name: scores[name],
+            )
+            for threshold in thresholds:
+                selected = alternative if best_alternative > scores["elite"] + threshold else "elite"
+                chosen = elite if selected == "elite" else recommend_model(
+                    selected, history, 152000 + origin_index * 1000 + offset
+                )
+                local[threshold].append(
+                    mean(len(set(ticket) & actual) for ticket in chosen.recommended_tickets)
+                )
+
+        fixed_mean = mean(local_fixed)
+        for threshold in thresholds:
+            results[threshold].extend(local[threshold])
+            origin_differences[threshold].append(mean(local[threshold]) - fixed_mean)
+
+    print("Elite meta-model margin diagnostic:")
+    for threshold in thresholds:
+        difference = [meta - elite for meta, elite in zip(results[threshold], fixed)]
+        ci = _bootstrap_ci(difference, seed=20261010 + int(threshold * 100))
+        print(f"  threshold={threshold:.2f}: meta={mean(results[threshold]):.4f}, "
+              f"delta={mean(difference):+.4f}, CI=[{ci[0]:+.4f}, {ci[1]:+.4f}], "
+              f"origins={origin_differences[threshold]}")
+
+    assert all(len(values) == len(origins) * holdout for values in results.values())
+    assert all(all(value == value for value in values) for values in results.values())

@@ -52,21 +52,22 @@ Elite Pro is the advanced ensemble layer used by the application's Pro mode. It 
 
 Elite Pro also returns exactly **14 recommended tickets**.
 
-Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. Elite uses adaptive candidate allocation across rank, raw-frequency, and EWMA sources. It can also evaluate an ensemble-score candidate source, but that injection remains an **opt-in experimental mode** and is evaluated separately before changing its production weight. Additional momentum, gap/overdue, consensus, learned-signal, pair/triple coverage, and tail-weight layers are also kept opt-in unless walk-forward diagnostics support promotion.
+Its candidate pool is an ensemble: candidate allocation can be weighted across rank, raw-frequency, and EWMA generators, while the final number scores use the adaptive ensemble weights. Elite currently keeps equal candidate-source allocation as the conservative production default; adaptive candidate allocation remains experimental because the latest longer walk-forward comparison was effectively neutral. Additional momentum, gap/overdue, consensus, learned-signal, pair/triple coverage, and tail-weight layers remain opt-in unless walk-forward diagnostics support promotion.
 
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 
 
 ### Current production validation
 
-The latest clean walk-forward model-selection diagnostic compared the production candidates under the same historical protocol:
+The latest clean walk-forward model-selection diagnostic found:
 
-- Regular: **0.9737** mean hits/ticket
-- Elite Pro (equal candidate allocation): **0.9759**
-- Elite Pro (adaptive candidate allocation): **0.9797**
-- Elite adaptive allocation vs Regular: **+0.0060**, bootstrap 95% CI **[-0.0526, +0.0624]**
+- Regular vs Pro: Pro was lower on that validation window.
+- Elite Pro remained close to Regular.
+- Adaptive candidate allocation showed only a small, statistically uncertain difference from the conservative allocation.
 
-This result supports using Elite's adaptive candidate allocation as the production configuration, but the confidence interval includes zero. LREI therefore treats the improvement as an empirical engineering result, **not evidence of guaranteed predictive advantage**.
+A separate conservative meta-selector diagnostic showed a positive historical delta when selecting among Regular/Pro/Elite using prior validation draws. LREI is therefore adding this as a separate **Smart** mode for further walk-forward validation rather than silently replacing Elite production behavior.
+
+These are empirical backtest observations only. They are **not evidence of guaranteed predictive advantage**.
 
 ## Evaluation Philosophy
 

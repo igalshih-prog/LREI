@@ -51,7 +51,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e . pytest
-      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic"
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic or elite_gap_recency_robust_long_holdout_diagnostic"
 
   strong_number:
     runs-on: ubuntu-latest

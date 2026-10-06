@@ -1,0 +1,25 @@
+name: Smart model selection benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lrei/lottery/smart.py"
+      - "src/lrei/lottery/elite.py"
+      - "src/lrei/lottery/pro.py"
+      - "tests/lottery/test_smart.py"
+      - "data/lottery.csv"
+      - ".github/workflows/smart_benchmark.yml"
+  workflow_dispatch:
+
+jobs:
+  smart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_smart.py -q -s

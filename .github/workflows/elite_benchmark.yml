@@ -108,9 +108,9 @@ jobs:
       - run: pip install -e . pytest
       - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_meta_model_selection_walk_forward_diagnostic"
 
-  ablations:
+  ablations_core:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,8 +120,38 @@ jobs:
           python-version: "3.11"
       - name: Install
         run: pip install -e . pytest
-      - name: Run Elite candidate diagnostics
-        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_pool_diversity or weighting_ablation_diagnostic or candidate_allocation_ablation_diagnostic or candidate_calibration_origin_ablation_diagnostic or elite_recent_affinity_multi_origin_robust_diagnostic or elite_gap_signal_multi_origin_robust_diagnostic or elite_portfolio_pair_triple_coverage_walk_forward_diagnostic or elite_adaptive_consensus_multi_origin_robust_diagnostic or elite_adaptive_feature_stack_multi_origin_diagnostic"
+      - name: Run candidate/weight diagnostics
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_pool_diversity or weighting_ablation_diagnostic or candidate_allocation_ablation_diagnostic"
+
+  ablations_calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run candidate calibration diagnostics
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "candidate_calibration_origin_ablation_diagnostic or elite_recent_affinity_multi_origin_robust_diagnostic or elite_gap_signal_multi_origin_robust_diagnostic"
+
+  ablations_features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run portfolio/feature diagnostics
+        run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "elite_portfolio_pair_triple_coverage_walk_forward_diagnostic or elite_adaptive_consensus_multi_origin_robust_diagnostic or elite_adaptive_feature_stack_multi_origin_diagnostic"
 
 
   calibration:

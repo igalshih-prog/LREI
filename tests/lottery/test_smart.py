@@ -104,6 +104,6 @@ def test_smart_selection_prefers_recent_consistent_performance():
     for name, blocks in origin_scores.items():
         weights = [engine.config.recency_decay ** i for i in range(len(blocks))]
         weighted_mean = sum(v * w for v, w in zip(blocks, weights)) / sum(weights)
-        stability = mean(blocks) if len(blocks) == 1 else mean((v - mean(blocks)) ** 2 for v in blocks) ** 0.5
+        stability = 0.0 if len(blocks) == 1 else mean((v - mean(blocks)) ** 2 for v in blocks) ** 0.5
         weighted[name] = weighted_mean - engine.config.stability_penalty * stability
     assert max(weighted, key=weighted.get) == "pro"

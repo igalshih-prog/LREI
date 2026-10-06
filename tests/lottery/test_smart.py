@@ -107,3 +107,73 @@ def test_smart_selection_prefers_recent_consistent_performance():
         stability = 0.0 if len(blocks) == 1 else mean((v - mean(blocks)) ** 2 for v in blocks) ** 0.5
         weighted[name] = weighted_mean - engine.config.stability_penalty * stability
     assert max(weighted, key=weighted.get) == "pro"
+
+def test_smart_robust_walk_forward_against_models_and_random():
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(45, max(30, len(draws) // 25))
+    start = len(draws) - holdout
+    config = SmartConfig(
+        calibration_draws=8,
+        calibration_candidate_count=60,
+        calibration_origins=3,
+        recency_decay=0.85,
+        stability_penalty=0.10,
+    )
+    smart_scores = []
+    elite_scores = []
+    pro_scores = []
+    random_scores = []
+    selections = {"regular": 0, "pro": 0, "elite": 0}
+
+    import random
+
+    rng = random.Random(20261007)
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        engine = SmartRecommendationEngine(config)
+        smart = engine.recommend(history, seed=203000 + offset)
+        selected, _ = engine.select_model(history, seed=203000 + offset)
+        selections[selected] += 1
+
+        elite = SmartRecommendationEngine(
+            SmartConfig(
+                calibration_draws=8,
+                calibration_candidate_count=60,
+                calibration_origins=3,
+                selection_margin=999.0,
+            )
+        ).recommend(history, seed=203000 + offset)
+        pro = ProRecommendationEngine(
+            __import__("lrei.lottery.pro", fromlist=["ProConfig"]).ProConfig(
+                candidate_count=60,
+                max_tickets=14,
+            )
+        ).recommend(history, seed=203000 + offset)
+
+        random_tickets = tuple(
+            tuple(sorted(rng.sample(range(1, 38), 6)))
+            for _ in range(14)
+        )
+        actual = set(target.numbers)
+
+        smart_scores.append(mean(len(set(ticket) & actual) for ticket in smart.recommended_tickets))
+        elite_scores.append(mean(len(set(ticket) & actual) for ticket in elite.recommended_tickets))
+        pro_scores.append(mean(len(set(ticket) & actual) for ticket in pro.recommended_tickets))
+        random_scores.append(mean(len(set(ticket) & actual) for ticket in random_tickets))
+
+    print("Smart robust walk-forward diagnostic:")
+    print(f"  holdout={holdout}")
+    print(f"  Smart={mean(smart_scores):.4f}")
+    print(f"  Elite={mean(elite_scores):.4f}")
+    print(f"  Pro={mean(pro_scores):.4f}")
+    print(f"  Random={mean(random_scores):.4f}")
+    print(f"  Smart-Elite={mean(a-b for a,b in zip(smart_scores, elite_scores)):+.4f}")
+    print(f"  Smart-Random={mean(a-b for a,b in zip(smart_scores, random_scores)):+.4f}")
+    print(f"  selections={selections}")
+
+    assert len(smart_scores) == holdout
+    assert sum(selections.values()) == holdout
+    assert all(0 <= value <= 6 for value in smart_scores)
+    assert all(0 <= value <= 6 for value in random_scores)

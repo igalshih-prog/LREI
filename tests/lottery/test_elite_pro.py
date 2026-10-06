@@ -1053,3 +1053,67 @@ def test_elite_production_profile_is_locked_to_validated_defaults():
     assert config.momentum_strength == 0.0
     assert config.gap_strength == 0.0
     assert config.consensus_strength == 0.0
+
+
+def test_elite_adaptive_strong_number_is_opt_in_and_validated():
+    base = EliteProConfig(candidate_count=90, max_tickets=14)
+    assert base.adaptive_strong_number is False
+    for kwargs in (
+        {"strong_calibration_draws": -1},
+        {"strong_adaptive_shrinkage": -0.1},
+        {"strong_adaptive_shrinkage": 1.1},
+    ):
+        try:
+            EliteProConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_elite_adaptive_strong_number_scores_are_valid():
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_strong_number=True,
+        strong_calibration_draws=20,
+        strong_adaptive_shrinkage=0.50,
+    )
+    scores = EliteProRecommendationEngine(config)._strong_scores_adaptive(DATASET)
+    assert len(scores) == 7
+    assert {item.number for item in scores} == set(range(1, 8))
+    assert all(item.score >= 0.0 for item in scores)
+
+
+def test_elite_adaptive_strong_number_walk_forward_diagnostic():
+    from statistics import mean
+    from lrei.lottery.dataset import LotteryDataset
+
+    draws = list(DATASET.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    results = {"frequency": [], "adaptive": []}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = target.strong_number
+        for name, adaptive in (("frequency", False), ("adaptive", True)):
+            config = EliteProConfig(
+                candidate_count=120,
+                max_tickets=14,
+                adaptive_strong_number=adaptive,
+                strong_calibration_draws=20,
+                strong_adaptive_shrinkage=0.50,
+            )
+            scores = EliteProRecommendationEngine(config)._strong_scores_adaptive(history)
+            predicted = max(scores, key=lambda item: (item.score, -item.number)).number
+            results[name].append(1 if predicted == actual else 0)
+
+    difference = [adaptive - frequency for adaptive, frequency in zip(results["adaptive"], results["frequency"])]
+    print("Elite strong-number diagnostic:")
+    print(f"  frequency hit-rate={mean(results['frequency']):.4f}")
+    print(f"  adaptive hit-rate={mean(results['adaptive']):.4f}")
+    print(f"  adaptive-frequency={mean(difference):+.4f}")
+
+    assert len(difference) == holdout
+    assert all(value in (-1, 0, 1) for value in difference)

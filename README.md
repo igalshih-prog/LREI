@@ -57,7 +57,12 @@ Its candidate pool is an ensemble: candidate allocation can be weighted across r
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 
 
-### Current production validation
+### Smart mode
+
+Smart is a separate model-selection layer. Before producing the current recommendation, it uses only earlier draws to compare Regular, Pro, and Elite on a short chronological validation window, then runs the selected model on the full available history. It still returns exactly **14 recommended tickets**.
+
+Smart is deliberately separate from Elite production behavior until its own walk-forward benchmark demonstrates a stable advantage.
+
 
 The latest clean walk-forward model-selection diagnostic found:
 

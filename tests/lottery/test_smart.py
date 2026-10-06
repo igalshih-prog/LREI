@@ -23,6 +23,15 @@ def test_smart_selection_is_reproducible():
     assert first == second
 
 
+def test_smart_rejects_invalid_calibration_origins():
+    try:
+        SmartConfig(calibration_origins=0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for calibration_origins=0")
+
+
 def test_smart_walk_forward_diagnostic():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -33,6 +42,7 @@ def test_smart_walk_forward_diagnostic():
             calibration_draws=8,
             calibration_candidate_count=60,
             selection_margin=0.0,
+            calibration_origins=3,
         )
     )
 

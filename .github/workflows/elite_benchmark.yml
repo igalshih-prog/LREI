@@ -53,6 +53,17 @@ jobs:
       - run: pip install -e . pytest
       - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "number_signal_strength_robust_walk_forward_diagnostic or portfolio_hit_threshold_walk_forward_diagnostic or elite_tail_focused_portfolio_selection_walk_forward_diagnostic or elite_momentum_signal_robust_walk_forward_diagnostic or elite_adaptive_momentum_robust_walk_forward_diagnostic"
 
+  strong_number:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "adaptive_strong_number"
+
   robust_ensemble:
     runs-on: ubuntu-latest
     timeout-minutes: 120

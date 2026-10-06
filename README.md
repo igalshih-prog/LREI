@@ -56,6 +56,18 @@ Its candidate pool is an ensemble: candidate allocation can be weighted across r
 
 The purpose of these additional layers is to test whether more sophisticated historical modeling improves empirical backtest behavior. They do not change the mathematical randomness of a fair lottery draw.
 
+
+### Current production validation
+
+The latest clean walk-forward model-selection diagnostic compared the production candidates under the same historical protocol:
+
+- Regular: **0.9737** mean hits/ticket
+- Elite Pro (equal candidate allocation): **0.9759**
+- Elite Pro (adaptive candidate allocation): **0.9797**
+- Elite adaptive allocation vs Regular: **+0.0060**, bootstrap 95% CI **[-0.0526, +0.0624]**
+
+This result supports using Elite's adaptive candidate allocation as the production configuration, but the confidence interval includes zero. LREI therefore treats the improvement as an empirical engineering result, **not evidence of guaranteed predictive advantage**.
+
 ## Evaluation Philosophy
 
 LREI does not claim to predict future lottery results with certainty.

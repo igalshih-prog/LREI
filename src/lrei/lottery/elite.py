@@ -60,6 +60,9 @@ class EliteProConfig(ProConfig):
     learned_signal_model: bool = False
     learned_model_draws: int = 120
     learned_model_shrinkage: float = 0.50
+    adaptive_strong_number: bool = False
+    strong_calibration_draws: int = 30
+    strong_adaptive_shrinkage: float = 0.50
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -133,6 +136,10 @@ class EliteProConfig(ProConfig):
             raise ValueError("learned_model_draws must be at least 20")
         if not 0.0 <= self.learned_model_shrinkage <= 1.0:
             raise ValueError("learned_model_shrinkage must be between 0 and 1")
+        if self.strong_calibration_draws < 0:
+            raise ValueError("strong_calibration_draws must be non-negative")
+        if not 0.0 <= self.strong_adaptive_shrinkage <= 1.0:
+            raise ValueError("strong_adaptive_shrinkage must be between 0 and 1")
         if self.portfolio_pair_coverage_weight < 0:
             raise ValueError("portfolio_pair_coverage_weight must be non-negative")
         if self.portfolio_triple_coverage_weight < 0:
@@ -710,6 +717,64 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         scale = 1.0 - ensemble_weight
         return tuple(scale * weight / source_total for weight in source) + (ensemble_weight,)
 
+    def _strong_scores_adaptive(self, dataset: LotteryDataset) -> tuple[NumberScore, ...]:
+        """Score the 1-7 strong number with an opt-in walk-forward ensemble."""
+        if not self.config.adaptive_strong_number or self.config.strong_calibration_draws <= 0:
+            return self._strong_scores(dataset)
+        block = self.config.strong_calibration_draws
+        if len(dataset) < block + 20:
+            return self._strong_scores(dataset)
+
+        def signals(history):
+            counts = {n: 0 for n in range(1, 8)}
+            for draw in history.draws:
+                if draw.strong_number is not None:
+                    counts[draw.strong_number] += 1
+            recent = {n: 0 for n in range(1, 8)}
+            for draw in history.draws[-60:]:
+                if draw.strong_number is not None:
+                    recent[draw.strong_number] += 1
+            alpha = 1.0 - math.exp(-math.log(2.0) / 12.0)
+            ewma = {n: 0.0 for n in range(1, 8)}
+            for draw in history.draws:
+                hit = draw.strong_number
+                for n in range(1, 8):
+                    ewma[n] = (1.0 - alpha) * ewma[n] + alpha * (1.0 if hit == n else 0.0)
+            def rank(values):
+                ordered = sorted(values, key=lambda n: (values[n], n))
+                return {n: i / 6.0 for i, n in enumerate(ordered)}
+            return rank(counts), rank(recent), rank(ewma)
+
+        validation = dataset.draws[-block:]
+        source_hits = [[], [], []]
+        for offset in range(block):
+            history = LotteryDataset(dataset.draws[:len(dataset) - block + offset])
+            if len(history) < 20:
+                continue
+            variants = signals(history)
+            target = validation[offset].strong_number
+            if target is None:
+                continue
+            for index, variant in enumerate(variants):
+                source_hits[index].append(1.0 if max(variant, key=variant.get) == target else 0.0)
+        if not all(source_hits):
+            return self._strong_scores(dataset)
+        performance = [max(0.05, mean(values)) for values in source_hits]
+        learned_total = sum(performance)
+        learned = [value / learned_total for value in performance]
+        shrink = self.config.strong_adaptive_shrinkage
+        weights = [(1.0 - shrink) / 3.0 + shrink * learned[index] for index in range(3)]
+        total = sum(weights)
+        weights = [value / total for value in weights]
+        rank_scores, recent_scores, ewma_scores = signals(dataset)
+        return tuple(
+            NumberScore(
+                number=n,
+                score=weights[0] * rank_scores[n] + weights[1] * recent_scores[n] + weights[2] * ewma_scores[n],
+            )
+            for n in range(1, 8)
+        )
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
@@ -809,7 +874,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         if len(recommended) != self.config.max_tickets:
             raise ValueError("Elite Pro optimizer could not produce the configured number of tickets")
 
-        strong_scores = self._strong_scores(dataset)
+        strong_scores = self._strong_scores_adaptive(dataset)
         generated = tuple(candidates)
         generated_with_strong = tuple(
             RecommendedTicket(numbers=t, strong_number=self.generator.generate_strong_number(scores=strong_scores, rng=rng) if strong_scores else None)

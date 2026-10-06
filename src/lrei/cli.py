@@ -14,6 +14,7 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProRecommendationEngine
+from lrei.lottery.smart import SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
 app = typer.Typer(
@@ -118,10 +119,10 @@ def recommend(
         ),
     ] = 42,
     mode: Annotated[
-        Literal["regular", "pro", "elite"],
+        Literal["regular", "pro", "elite", "smart"],
         typer.Option(
             "--mode",
-            help="Recommendation engine: regular, pro, or elite.",
+            help="Recommendation engine: regular, pro, elite, or smart.",
         ),
     ] = "elite",
 ) -> None:
@@ -145,7 +146,9 @@ def recommend(
 
     statistics = LotteryStatistics.from_dataset(dataset)
 
-    if mode == "elite":
+    if mode == "smart":
+        result = SmartRecommendationEngine().recommend(dataset, seed=seed)
+    elif mode == "elite":
         result = EliteProRecommendationEngine().recommend(
             dataset,
             seed=seed,

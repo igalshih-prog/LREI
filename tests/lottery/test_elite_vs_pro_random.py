@@ -2190,3 +2190,83 @@ def test_elite_meta_model_margin_multi_origin_diagnostic():
 
     assert all(len(values) == len(origins) * holdout for values in results.values())
     assert all(all(value == value for value in values) for values in results.values())
+
+
+def test_elite_conservative_meta_selector_margin_diagnostic():
+    """Test conservative margins for Regular/Pro/Elite model selection."""
+    from lrei.lottery.recommendation import RecommendationEngine
+    from lrei.lottery.statistics import LotteryStatistics
+    from lrei.lottery.pro import ProConfig
+
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 30
+    origins = [len(draws) - holdout, len(draws) - 2 * holdout, len(draws) - 3 * holdout]
+    calibration_draws = 12
+    margins = (0.0, 0.01, 0.02, 0.03)
+    results = {margin: [] for margin in margins}
+    fixed = []
+
+    def recommend_model(name, history, seed):
+        if name == "regular":
+            return RecommendationEngine().recommend(
+                LotteryStatistics.from_dataset(history), ticket_count=50, seed=seed
+            )
+        if name == "pro":
+            return ProRecommendationEngine(
+                ProConfig(candidate_count=100, max_tickets=14)
+            ).recommend(history, seed=seed)
+        return EliteProRecommendationEngine(
+            EliteProConfig(candidate_count=100, max_tickets=14)
+        ).recommend(history, seed=seed)
+
+    for origin_index, start in enumerate(origins):
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            fixed_result = recommend_model("elite", history, 160000 + origin_index * 1000 + offset)
+            fixed_value = mean(len(set(ticket) & actual) for ticket in fixed_result.recommended_tickets)
+            fixed.append(fixed_value)
+
+            validation = history.draws[-calibration_draws:]
+            train = LotteryDataset(history.draws[:-calibration_draws])
+            model_scores = {}
+            for model_index, name in enumerate(("regular", "pro", "elite")):
+                values = []
+                for validation_index, validation_draw in enumerate(validation):
+                    candidate = recommend_model(
+                        name,
+                        train,
+                        161000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
+                    )
+                    values.append(
+                        mean(len(set(ticket) & set(validation_draw.numbers)) for ticket in candidate.recommended_tickets)
+                    )
+                model_scores[name] = mean(values)
+
+            best_score = max(model_scores.values())
+            for margin in margins:
+                selected = "elite"
+                if best_score - model_scores["elite"] > margin:
+                    selected = max(model_scores, key=model_scores.get)
+                chosen = recommend_model(
+                    selected,
+                    history,
+                    162000 + int(margin * 1000) + origin_index * 1000 + offset,
+                )
+                results[margin].append(
+                    mean(len(set(ticket) & actual) for ticket in chosen.recommended_tickets)
+                )
+
+    print("Elite conservative meta-selector margin diagnostic:")
+    print(f"  fixed_elite={mean(fixed):.4f}")
+    for margin in margins:
+        difference = [value - base for value, base in zip(results[margin], fixed)]
+        ci = _bootstrap_ci(difference, seed=20261007 + int(margin * 100))
+        print(
+            f"  margin={margin:.2f}: hits={mean(results[margin]):.4f}, "
+            f"diff={mean(difference):+.4f}, CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+        )
+
+    assert all(len(values) == holdout * len(origins) for values in results.values())
+    assert all(all(value == value for value in values) for values in results.values())

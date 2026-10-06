@@ -179,3 +179,15 @@ jobs:
         run: pip install -e . pytest
       - name: Run multi-origin score calibration diagnostic
         run: python -m pytest tests/lottery/test_elite_pro.py -q -s -k "score_calibration_multi_origin_robust_diagnostic or elite_momentum_multi_origin_robust_diagnostic"
+
+
+  model_selection_margin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_conservative_meta_selector_margin_diagnostic"

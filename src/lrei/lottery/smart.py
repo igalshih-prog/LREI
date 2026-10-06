@@ -20,6 +20,7 @@ class SmartConfig:
     calibration_candidate_count: int = 200
     min_history_draws: int = 60
     selection_margin: float = 0.0
+    calibration_origins: int = 3
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:
@@ -30,6 +31,8 @@ class SmartConfig:
             raise ValueError("min_history_draws is too small for calibration")
         if self.selection_margin < 0:
             raise ValueError("selection_margin must be non-negative")
+        if self.calibration_origins < 1:
+            raise ValueError("calibration_origins must be at least 1")
 
 
 class SmartRecommendationEngine:
@@ -74,28 +77,40 @@ class SmartRecommendationEngine:
         if len(dataset) < self.config.min_history_draws:
             return "elite", {}
 
-        validation = dataset.draws[-self.config.calibration_draws:]
-        train = LotteryDataset(dataset.draws[:-self.config.calibration_draws])
-        if len(train) < 20:
+        block = self.config.calibration_draws
+        minimum_train = 20
+        max_origins = min(
+            self.config.calibration_origins,
+            max(1, (len(dataset) - minimum_train) // block),
+        )
+        if max_origins < 1:
             return "elite", {}
 
         models = self._models()
         scores = {name: [] for name in models}
 
-        for draw_index, target in enumerate(validation):
-            for model_index, (name, model) in enumerate(models.items()):
-                if name == "regular":
-                    result = model.recommend(
-                        LotteryStatistics.from_dataset(train),
-                        ticket_count=14,
-                        seed=(seed or 0) + draw_index * 101 + model_index,
-                    )
-                else:
-                    result = model.recommend(
-                        train,
-                        seed=(seed or 0) + draw_index * 101 + model_index,
-                    )
-                scores[name].append(self._mean_hits(result, target))
+        for origin_index in range(max_origins):
+            origin = len(dataset) - origin_index * block
+            validation_start = origin - block
+            if validation_start < minimum_train:
+                break
+            train = LotteryDataset(dataset.draws[:validation_start])
+            validation = dataset.draws[validation_start:origin]
+            for draw_index, target in enumerate(validation):
+                for model_index, (name, model) in enumerate(models.items()):
+                    model_seed = (seed or 0) + origin_index * 10000 + draw_index * 101 + model_index
+                    if name == "regular":
+                        result = model.recommend(
+                            LotteryStatistics.from_dataset(train),
+                            ticket_count=14,
+                            seed=model_seed,
+                        )
+                    else:
+                        result = model.recommend(train, seed=model_seed)
+                    scores[name].append(self._mean_hits(result, target))
+
+        if not all(scores.values()):
+            return "elite", {}
 
         means = {name: mean(values) for name, values in scores.items()}
         best_name = max(means, key=means.get)

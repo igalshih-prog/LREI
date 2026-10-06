@@ -21,6 +21,8 @@ class SmartConfig:
     min_history_draws: int = 60
     selection_margin: float = 0.0
     calibration_origins: int = 3
+    recency_decay: float = 0.85
+    stability_penalty: float = 0.10
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:
@@ -33,6 +35,10 @@ class SmartConfig:
             raise ValueError("selection_margin must be non-negative")
         if self.calibration_origins < 1:
             raise ValueError("calibration_origins must be at least 1")
+        if not 0.0 < self.recency_decay <= 1.0:
+            raise ValueError("recency_decay must be in (0, 1]")
+        if self.stability_penalty < 0:
+            raise ValueError("stability_penalty must be non-negative")
 
 
 class SmartRecommendationEngine:
@@ -88,6 +94,7 @@ class SmartRecommendationEngine:
 
         models = self._models()
         scores = {name: [] for name in models}
+        origin_scores = {name: [] for name in models}
 
         for origin_index in range(max_origins):
             origin = len(dataset) - origin_index * block
@@ -96,6 +103,7 @@ class SmartRecommendationEngine:
                 break
             train = LotteryDataset(dataset.draws[:validation_start])
             validation = dataset.draws[validation_start:origin]
+            block_scores = {name: [] for name in models}
             for draw_index, target in enumerate(validation):
                 for model_index, (name, model) in enumerate(models.items()):
                     model_seed = (seed or 0) + origin_index * 10000 + draw_index * 101 + model_index
@@ -107,21 +115,38 @@ class SmartRecommendationEngine:
                         )
                     else:
                         result = model.recommend(train, seed=model_seed)
-                    scores[name].append(self._mean_hits(result, target))
+                    value = self._mean_hits(result, target)
+                    scores[name].append(value)
+                    block_scores[name].append(value)
+            for name, values in block_scores.items():
+                origin_scores[name].append(mean(values))
 
         if not all(scores.values()):
             return "elite", {}
 
-        means = {name: mean(values) for name, values in scores.items()}
-        best_name = max(means, key=means.get)
-        elite_score = means["elite"]
+        raw_means = {name: mean(values) for name, values in scores.items()}
+        selection_scores = {}
+        for name in models:
+            blocks = origin_scores[name]
+            weights = [self.config.recency_decay ** i for i in range(len(blocks))]
+            total_weight = sum(weights)
+            weighted_mean = sum(value * weight for value, weight in zip(blocks, weights)) / total_weight
+            if len(blocks) > 1:
+                block_mean = mean(blocks)
+                stability = mean((value - block_mean) ** 2 for value in blocks) ** 0.5
+            else:
+                stability = 0.0
+            selection_scores[name] = weighted_mean - self.config.stability_penalty * stability
+
+        best_name = max(selection_scores, key=selection_scores.get)
+        elite_score = selection_scores["elite"]
 
         # A non-Elite model must beat Elite by the configured margin before
         # Smart switches away from the stronger default.
-        if best_name != "elite" and means[best_name] <= elite_score + self.config.selection_margin:
+        if best_name != "elite" and selection_scores[best_name] <= elite_score + self.config.selection_margin:
             best_name = "elite"
 
-        return best_name, means
+        return best_name, raw_means
 
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         selected, _ = self.select_model(dataset, seed=seed)

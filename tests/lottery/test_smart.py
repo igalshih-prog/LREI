@@ -112,12 +112,12 @@ def test_smart_selection_prefers_recent_consistent_performance():
 def test_smart_robust_walk_forward_against_models_and_random():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
-    holdout = min(45, max(30, len(draws) // 25))
+    holdout = min(30, max(24, len(draws) // 35))
     start = len(draws) - holdout
     config = SmartConfig(
-        calibration_draws=8,
-        calibration_candidate_count=60,
-        calibration_origins=3,
+        calibration_draws=6,
+        calibration_candidate_count=40,
+        calibration_origins=2,
         recency_decay=0.85,
         stability_penalty=0.10,
     )

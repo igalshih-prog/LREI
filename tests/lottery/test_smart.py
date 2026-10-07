@@ -4,6 +4,7 @@ from statistics import mean
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
+from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
 
 def test_smart_returns_exactly_14_tickets():
@@ -52,11 +53,12 @@ def test_smart_walk_forward_diagnostic():
     for offset, target in enumerate(draws[start:]):
         history = LotteryDataset(draws=draws[:start + offset])
         smart = engine.recommend(history, seed=20261000 + offset)
-        elite = SmartRecommendationEngine(
-            SmartConfig(
-                calibration_draws=8,
-                calibration_candidate_count=60,
-                selection_margin=999.0,
+        elite = EliteProRecommendationEngine(
+            EliteProConfig(
+                candidate_count=60,
+                max_tickets=14,
+                adaptive_weights=False,
+                adaptive_candidate_weights=False,
             )
         ).recommend(history, seed=20261000 + offset)
         actual = set(target.numbers)
@@ -138,12 +140,12 @@ def test_smart_robust_walk_forward_against_models_and_random():
         selected, _ = engine.select_model(history, seed=203000 + offset)
         selections[selected] += 1
 
-        elite = SmartRecommendationEngine(
-            SmartConfig(
-                calibration_draws=8,
-                calibration_candidate_count=60,
-                calibration_origins=3,
-                selection_margin=999.0,
+        elite = EliteProRecommendationEngine(
+            EliteProConfig(
+                candidate_count=40,
+                max_tickets=14,
+                adaptive_weights=False,
+                adaptive_candidate_weights=False,
             )
         ).recommend(history, seed=203000 + offset)
         pro = ProRecommendationEngine(

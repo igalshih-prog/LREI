@@ -1,5 +1,6 @@
 from pathlib import Path
 from statistics import mean
+import random
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
@@ -127,6 +128,8 @@ def test_smart_robust_walk_forward_against_models_and_random():
     elite_scores = []
     pro_scores = []
     random_scores = []
+    smart_vs_elite = []
+    smart_vs_random = []
     selections = {"regular": 0, "pro": 0, "elite": 0}
 
     import random
@@ -140,14 +143,7 @@ def test_smart_robust_walk_forward_against_models_and_random():
         selected, _ = engine.select_model(history, seed=203000 + offset)
         selections[selected] += 1
 
-        elite = EliteProRecommendationEngine(
-            EliteProConfig(
-                candidate_count=40,
-                max_tickets=14,
-                adaptive_weights=False,
-                adaptive_candidate_weights=False,
-            )
-        ).recommend(history, seed=203000 + offset)
+        elite = EliteProRecommendationEngine().recommend(history, seed=203000 + offset)
         pro = ProRecommendationEngine(
             __import__("lrei.lottery.pro", fromlist=["ProConfig"]).ProConfig(
                 candidate_count=60,
@@ -165,6 +161,8 @@ def test_smart_robust_walk_forward_against_models_and_random():
         elite_scores.append(mean(len(set(ticket) & actual) for ticket in elite.recommended_tickets))
         pro_scores.append(mean(len(set(ticket) & actual) for ticket in pro.recommended_tickets))
         random_scores.append(mean(len(set(ticket) & actual) for ticket in random_tickets))
+        smart_vs_elite.append(smart_scores[-1] - elite_scores[-1])
+        smart_vs_random.append(smart_scores[-1] - random_scores[-1])
 
     print("Smart robust walk-forward diagnostic:")
     print(f"  holdout={holdout}")
@@ -172,8 +170,18 @@ def test_smart_robust_walk_forward_against_models_and_random():
     print(f"  Elite={mean(elite_scores):.4f}")
     print(f"  Pro={mean(pro_scores):.4f}")
     print(f"  Random={mean(random_scores):.4f}")
-    print(f"  Smart-Elite={mean(a-b for a,b in zip(smart_scores, elite_scores)):+.4f}")
-    print(f"  Smart-Random={mean(a-b for a,b in zip(smart_scores, random_scores)):+.4f}")
+    def bootstrap_ci(values, seed=20261008, samples=5000):
+        bootstrap_rng = random.Random(seed)
+        estimates = [mean(values[bootstrap_rng.randrange(len(values))] for _ in values) for _ in range(samples)]
+        estimates.sort()
+        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+
+    smart_elite_ci = bootstrap_ci(smart_vs_elite)
+    smart_random_ci = bootstrap_ci(smart_vs_random, seed=20261009)
+    print(f"  Smart-Elite={mean(smart_vs_elite):+.4f}")
+    print(f"  Smart-Random={mean(smart_vs_random):+.4f}")
+    print(f"  Smart-Elite 95% CI=[{smart_elite_ci[0]:+.4f}, {smart_elite_ci[1]:+.4f}]")
+    print(f"  Smart-Random 95% CI=[{smart_random_ci[0]:+.4f}, {smart_random_ci[1]:+.4f}]")
     print(f"  selections={selections}")
 
     assert len(smart_scores) == holdout

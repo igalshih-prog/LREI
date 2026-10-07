@@ -399,3 +399,83 @@ def test_smart_calibration_recency_margin_ablation():
 
     assert all(len(values) == holdout for values in results.values())
     assert all(len(values) == holdout for values in tail4.values())
+
+
+def test_smart_calibration_multi_origin_robust_diagnostic():
+    """Stress-test Smart calibration choices across independent chronological origins."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    block = 20
+    origins = [len(draws) - 80, len(draws) - 55, len(draws) - 30]
+    variants = {
+        "current": (6, 3, 0.85, 0.10, 0.00),
+        "stable": (10, 3, 0.85, 0.10, 0.02),
+        "recent": (8, 3, 0.70, 0.10, 0.02),
+        "longer": (12, 2, 0.85, 0.10, 0.02),
+    }
+    results = {name: [] for name in variants}
+    selections = {name: {"regular": 0, "pro": 0, "elite": 0} for name in variants}
+    origin_means = {name: [] for name in variants}
+
+    def bootstrap_ci(values, seed=20261011, samples=5000):
+        rng = random.Random(seed)
+        estimates = [
+            mean(values[rng.randrange(len(values))] for _ in values)
+            for _ in range(samples)
+        ]
+        estimates.sort()
+        return (
+            estimates[int(0.025 * (len(estimates) - 1))],
+            estimates[int(0.975 * (len(estimates) - 1))],
+        )
+
+    for origin_index, start in enumerate(origins):
+        for name, (calibration_draws, calibration_origins, decay, stability, margin) in variants.items():
+            local = []
+            for offset, target in enumerate(draws[start:start + block]):
+                history = LotteryDataset(draws=draws[:start + offset])
+                config = SmartConfig(
+                    calibration_draws=calibration_draws,
+                    calibration_candidate_count=40,
+                    min_history_draws=60,
+                    calibration_origins=calibration_origins,
+                    recency_decay=decay,
+                    stability_penalty=stability,
+                    selection_margin=margin,
+                )
+                engine = SmartRecommendationEngine(config)
+                selected, _ = engine.select_model(history, seed=207000 + origin_index * 1000 + offset)
+                selections[name][selected] += 1
+                result = engine.recommend(
+                    history,
+                    seed=207000 + origin_index * 1000 + offset,
+                )
+                actual = set(target.numbers)
+                local.append(
+                    mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+                )
+                results[name].append(local[-1])
+            origin_means[name].append(mean(local))
+
+    baseline = results["current"]
+    print("Smart calibration multi-origin robust diagnostic:")
+    for name, values in results.items():
+        difference = [value - base for value, base in zip(values, baseline)]
+        ci = bootstrap_ci(difference, seed=20261012 + list(variants).index(name))
+        print(
+            f"  {name}: mean={mean(values):.4f}, "
+            f"delta={mean(difference):+.4f}, "
+            f"95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}], "
+            f"origins={[round(x, 4) for x in origin_means[name]]}, "
+            f"selections={selections[name]}"
+        )
+
+    assert all(len(values) == block * len(origins) for values in results.values())
+    assert all(
+        len(origin_values) == len(origins)
+        for origin_values in origin_means.values()
+    )
+    assert all(
+        all(value == value for value in values)
+        for values in results.values()
+    )

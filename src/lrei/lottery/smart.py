@@ -23,6 +23,10 @@ class SmartConfig:
     calibration_origins: int = 3
     recency_decay: float = 0.85
     stability_penalty: float = 0.10
+    selection_metric: str = "mean"
+    tail_weight_4: float = 0.50
+    tail_weight_5: float = 1.00
+    tail_weight_6: float = 2.00
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:
@@ -39,6 +43,10 @@ class SmartConfig:
             raise ValueError("recency_decay must be in (0, 1]")
         if self.stability_penalty < 0:
             raise ValueError("stability_penalty must be non-negative")
+        if self.selection_metric not in {"mean", "tail"}:
+            raise ValueError("selection_metric must be 'mean' or 'tail'")
+        if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
+            raise ValueError("tail weights must be non-negative")
 
 
 class SmartRecommendationEngine:
@@ -71,12 +79,17 @@ class SmartRecommendationEngine:
             ),
         }
 
-    @staticmethod
-    def _mean_hits(result: RecommendationResult, target) -> float:
+    def _validation_score(self, result: RecommendationResult, target) -> float:
         actual = set(target.numbers)
-        return mean(
-            len(set(ticket) & actual)
-            for ticket in result.recommended_tickets
+        hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+        mean_hits = mean(hits)
+        if self.config.selection_metric == "mean":
+            return mean_hits
+        return (
+            mean_hits
+            + self.config.tail_weight_4 * mean(hit >= 4 for hit in hits)
+            + self.config.tail_weight_5 * mean(hit >= 5 for hit in hits)
+            + self.config.tail_weight_6 * mean(hit == 6 for hit in hits)
         )
 
     def select_model(self, dataset: LotteryDataset, seed: int | None = None) -> tuple[str, dict[str, float]]:
@@ -115,7 +128,7 @@ class SmartRecommendationEngine:
                         )
                     else:
                         result = model.recommend(train, seed=model_seed)
-                    value = self._mean_hits(result, target)
+                    value = self._validation_score(result, target)
                     scores[name].append(value)
                     block_scores[name].append(value)
             for name, values in block_scores.items():

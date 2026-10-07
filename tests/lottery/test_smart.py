@@ -188,3 +188,81 @@ def test_smart_robust_walk_forward_against_models_and_random():
     assert sum(selections.values()) == holdout
     assert all(0 <= value <= 6 for value in smart_scores)
     assert all(0 <= value <= 6 for value in random_scores)
+
+
+def test_smart_tail_metric_is_opt_in_and_validated():
+    base = SmartConfig()
+    assert base.selection_metric == "mean"
+    assert base.tail_weight_4 == 0.50
+    assert base.tail_weight_5 == 1.00
+    assert base.tail_weight_6 == 2.00
+
+    for kwargs in (
+        {"selection_metric": "invalid"},
+        {"tail_weight_4": -0.1},
+        {"tail_weight_5": -0.1},
+        {"tail_weight_6": -0.1},
+    ):
+        try:
+            SmartConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_smart_tail_metric_walk_forward_diagnostic():
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(60, max(40, len(draws) // 18))
+    start = len(draws) - holdout
+    variants = {
+        "mean": SmartConfig(
+            calibration_draws=8,
+            calibration_candidate_count=60,
+            calibration_origins=3,
+            selection_metric="mean",
+        ),
+        "tail": SmartConfig(
+            calibration_draws=8,
+            calibration_candidate_count=60,
+            calibration_origins=3,
+            selection_metric="tail",
+            tail_weight_4=0.50,
+            tail_weight_5=1.00,
+            tail_weight_6=2.00,
+        ),
+    }
+    results = {name: [] for name in variants}
+    tail_rates = {name: {threshold: [] for threshold in (4, 5, 6)} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, config in variants.items():
+            result = SmartRecommendationEngine(config).recommend(
+                history, seed=204000 + offset
+            )
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            results[name].append(mean(hits))
+            for threshold in tail_rates[name]:
+                tail_rates[name][threshold].append(
+                    mean(hit >= threshold for hit in hits)
+                )
+
+    print("Smart selection metric diagnostic:")
+    for name in variants:
+        print(
+            f"  {name}: mean={mean(results[name]):.4f}, "
+            + ", ".join(
+                f"{threshold}+={mean(tail_rates[name][threshold]):.4f}"
+                for threshold in tail_rates[name]
+            )
+        )
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(
+        len(values) == holdout
+        for thresholds in tail_rates.values()
+        for values in thresholds.values()
+    )

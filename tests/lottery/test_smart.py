@@ -266,3 +266,81 @@ def test_smart_tail_metric_walk_forward_diagnostic():
         for thresholds in tail_rates.values()
         for values in thresholds.values()
     )
+
+
+def test_smart_validation_weighted_portfolio_ensemble_diagnostic():
+    """Compare single-model Smart selection with a validation-weighted 14-ticket ensemble."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(40, max(30, len(draws) // 28))
+    start = len(draws) - holdout
+    config = SmartConfig(
+        calibration_draws=6,
+        calibration_candidate_count=50,
+        calibration_origins=2,
+        recency_decay=0.85,
+        stability_penalty=0.10,
+    )
+    smart_scores = []
+    ensemble_scores = []
+    selections = {name: 0 for name in ("regular", "pro", "elite")}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        engine = SmartRecommendationEngine(config)
+        smart = engine.recommend(history, seed=205000 + offset)
+        selected, raw_scores = engine.select_model(history, seed=205000 + offset)
+        selections[selected] += 1
+
+        models = engine._models()
+        results = {}
+        for model_index, (name, model) in enumerate(models.items()):
+            seed = 205000 + offset * 100 + model_index
+            if name == "regular":
+                results[name] = model.recommend(
+                    __import__("lrei.lottery.statistics", fromlist=["LotteryStatistics"]).LotteryStatistics.from_dataset(history),
+                    ticket_count=14,
+                    seed=seed,
+                )
+            else:
+                results[name] = model.recommend(history, seed=seed)
+
+        total = sum(max(raw_scores.get(name, 0.0), 0.001) for name in models)
+        allocations = {
+            name: int(14 * max(raw_scores.get(name, 0.0), 0.001) / total)
+            for name in models
+        }
+        for index in range(14 - sum(allocations.values())):
+            best_name = max(
+                models,
+                key=lambda name: (
+                    max(raw_scores.get(name, 0.0), 0.001) / max(1, allocations[name] + 1),
+                    -list(models).index(name),
+                ),
+            )
+            allocations[best_name] += 1
+
+        ensemble_tickets = []
+        for name in models:
+            ensemble_tickets.extend(results[name].recommended_tickets[:allocations[name]])
+        ensemble_tickets = tuple(ensemble_tickets[:14])
+
+        actual = set(target.numbers)
+        smart_scores.append(
+            mean(len(set(ticket) & actual) for ticket in smart.recommended_tickets)
+        )
+        ensemble_scores.append(
+            mean(len(set(ticket) & actual) for ticket in ensemble_tickets)
+        )
+
+    difference = [ensemble - smart for ensemble, smart in zip(ensemble_scores, smart_scores)]
+
+    print("Smart validation-weighted portfolio ensemble diagnostic:")
+    print(f"  Smart single-model={mean(smart_scores):.4f}")
+    print(f"  Ensemble={mean(ensemble_scores):.4f}")
+    print(f"  Ensemble-Smart={mean(difference):+.4f}")
+    print(f"  selections={selections}")
+
+    assert len(difference) == holdout
+    assert all(len(set(draws[start + i].numbers)) == 6 for i in range(holdout))
+    assert all(value == value for value in difference)

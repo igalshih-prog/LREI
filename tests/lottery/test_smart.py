@@ -344,3 +344,58 @@ def test_smart_validation_weighted_portfolio_ensemble_diagnostic():
     assert len(difference) == holdout
     assert all(len(set(draws[start + i].numbers)) == 6 for i in range(holdout))
     assert all(value == value for value in difference)
+
+
+def test_smart_calibration_recency_margin_ablation():
+    """Find a more stable Smart selector without changing its production defaults."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(30, max(24, len(draws) // 35))
+    start = len(draws) - holdout
+    variants = {
+        "decay_070_margin_000": (0.70, 0.00),
+        "decay_070_margin_020": (0.70, 0.02),
+        "decay_085_margin_000": (0.85, 0.00),
+        "decay_085_margin_020": (0.85, 0.02),
+        "decay_100_margin_000": (1.00, 0.00),
+        "decay_100_margin_020": (1.00, 0.02),
+    }
+    results = {name: [] for name in variants}
+    tail4 = {name: [] for name in variants}
+    selections = {name: {"regular": 0, "pro": 0, "elite": 0} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, (decay, margin) in variants.items():
+            engine = SmartRecommendationEngine(
+                SmartConfig(
+                    calibration_draws=6,
+                    calibration_candidate_count=40,
+                    calibration_origins=3,
+                    recency_decay=decay,
+                    stability_penalty=0.10,
+                    selection_margin=margin,
+                )
+            )
+            result = engine.recommend(history, seed=206000 + offset)
+            selected, _ = engine.select_model(history, seed=206000 + offset)
+            selections[name][selected] += 1
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            results[name].append(mean(hits))
+            tail4[name].append(int(max(hits) >= 4))
+
+    print("Smart recency/margin ablation:")
+    ranked = sorted(
+        variants,
+        key=lambda name: (mean(results[name]), mean(tail4[name])),
+        reverse=True,
+    )
+    for name in ranked:
+        print(
+            f"  {name}: mean={mean(results[name]):.4f}, "
+            f"4+={mean(tail4[name]):.4f}, selections={selections[name]}"
+        )
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(len(values) == holdout for values in tail4.values())

@@ -3,6 +3,7 @@ from statistics import mean
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
+from lrei.lottery.pro import ProRecommendationEngine
 
 
 def test_smart_returns_exactly_14_tickets():

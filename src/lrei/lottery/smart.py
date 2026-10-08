@@ -172,8 +172,7 @@ class SmartRecommendationEngine:
 
         return best_name, raw_means
 
-    def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
-        selected, _ = self.select_model(dataset, seed=seed)
+    def _recommend_selected(self, selected: str, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if selected == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(dataset),
@@ -192,3 +191,7 @@ class SmartRecommendationEngine:
                 adaptive_candidate_weights=False,
             )
         ).recommend(dataset, seed=seed)
+
+    def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
+        selected, _ = self.select_model(dataset, seed=seed)
+        return self._recommend_selected(selected, dataset, seed=seed)

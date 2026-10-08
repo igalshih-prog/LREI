@@ -505,12 +505,10 @@ def test_smart_calibration_multi_origin_robust_diagnostic():
                     selection_margin=margin,
                 )
                 engine = SmartRecommendationEngine(config)
-                selected, _ = engine.select_model(history, seed=207000 + origin_index * 1000 + offset)
+                seed = 207000 + origin_index * 1000 + offset
+                selected, _ = engine.select_model(history, seed=seed)
                 selections[name][selected] += 1
-                result = engine.recommend(
-                    history,
-                    seed=207000 + origin_index * 1000 + offset,
-                )
+                result = engine._recommend_selected(selected, history, seed=seed)
                 actual = set(target.numbers)
                 local.append(
                     mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)

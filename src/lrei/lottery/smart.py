@@ -44,7 +44,7 @@ class SmartConfig:
         if self.stability_penalty < 0:
             raise ValueError("stability_penalty must be non-negative")
         if self.selection_metric not in {"mean", "tail"}:
-            raise ValueError("selection_metric must be 'mean' or 'tail'")
+            raise ValueError("selection_metric must be 'mean', 'tail', or 'jackpot'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
             raise ValueError("tail weights must be non-negative")
 
@@ -85,11 +85,19 @@ class SmartRecommendationEngine:
         mean_hits = mean(hits)
         if self.config.selection_metric == "mean":
             return mean_hits
+        if self.config.selection_metric == "tail":
+            return (
+                mean_hits
+                + self.config.tail_weight_4 * mean(hit >= 4 for hit in hits)
+                + self.config.tail_weight_5 * mean(hit >= 5 for hit in hits)
+                + self.config.tail_weight_6 * mean(hit == 6 for hit in hits)
+            )
+        best_hit = max(hits)
         return (
-            mean_hits
-            + self.config.tail_weight_4 * mean(hit >= 4 for hit in hits)
-            + self.config.tail_weight_5 * mean(hit >= 5 for hit in hits)
-            + self.config.tail_weight_6 * mean(hit == 6 for hit in hits)
+            best_hit
+            + self.config.tail_weight_4 * float(best_hit >= 4)
+            + self.config.tail_weight_5 * float(best_hit >= 5)
+            + self.config.tail_weight_6 * float(best_hit == 6)
         )
 
     def select_model(self, dataset: LotteryDataset, seed: int | None = None) -> tuple[str, dict[str, float]]:

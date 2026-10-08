@@ -27,3 +27,5 @@ jobs:
         run: python -m pytest tests/lottery/test_smart.py -q -s -k "smart_calibration_multi_origin_robust_diagnostic"
       - name: Run robust Smart tail diagnostic
         run: python -m pytest tests/lottery/test_smart.py -q -s -k "smart_tail_metric_robust_walk_forward_diagnostic"
+      - name: Run robust Smart jackpot-metric diagnostic
+        run: python -m pytest tests/lottery/test_smart.py -q -s -k "smart_jackpot_metric_walk_forward_diagnostic"

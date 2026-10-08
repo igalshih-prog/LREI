@@ -211,6 +211,66 @@ def test_smart_tail_metric_is_opt_in_and_validated():
             raise AssertionError(f"Expected ValueError for {kwargs}")
 
 
+def test_smart_jackpot_metric_is_opt_in_and_uses_best_ticket():
+    base = SmartConfig()
+    assert base.selection_metric == "mean"
+    config = SmartConfig(selection_metric="jackpot")
+    engine = SmartRecommendationEngine(config)
+    class Target:
+        numbers = (1, 2, 3, 4, 5, 6)
+    result = type("Result", (), {
+        "recommended_tickets": (
+            (1, 2, 3, 4, 20, 21),
+            (1, 2, 30, 31, 32, 33),
+        )
+    })()
+    assert engine._validation_score(result, Target()) == 4.5
+
+
+def test_smart_jackpot_metric_walk_forward_diagnostic():
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(90, max(60, len(draws) // 13))
+    start = len(draws) - holdout
+    variants = {
+        "mean": SmartConfig(calibration_draws=8, calibration_candidate_count=50, calibration_origins=3, selection_metric="mean"),
+        "tail": SmartConfig(calibration_draws=8, calibration_candidate_count=50, calibration_origins=3, selection_metric="tail"),
+        "jackpot": SmartConfig(
+            calibration_draws=8,
+            calibration_candidate_count=50,
+            calibration_origins=3,
+            selection_metric="jackpot",
+        ),
+    }
+    results = {name: [] for name in variants}
+    best_rates = {name: {threshold: [] for threshold in (4, 5, 6)} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws[:start + offset])
+        actual = set(target.numbers)
+        for name, config in variants.items():
+            result = SmartRecommendationEngine(config).recommend(history, seed=209000 + offset)
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            results[name].append(mean(hits))
+            best = max(hits)
+            for threshold in best_rates[name]:
+                best_rates[name][threshold].append(float(best >= threshold))
+
+    print("Smart jackpot-metric diagnostic:")
+    for name in variants:
+        print(
+            f"  {name}: mean={mean(results[name]):.4f}, "
+            + ", ".join(f"best_{threshold}+={mean(best_rates[name][threshold]):.4f}" for threshold in best_rates[name])
+        )
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(
+        len(values) == holdout
+        for thresholds in best_rates.values()
+        for values in thresholds.values()
+    )
+
+
 def test_smart_tail_metric_walk_forward_diagnostic():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)

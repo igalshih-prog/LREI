@@ -497,6 +497,7 @@ def test_smart_calibration_multi_origin_robust_diagnostic():
                 config = SmartConfig(
                     calibration_draws=calibration_draws,
                     calibration_candidate_count=40,
+                    recommendation_candidate_count=40,
                     min_history_draws=60,
                     calibration_origins=calibration_origins,
                     recency_decay=decay,
@@ -551,12 +552,14 @@ def test_smart_tail_metric_robust_walk_forward_diagnostic():
         "mean": SmartConfig(
             calibration_draws=8,
             calibration_candidate_count=50,
+            recommendation_candidate_count=50,
             calibration_origins=3,
             selection_metric="mean",
         ),
         "tail": SmartConfig(
             calibration_draws=8,
             calibration_candidate_count=50,
+            recommendation_candidate_count=50,
             calibration_origins=3,
             selection_metric="tail",
             tail_weight_4=0.50,

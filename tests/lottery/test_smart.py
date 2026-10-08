@@ -479,3 +479,99 @@ def test_smart_calibration_multi_origin_robust_diagnostic():
         all(value == value for value in values)
         for values in results.values()
     )
+
+
+def test_smart_tail_metric_robust_walk_forward_diagnostic():
+    """Compare mean-vs-tail Smart selection on a longer holdout."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(90, max(60, len(draws) // 13))
+    start = len(draws) - holdout
+    variants = {
+        "mean": SmartConfig(
+            calibration_draws=8,
+            calibration_candidate_count=50,
+            calibration_origins=3,
+            selection_metric="mean",
+        ),
+        "tail": SmartConfig(
+            calibration_draws=8,
+            calibration_candidate_count=50,
+            calibration_origins=3,
+            selection_metric="tail",
+            tail_weight_4=0.50,
+            tail_weight_5=1.00,
+            tail_weight_6=2.00,
+        ),
+    }
+    mean_results = {name: [] for name in variants}
+    tail_results = {name: {threshold: [] for threshold in (4, 5, 6)} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for name, config in variants.items():
+            result = SmartRecommendationEngine(config).recommend(
+                history, seed=208000 + offset
+            )
+            hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+            mean_results[name].append(mean(hits))
+            for threshold in tail_results[name]:
+                tail_results[name][threshold].append(
+                    mean(hit >= threshold for hit in hits)
+                )
+
+    def bootstrap_ci(values, seed=20261013, samples=5000):
+        rng = random.Random(seed)
+        estimates = [
+            mean(values[rng.randrange(len(values))] for _ in values)
+            for _ in range(samples)
+        ]
+        estimates.sort()
+        return (
+            estimates[int(0.025 * (len(estimates) - 1))],
+            estimates[int(0.975 * (len(estimates) - 1))],
+        )
+
+    mean_difference = [
+        tail - mean_value
+        for tail, mean_value in zip(mean_results["tail"], mean_results["mean"])
+    ]
+    tail4_difference = [
+        tail - mean_value
+        for tail, mean_value in zip(
+            tail_results["tail"][4], tail_results["mean"][4]
+        )
+    ]
+    tail5_difference = [
+        tail - mean_value
+        for tail, mean_value in zip(
+            tail_results["tail"][5], tail_results["mean"][5]
+        )
+    ]
+    print("Smart tail robust diagnostic:")
+    for name in variants:
+        print(
+            f"  {name}: mean={mean(mean_results[name]):.4f}, "
+            f"4+={mean(tail_results[name][4]):.4f}, "
+            f"5+={mean(tail_results[name][5]):.4f}, "
+            f"6={mean(tail_results[name][6]):.4f}"
+        )
+    print(f"  tail-mean mean-hit delta={mean(mean_difference):+.4f}")
+    print(
+        f"  tail-mean 4+ delta={mean(tail4_difference):+.4f}, "
+        f"95% CI=[{bootstrap_ci(tail4_difference, 20261014)[0]:+.4f}, "
+        f"{bootstrap_ci(tail4_difference, 20261014)[1]:+.4f}]"
+    )
+    print(
+        f"  tail-mean 5+ delta={mean(tail5_difference):+.4f}, "
+        f"95% CI=[{bootstrap_ci(tail5_difference, 20261015)[0]:+.4f}, "
+        f"{bootstrap_ci(tail5_difference, 20261015)[1]:+.4f}]"
+    )
+
+    assert all(len(values) == holdout for values in mean_results.values())
+    assert all(
+        len(values) == holdout
+        for thresholds in tail_results.values()
+        for values in thresholds.values()
+    )

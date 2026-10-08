@@ -43,7 +43,7 @@ class SmartConfig:
             raise ValueError("recency_decay must be in (0, 1]")
         if self.stability_penalty < 0:
             raise ValueError("stability_penalty must be non-negative")
-        if self.selection_metric not in {"mean", "tail"}:
+        if self.selection_metric not in {"mean", "tail", "jackpot"}:
             raise ValueError("selection_metric must be 'mean', 'tail', or 'jackpot'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
             raise ValueError("tail weights must be non-negative")

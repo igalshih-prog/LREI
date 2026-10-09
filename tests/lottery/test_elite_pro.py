@@ -1117,3 +1117,60 @@ def test_elite_adaptive_strong_number_walk_forward_diagnostic():
 
     assert len(difference) == holdout
     assert all(value in (-1, 0, 1) for value in difference)
+
+
+def test_elite_adaptive_candidate_weights_are_normalized_and_history_only():
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_candidate_weights=True,
+        candidate_calibration_draws=12,
+        candidate_calibration_candidate_count=30,
+        candidate_adaptive_shrinkage=1.0,
+    )
+    engine = EliteProRecommendationEngine(config)
+    variants = (
+        (engine._engine(config, True, False), None),
+        (engine._engine(config, False, False), None),
+        (engine._engine(config, True, True), None),
+    )
+
+    weights = engine._adaptive_candidate_weights(DATASET, variants)
+
+    assert len(weights) == 3
+    assert all(weight >= 0.0 for weight in weights)
+    assert abs(sum(weights) - 1.0) < 1e-12
+
+
+def test_elite_adaptive_candidate_allocation_can_be_disabled():
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_candidate_weights=False,
+        candidate_rank_weight=1.0,
+        candidate_raw_weight=1.0,
+        candidate_ewma_weight=2.0,
+    )
+    engine = EliteProRecommendationEngine(config)
+    variants = (
+        (engine._engine(config, True, False), None),
+        (engine._engine(config, False, False), None),
+        (engine._engine(config, True, True), None),
+    )
+
+    assert engine._adaptive_candidate_weights(DATASET, variants) == (1.0, 1.0, 2.0)
+
+
+def test_elite_rejects_invalid_candidate_calibration_settings():
+    for kwargs in (
+        {"candidate_calibration_draws": -1},
+        {"candidate_calibration_candidate_count": 13, "max_tickets": 14},
+        {"candidate_adaptive_shrinkage": -0.1},
+        {"candidate_adaptive_shrinkage": 1.1},
+    ):
+        try:
+            EliteProConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")

@@ -1174,3 +1174,65 @@ def test_elite_rejects_invalid_candidate_calibration_settings():
             pass
         else:
             raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_elite_pro_adaptive_candidate_weights_are_normalized_and_reproducible():
+    from lrei.lottery.dataset import LotteryDataset
+
+    history = LotteryDataset(draws=DATASET.draws[:-5])
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_candidate_weights=True,
+        candidate_calibration_draws=5,
+        candidate_calibration_candidate_count=30,
+        candidate_adaptive_shrinkage=0.50,
+    )
+    engine = EliteProRecommendationEngine(config)
+    variants = (
+        (engine._engine(config, True, False), None),
+        (engine._engine(config, False, False), None),
+        (engine._engine(config, True, True), None),
+    )
+
+    first = engine._adaptive_candidate_weights(history, variants)
+    second = engine._adaptive_candidate_weights(history, variants)
+
+    assert len(first) == 3
+    assert all(weight >= 0.0 for weight in first)
+    assert abs(sum(first) - 1.0) < 1e-12
+    assert first == second
+
+
+def test_elite_pro_adaptive_candidate_weights_can_be_disabled():
+    config = EliteProConfig(
+        candidate_count=90,
+        max_tickets=14,
+        adaptive_candidate_weights=False,
+        candidate_rank_weight=1.0,
+        candidate_raw_weight=2.0,
+        candidate_ewma_weight=1.0,
+    )
+    engine = EliteProRecommendationEngine(config)
+    variants = (
+        (engine._engine(config, True, False), None),
+        (engine._engine(config, False, False), None),
+        (engine._engine(config, True, True), None),
+    )
+
+    assert engine._adaptive_candidate_weights(DATASET, variants) == (1.0, 2.0, 1.0)
+
+
+def test_elite_pro_rejects_invalid_candidate_adaptation_settings():
+    for kwargs in (
+        {"candidate_calibration_draws": -1},
+        {"candidate_calibration_candidate_count": 13},
+        {"candidate_adaptive_shrinkage": -0.1},
+        {"candidate_adaptive_shrinkage": 1.1},
+    ):
+        try:
+            EliteProConfig(**kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for {kwargs}")

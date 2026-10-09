@@ -674,3 +674,77 @@ def test_smart_calibration_reuses_one_portfolio_per_model_and_origin():
     engine.select_model(LotteryDataset(dataset.draws[:30]), seed=42)
 
     assert calls == {"regular": 2, "pro": 2, "elite": 2}
+
+
+def test_smart_multi_origin_robust_random_baseline_diagnostic():
+    """Compare Smart with repeated random portfolios over a longer unseen tail."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(72, max(60, len(draws) // 16))
+    start = len(draws) - holdout
+    random_portfolios_per_draw = 5
+    config = SmartConfig(
+        calibration_draws=6,
+        calibration_candidate_count=40,
+        recommendation_candidate_count=100,
+        min_history_draws=60,
+        calibration_origins=2,
+        recency_decay=1.0,
+        stability_penalty=0.10,
+        selection_metric="mean",
+    )
+    engine = SmartRecommendationEngine(config)
+    rng = random.Random(20261010)
+    smart_means = []
+    random_means = []
+    paired = []
+    smart_best_4 = []
+    random_best_4 = []
+    smart_best_5 = []
+    random_best_5 = []
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        result = engine.recommend(history, seed=204000 + offset)
+        actual = set(target.numbers)
+        smart_hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
+        random_hits = []
+        for _ in range(random_portfolios_per_draw):
+            portfolio = _random_portfolio(rng)
+            random_hits.extend(len(set(ticket) & actual) for ticket in portfolio)
+        smart_mean = mean(smart_hits)
+        random_mean = mean(random_hits)
+        smart_means.append(smart_mean)
+        random_means.append(random_mean)
+        paired.append(smart_mean - random_mean)
+        smart_best_4.append(float(max(smart_hits) >= 4))
+        random_best_4.append(float(max(random_hits) >= 4))
+        smart_best_5.append(float(max(smart_hits) >= 5))
+        random_best_5.append(float(max(random_hits) >= 5))
+
+    def ci(values, seed):
+        bootstrap_rng = random.Random(seed)
+        estimates = [
+            mean(values[bootstrap_rng.randrange(len(values))] for _ in values)
+            for _ in range(5000)
+        ]
+        estimates.sort()
+        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+
+    paired_ci = ci(paired, 20261011)
+    four_plus_delta = mean(a - b for a, b in zip(smart_best_4, random_best_4))
+    four_plus_ci = ci([a - b for a, b in zip(smart_best_4, random_best_4)], 20261012)
+    five_plus_delta = mean(a - b for a, b in zip(smart_best_5, random_best_5))
+    five_plus_ci = ci([a - b for a, b in zip(smart_best_5, random_best_5)], 20261013)
+
+    print("Smart multi-origin robust random-baseline diagnostic:")
+    print(f"  holdout={holdout}, random_portfolios_per_draw={random_portfolios_per_draw}")
+    print(f"  theoretical_random_mean_hits/ticket={6.0 * 6.0 / 37.0:.4f}")
+    print(f"  Smart={mean(smart_means):.4f}, Random={mean(random_means):.4f}")
+    print(f"  Smart-Random={mean(paired):+.4f}, 95% CI=[{paired_ci[0]:+.4f}, {paired_ci[1]:+.4f}]")
+    print(f"  best 4+ delta={four_plus_delta:+.4f}, 95% CI=[{four_plus_ci[0]:+.4f}, {four_plus_ci[1]:+.4f}]")
+    print(f"  best 5+ delta={five_plus_delta:+.4f}, 95% CI=[{five_plus_ci[0]:+.4f}, {five_plus_ci[1]:+.4f}]")
+
+    assert len(paired) == holdout
+    assert all(0 <= value <= 6 for value in smart_means + random_means)
+    assert all(value == value for value in paired)

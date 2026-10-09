@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e . pytest
-      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic"
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "robust_baseline_walk_forward_diagnostic or candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_robust_walk_forward_diagnostic or adaptive_candidate_allocation_multi_origin_diagnostic"
 
   robust_signals:
     runs-on: ubuntu-latest

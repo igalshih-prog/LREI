@@ -636,3 +636,41 @@ def test_smart_tail_metric_robust_walk_forward_diagnostic():
         for thresholds in tail_results.values()
         for values in thresholds.values()
     )
+
+
+def test_smart_calibration_reuses_one_portfolio_per_model_and_origin():
+    """A fixed training origin should generate one portfolio per model, not per draw."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    calls = {"regular": 0, "pro": 0, "elite": 0}
+
+    class FakeResult:
+        recommended_tickets = tuple(
+            tuple(range(start, start + 6))
+            for start in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+        )
+
+    class CountingModel:
+        def __init__(self, name):
+            self.name = name
+
+        def recommend(self, *args, **kwargs):
+            calls[self.name] += 1
+            return FakeResult()
+
+    engine = SmartRecommendationEngine(
+        SmartConfig(
+            calibration_draws=2,
+            calibration_candidate_count=14,
+            calibration_origins=2,
+            min_history_draws=22,
+        )
+    )
+    engine._models = lambda: {
+        "regular": CountingModel("regular"),
+        "pro": CountingModel("pro"),
+        "elite": CountingModel("elite"),
+    }
+
+    engine.select_model(LotteryDataset(dataset.draws[:30]), seed=42)
+
+    assert calls == {"regular": 2, "pro": 2, "elite": 2}

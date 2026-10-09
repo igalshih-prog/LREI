@@ -128,17 +128,22 @@ class SmartRecommendationEngine:
             train = LotteryDataset(dataset.draws[:validation_start])
             validation = dataset.draws[validation_start:origin]
             block_scores = {name: [] for name in models}
-            for draw_index, target in enumerate(validation):
-                for model_index, (name, model) in enumerate(models.items()):
-                    model_seed = (seed or 0) + origin_index * 10000 + draw_index * 101 + model_index
-                    if name == "regular":
-                        result = model.recommend(
-                            LotteryStatistics.from_dataset(train),
-                            ticket_count=14,
-                            seed=model_seed,
-                        )
-                    else:
-                        result = model.recommend(train, seed=model_seed)
+            # The training history is fixed for this validation block, so each
+            # model should produce one portfolio per origin and that same
+            # portfolio should be scored against every draw in the block.
+            # Previously a fresh random portfolio was generated for each target,
+            # adding Monte Carlo noise and repeating expensive model generation.
+            for model_index, (name, model) in enumerate(models.items()):
+                model_seed = (seed or 0) + origin_index * 10000 + model_index
+                if name == "regular":
+                    result = model.recommend(
+                        LotteryStatistics.from_dataset(train),
+                        ticket_count=14,
+                        seed=model_seed,
+                    )
+                else:
+                    result = model.recommend(train, seed=model_seed)
+                for target in validation:
                     value = self._validation_score(result, target)
                     scores[name].append(value)
                     block_scores[name].append(value)

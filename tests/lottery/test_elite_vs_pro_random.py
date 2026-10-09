@@ -2270,3 +2270,56 @@ def test_elite_conservative_meta_selector_margin_diagnostic():
 
     assert all(len(values) == holdout * len(origins) for values in results.values())
     assert all(all(value == value for value in values) for values in results.values())
+
+
+def test_elite_adaptive_candidate_allocation_multi_origin_diagnostic():
+    """Check adaptive candidate allocation across three separate walk-forward origins."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 12
+    origins = [len(draws) - 72, len(draws) - 42, len(draws) - 12]
+    results = {"equal": [], "adaptive": []}
+    origin_results = {"equal": [], "adaptive": []}
+
+    for origin_index, start in enumerate(origins):
+        local = {"equal": [], "adaptive": []}
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            actual = set(target.numbers)
+            for name, adaptive in (("equal", False), ("adaptive", True)):
+                config = EliteProConfig(
+                    candidate_count=120,
+                    max_tickets=14,
+                    adaptive_candidate_weights=adaptive,
+                    candidate_calibration_draws=12,
+                    candidate_calibration_candidate_count=60,
+                    candidate_adaptive_shrinkage=0.50,
+                )
+                result = EliteProRecommendationEngine(config).recommend(
+                    history, seed=99000 + origin_index * 1000 + offset
+                )
+                score = mean(
+                    len(set(ticket) & actual) for ticket in result.recommended_tickets
+                )
+                results[name].append(score)
+                local[name].append(score)
+        for name in local:
+            origin_results[name].append(mean(local[name]))
+
+    difference = [
+        adaptive - equal
+        for adaptive, equal in zip(results["adaptive"], results["equal"])
+    ]
+    ci = _bootstrap_ci(difference, seed=20261016)
+
+    print("Elite adaptive candidate-allocation multi-origin diagnostic:")
+    for name in results:
+        print(
+            f"  {name}: overall={mean(results[name]):.4f}, "
+            f"origins={[round(value, 4) for value in origin_results[name]]}"
+        )
+    print(f"  adaptive-equal={mean(difference):+.4f}")
+    print(f"  95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+
+    assert len(difference) == holdout * len(origins)
+    assert all(value == value for value in difference)

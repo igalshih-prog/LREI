@@ -1,10 +1,11 @@
-name: Exact portfolio coverage
+name: Exact portfolio coverage and Coverage mode
 
 on:
   push:
     branches: [main]
     paths:
       - "src/lrei/lottery/**"
+      - "app.py"
       - "data/lottery.csv"
       - "tests/lottery/test_elite_portfolio_coverage.py"
       - "tests/lottery/test_portfolio_coverage.py"

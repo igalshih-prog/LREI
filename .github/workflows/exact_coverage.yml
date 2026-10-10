@@ -8,6 +8,7 @@ on:
       - "data/lottery.csv"
       - "tests/lottery/test_elite_portfolio_coverage.py"
       - "tests/lottery/test_portfolio_coverage.py"
+      - "tests/lottery/test_coverage_engine.py"
       - ".github/workflows/exact_coverage.yml"
   workflow_dispatch:
 
@@ -25,4 +26,4 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Verify exact coverage calculation
-        run: python -m pytest tests/lottery/test_portfolio_coverage.py tests/lottery/test_elite_portfolio_coverage.py -q -s
+        run: python -m pytest tests/lottery/test_portfolio_coverage.py tests/lottery/test_elite_portfolio_coverage.py tests/lottery/test_coverage_engine.py -q -s

@@ -47,9 +47,13 @@ def test_elite_exact_portfolio_coverage_diagnostic():
     print(f"  Elite exact 6/6 coverage={mean(elite_six):.8%}")
     print(f"  Random exact 6/6 coverage={mean(random_six):.8%}")
 
-    expected_jackpot_probability = 14 / comb(37, 6)
+    expected_main_number_six_of_six_probability = 14 / comb(37, 6)
     assert len(elite_four) == len(random_four) == 8
     assert all(0.0 <= value <= 1.0 for value in elite_four + random_four + elite_five + random_five + elite_six + random_six)
-    # With 14 unique tickets, each portfolio covers exactly 14 distinct jackpot
-    # outcomes. Historical scoring cannot improve this theoretical probability.
-    assert all(abs(value - expected_jackpot_probability) < 1e-15 for value in elite_six + random_six)
+    # This metric counts exact matches of all six main numbers only; the
+    # separate strong number is intentionally outside this function.
+    # With 14 unique main-number tickets, each portfolio covers 14 outcomes.
+    assert all(
+        abs(value - expected_main_number_six_of_six_probability) < 1e-15
+        for value in elite_six + random_six
+    )

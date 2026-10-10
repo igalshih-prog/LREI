@@ -775,6 +775,77 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
             for n in range(1, 8)
         )
 
+    def _complete_portfolio_fallback(
+        self,
+        initial,
+        scores,
+        frequencies,
+        pair_counts,
+        triple_counts,
+        structure,
+        rng,
+    ):
+        """Complete a portfolio when the sampled candidate pool is too restrictive.
+
+        This bounded fallback is used only after normal candidate selection fails.
+        It samples valid lottery lines directly, preserves the overlap constraint,
+        and greedily maximizes the same portfolio objective used by the optimizer.
+        """
+        score_map = {item.number: item.score for item in scores}
+        draw_count = max(1, round(sum(frequencies.values()) / 6))
+        score_cache = {}
+
+        def ticket_score(ticket):
+            ticket = tuple(sorted(ticket))
+            if ticket not in score_cache:
+                score_cache[ticket] = self._candidate_score(
+                    ticket,
+                    score_map,
+                    pair_counts,
+                    triple_counts,
+                    frequencies,
+                    draw_count,
+                    structure,
+                    self.config.affinity_prior_strength,
+                )
+            return score_cache[ticket]
+
+        starts = [tuple(initial), tuple()] if initial else [tuple()]
+        for start in starts:
+            selected = list(dict.fromkeys(tuple(sorted(ticket)) for ticket in start))
+            if any(not self.optimizer.is_compatible(ticket, selected[:index]) for index, ticket in enumerate(selected)):
+                selected = []
+            while len(selected) < self.config.max_tickets:
+                base = {ticket: ticket_score(ticket) for ticket in selected}
+                current_objective = self._portfolio_objective(selected, base)
+                best_ticket = None
+                best_gain = float("-inf")
+                valid_candidates = 0
+                attempts = 0
+                # A few dozen feasible options provide useful choice without
+                # changing ordinary runs or depending on another weighted pool.
+                while valid_candidates < 48 and attempts < 25000:
+                    attempts += 1
+                    ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+                    if ticket in selected or not self.optimizer.is_compatible(ticket, selected):
+                        continue
+                    valid_candidates += 1
+                    base[ticket] = ticket_score(ticket)
+                    trial = selected + [ticket]
+                    gain = self._portfolio_objective(trial, base) - current_objective
+                    if gain > best_gain + 1e-12:
+                        best_ticket = ticket
+                        best_gain = gain
+                if best_ticket is None:
+                    break
+                selected.append(best_ticket)
+            if len(selected) == self.config.max_tickets:
+                return tuple(selected)
+
+        raise ValueError(
+            "Elite Pro could not complete a compatible portfolio after bounded fallback search"
+        )
+
     def recommend(self, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if len(dataset) == 0:
             raise ValueError("Dataset is empty")
@@ -871,6 +942,16 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 expanded.append(self._generate_candidate(ensemble_scores, pair_counts, triple_counts, structure, rng))
             recommended = self._select_portfolio(expanded, ensemble_scores, frequencies, pair_counts, triple_counts, structure)
         recommended = tuple(recommended[:self.config.max_tickets])
+        if len(recommended) != self.config.max_tickets:
+            recommended = self._complete_portfolio_fallback(
+                recommended,
+                ensemble_scores,
+                frequencies,
+                pair_counts,
+                triple_counts,
+                structure,
+                rng,
+            )
         if len(recommended) != self.config.max_tickets:
             raise ValueError("Elite Pro optimizer could not produce the configured number of tickets")
 

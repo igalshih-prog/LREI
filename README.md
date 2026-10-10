@@ -74,6 +74,13 @@ A separate conservative meta-selector diagnostic showed a positive historical de
 
 These are empirical backtest observations only. They are **not evidence of guaranteed predictive advantage**.
 
+### Coverage
+
+Coverage is a separate, coverage-oriented mode that returns exactly **14 unique tickets** with no more than one main number shared by any pair of tickets. Under the uniform 6-of-37 draw model, this makes the events of hitting at least 4 main numbers on different tickets disjoint, so the portfolio achieves the mathematical maximum possible 4+-main-number coverage for 14 distinct lines.
+
+This is a portfolio-coverage guarantee, **not a prediction of which numbers will be drawn**. It does not increase the chance of matching all six main numbers (or the full jackpot with the strong number) beyond the chance from purchasing 14 distinct valid lines. The Coverage correctness checks run in a dedicated GitHub Actions workflow.
+
+
 ## Evaluation Philosophy
 
 LREI does not claim to predict future lottery results with certainty.

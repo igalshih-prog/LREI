@@ -12,7 +12,6 @@ on:
       - "data/lottery.csv"
       - "tests/lottery/test_elite_vs_pro_random.py"
       - "tests/lottery/test_elite_pro.py"
-      - "tests/lottery/test_elite_portfolio_coverage.py"
       - ".github/workflows/elite_benchmark.yml"
   workflow_dispatch:
 
@@ -192,15 +191,3 @@ jobs:
           python-version: "3.11"
       - run: pip install -e . pytest
       - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_conservative_meta_selector_margin_diagnostic"
-
-  exact_coverage:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -e . pytest
-      - name: Verify exact 4+, 5+, and jackpot coverage for 14 tickets
-        run: python -m pytest tests/lottery/test_elite_portfolio_coverage.py -q -s

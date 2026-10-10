@@ -8,6 +8,14 @@ from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
 
+def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
+    """Create a reproducible random baseline portfolio for Smart diagnostics."""
+    return tuple(
+        tuple(sorted(rng.sample(range(1, max_number + 1), ticket_size)))
+        for _ in range(ticket_count)
+    )
+
+
 def test_smart_returns_exactly_14_tickets():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     result = SmartRecommendationEngine(

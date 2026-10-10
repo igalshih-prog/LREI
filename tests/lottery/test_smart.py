@@ -803,3 +803,17 @@ def test_smart_selection_seed_stability_walk_forward_diagnostic():
     assert all(len(values) == holdout for values in scores.values())
     assert all(0.0 <= value <= 1.0 for value in same_selection_counts)
     assert all(0.0 <= value <= 6.0 for values in scores.values() for value in values)
+
+
+def test_smart_model_selection_is_independent_of_final_ticket_seed():
+    """Calibration must not change model choice just because ticket seed changes."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    engine = SmartRecommendationEngine(
+        SmartConfig(
+            calibration_draws=6,
+            calibration_candidate_count=40,
+            calibration_origins=2,
+        )
+    )
+    selections = [engine.select_model(dataset, seed=seed)[0] for seed in (1, 17, 20261010, 999999)]
+    assert len(set(selections)) == 1

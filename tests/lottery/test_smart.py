@@ -716,19 +716,30 @@ def test_smart_multi_origin_robust_random_baseline_diagnostic():
         result = engine.recommend(history, seed=204000 + offset)
         actual = set(target.numbers)
         smart_hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
-        random_hits = []
+        random_portfolio_hits = []
         for _ in range(random_portfolios_per_draw):
             portfolio = _random_portfolio(rng)
-            random_hits.extend(len(set(ticket) & actual) for ticket in portfolio)
+            random_portfolio_hits.append(
+                [len(set(ticket) & actual) for ticket in portfolio]
+            )
+        # Mean hits/ticket is averaged across random replications for a
+        # lower-noise baseline. Tail events are also evaluated per 14-ticket
+        # portfolio, not across a pooled 70-ticket set, so ticket counts match.
         smart_mean = mean(smart_hits)
-        random_mean = mean(random_hits)
+        random_mean = mean(
+            hit for portfolio_hits in random_portfolio_hits for hit in portfolio_hits
+        )
         smart_means.append(smart_mean)
         random_means.append(random_mean)
         paired.append(smart_mean - random_mean)
         smart_best_4.append(float(max(smart_hits) >= 4))
-        random_best_4.append(float(max(random_hits) >= 4))
+        random_best_4.append(
+            mean(float(max(portfolio_hits) >= 4) for portfolio_hits in random_portfolio_hits)
+        )
         smart_best_5.append(float(max(smart_hits) >= 5))
-        random_best_5.append(float(max(random_hits) >= 5))
+        random_best_5.append(
+            mean(float(max(portfolio_hits) >= 5) for portfolio_hits in random_portfolio_hits)
+        )
 
     def ci(values, seed):
         bootstrap_rng = random.Random(seed)

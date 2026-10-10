@@ -756,3 +756,50 @@ def test_smart_multi_origin_robust_random_baseline_diagnostic():
     assert len(paired) == holdout
     assert all(0 <= value <= 6 for value in smart_means + random_means)
     assert all(value == value for value in paired)
+
+
+def test_smart_selection_seed_stability_walk_forward_diagnostic():
+    """Measure whether Smart's selected model is stable across generator seeds."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(24, max(18, len(draws) // 45))
+    start = len(draws) - holdout
+    seeds = (31001, 41001, 51001)
+    config = SmartConfig(
+        calibration_draws=6,
+        calibration_candidate_count=40,
+        recommendation_candidate_count=40,
+        calibration_origins=2,
+        recency_decay=0.85,
+        stability_penalty=0.10,
+    )
+    selections = {seed: [] for seed in seeds}
+    scores = {seed: [] for seed in seeds}
+    same_selection_counts = []
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        actual = set(target.numbers)
+        for seed in seeds:
+            engine = SmartRecommendationEngine(config)
+            selected, _ = engine.select_model(history, seed=seed + offset)
+            result = engine._recommend_selected(selected, history, seed=seed + offset)
+            selections[seed].append(selected)
+            scores[seed].append(
+                mean(len(set(ticket) & actual) for ticket in result.recommended_tickets)
+            )
+        same_selection_counts.append(
+            float(len({selections[seed][-1] for seed in seeds}) == 1)
+        )
+
+    print("Smart selection seed-stability diagnostic:")
+    print(f"  holdout={holdout}, seeds={len(seeds)}")
+    for seed in seeds:
+        counts = {name: selections[seed].count(name) for name in ("regular", "pro", "elite")}
+        print(f"  seed={seed}: mean_hits={mean(scores[seed]):.4f}, selections={counts}")
+    print(f"  all-seed selection agreement={mean(same_selection_counts):.4f}")
+
+    assert all(len(values) == holdout for values in selections.values())
+    assert all(len(values) == holdout for values in scores.values())
+    assert all(0.0 <= value <= 1.0 for value in same_selection_counts)
+    assert all(0.0 <= value <= 6.0 for values in scores.values() for value in values)

@@ -1,4 +1,5 @@
 import random
+from math import comb
 from pathlib import Path
 from statistics import mean
 
@@ -24,6 +25,7 @@ def test_elite_exact_portfolio_coverage_diagnostic():
     rng = random.Random(20261009)
     elite_four, random_four = [], []
     elite_five, random_five = [], []
+    elite_six, random_six = [], []
 
     for seed in range(8):
         elite_portfolio = elite.recommend(dataset, seed=seed + 30000).recommended_tickets
@@ -32,6 +34,8 @@ def test_elite_exact_portfolio_coverage_diagnostic():
         random_four.append(portfolio_coverage(random_portfolio, threshold=4)["probability"])
         elite_five.append(portfolio_coverage(elite_portfolio, threshold=5)["probability"])
         random_five.append(portfolio_coverage(random_portfolio, threshold=5)["probability"])
+        elite_six.append(portfolio_coverage(elite_portfolio, threshold=6)["probability"])
+        random_six.append(portfolio_coverage(random_portfolio, threshold=6)["probability"])
 
     print("Elite exact portfolio-coverage diagnostic (theoretical uniform draws):")
     print(f"  Elite 4+ coverage={mean(elite_four):.6%}")
@@ -40,6 +44,12 @@ def test_elite_exact_portfolio_coverage_diagnostic():
     print(f"  Random 5+ coverage={mean(random_five):.6%}")
     print(f"  Elite 4+ minus random={mean(a - b for a, b in zip(elite_four, random_four)):+.6%}")
     print(f"  Elite 5+ minus random={mean(a - b for a, b in zip(elite_five, random_five)):+.6%}")
+    print(f"  Elite exact 6/6 coverage={mean(elite_six):.8%}")
+    print(f"  Random exact 6/6 coverage={mean(random_six):.8%}")
 
+    expected_jackpot_probability = 14 / comb(37, 6)
     assert len(elite_four) == len(random_four) == 8
-    assert all(0.0 <= value <= 1.0 for value in elite_four + random_four + elite_five + random_five)
+    assert all(0.0 <= value <= 1.0 for value in elite_four + random_four + elite_five + random_five + elite_six + random_six)
+    # With 14 unique tickets, each portfolio covers exactly 14 distinct jackpot
+    # outcomes. Historical scoring cannot improve this theoretical probability.
+    assert all(abs(value - expected_jackpot_probability) < 1e-15 for value in elite_six + random_six)

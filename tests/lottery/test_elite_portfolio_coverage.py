@@ -16,44 +16,76 @@ def _random_portfolio(rng, count=14):
 
 
 def test_elite_exact_portfolio_coverage_diagnostic():
-    """Compare Elite portfolio coverage with random portfolios under a uniform draw model."""
+    """Compare exact prize-tier main-number coverage across overlap limits and random."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
-    elite = EliteProRecommendationEngine(
-        EliteProConfig(candidate_count=200, max_tickets=14, adaptive_weights=False,
-                       adaptive_candidate_weights=False)
-    )
+    variants = {"overlap_2": 2, "overlap_3": 3, "overlap_4": 4}
+    thresholds = (4, 5, 6)
+    elite_coverage = {
+        name: {threshold: [] for threshold in thresholds}
+        for name in variants
+    }
+    random_coverage = {threshold: [] for threshold in thresholds}
     rng = random.Random(20261009)
-    elite_four, random_four = [], []
-    elite_five, random_five = [], []
-    elite_six, random_six = [], []
 
     for seed in range(8):
-        elite_portfolio = elite.recommend(dataset, seed=seed + 30000).recommended_tickets
-        random_portfolio = _random_portfolio(rng)
-        elite_four.append(portfolio_coverage(elite_portfolio, threshold=4)["probability"])
-        random_four.append(portfolio_coverage(random_portfolio, threshold=4)["probability"])
-        elite_five.append(portfolio_coverage(elite_portfolio, threshold=5)["probability"])
-        random_five.append(portfolio_coverage(random_portfolio, threshold=5)["probability"])
-        elite_six.append(portfolio_coverage(elite_portfolio, threshold=6)["probability"])
-        random_six.append(portfolio_coverage(random_portfolio, threshold=6)["probability"])
+        for name, max_overlap in variants.items():
+            engine = EliteProRecommendationEngine(
+                EliteProConfig(
+                    candidate_count=300,
+                    max_overlap=max_overlap,
+                    max_tickets=14,
+                    adaptive_weights=False,
+                    adaptive_candidate_weights=False,
+                )
+            )
+            portfolio = engine.recommend(dataset, seed=30000 + seed).recommended_tickets
+            assert len(portfolio) == 14
+            assert len(set(portfolio)) == 14
+            for threshold in thresholds:
+                elite_coverage[name][threshold].append(
+                    portfolio_coverage(portfolio, threshold=threshold)["probability"]
+                )
 
-    print("Elite exact portfolio-coverage diagnostic (theoretical uniform draws):")
-    print(f"  Elite 4+ coverage={mean(elite_four):.6%}")
-    print(f"  Random 4+ coverage={mean(random_four):.6%}")
-    print(f"  Elite 5+ coverage={mean(elite_five):.6%}")
-    print(f"  Random 5+ coverage={mean(random_five):.6%}")
-    print(f"  Elite 4+ minus random={mean(a - b for a, b in zip(elite_four, random_four)):+.6%}")
-    print(f"  Elite 5+ minus random={mean(a - b for a, b in zip(elite_five, random_five)):+.6%}")
-    print(f"  Elite exact 6/6 coverage={mean(elite_six):.8%}")
-    print(f"  Random exact 6/6 coverage={mean(random_six):.8%}")
+        random_portfolio = _random_portfolio(rng)
+        assert len(random_portfolio) == 14
+        for threshold in thresholds:
+            random_coverage[threshold].append(
+                portfolio_coverage(random_portfolio, threshold=threshold)["probability"]
+            )
+
+    print("Exact portfolio coverage under uniformly random 6/37 main-number draws:")
+    for name in variants:
+        four = elite_coverage[name][4]
+        five = elite_coverage[name][5]
+        print(
+            f"  {name}: 4+={mean(four):.6%}, 5+={mean(five):.6%}, "
+            f"6/6-main={mean(elite_coverage[name][6]):.8%}"
+        )
+        print(
+            f"    minus random: 4+={mean(a - b for a, b in zip(four, random_coverage[4])):+.6%}, "
+            f"5+={mean(a - b for a, b in zip(five, random_coverage[5])):+.6%}"
+        )
+    print(
+        f"  random: 4+={mean(random_coverage[4]):.6%}, "
+        f"5+={mean(random_coverage[5]):.6%}, "
+        f"6/6-main={mean(random_coverage[6]):.8%}"
+    )
 
     expected_main_number_six_of_six_probability = 14 / comb(37, 6)
-    assert len(elite_four) == len(random_four) == 8
-    assert all(0.0 <= value <= 1.0 for value in elite_four + random_four + elite_five + random_five + elite_six + random_six)
-    # This metric counts exact matches of all six main numbers only; the
-    # separate strong number is intentionally outside this function.
-    # With 14 unique main-number tickets, each portfolio covers 14 outcomes.
+    assert len(random_coverage[4]) == 8
     assert all(
         abs(value - expected_main_number_six_of_six_probability) < 1e-15
-        for value in elite_six + random_six
+        for name in variants
+        for value in elite_coverage[name][6]
+    )
+    assert all(
+        abs(value - expected_main_number_six_of_six_probability) < 1e-15
+        for value in random_coverage[6]
+    )
+
+    # Full jackpot includes the separate 1-in-7 strong number.
+    full_jackpot_probability = 14 / (comb(37, 6) * 7)
+    print(
+        f"  theoretical 6/6 + strong-number probability for 14 distinct lines: "
+        f"1 in {1 / full_jackpot_probability:,.0f}"
     )

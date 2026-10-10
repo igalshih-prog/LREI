@@ -27,5 +27,8 @@ jobs:
       - name: Install test dependencies
         run: pip install pytest
 
+      - name: Compile application and source modules
+        run: python -m compileall -q app.py src
+
       - name: Run tests
         run: pytest -s -m "not slow"

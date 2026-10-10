@@ -28,6 +28,7 @@ class SmartConfig:
     tail_weight_4: float = 0.50
     tail_weight_5: float = 1.00
     tail_weight_6: float = 2.00
+    calibration_seed: int = 314159
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:
@@ -134,7 +135,9 @@ class SmartRecommendationEngine:
             # Previously a fresh random portfolio was generated for each target,
             # adding Monte Carlo noise and repeating expensive model generation.
             for model_index, (name, model) in enumerate(models.items()):
-                model_seed = (seed or 0) + origin_index * 10000 + model_index
+                # Keep model selection independent of the caller's final-ticket seed.
+                # Otherwise random candidate generation can change which model wins calibration.
+                model_seed = self.config.calibration_seed + origin_index * 10000 + model_index
                 if name == "regular":
                     result = model.recommend(
                         LotteryStatistics.from_dataset(train),

@@ -9,6 +9,7 @@ from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
 from lrei.lottery.smart import SmartRecommendationEngine
+from lrei.lottery.coverage_engine import CoverageRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
 
@@ -80,6 +81,13 @@ def generate_smart_tickets(dataset, seed: int):
     return result, tickets
 
 
+def generate_coverage_tickets(dataset, seed: int):
+    engine = CoverageRecommendationEngine()
+    result = engine.recommend(dataset=dataset, seed=seed)
+    tickets = result.recommended_tickets_with_strong[:14]
+    return result, tickets
+
+
 st.title("🎯 LREI")
 st.subheader("Lottery Recommendation Engine")
 
@@ -134,7 +142,7 @@ st.metric(
 
 mode = st.radio(
     "בחר מנוע",
-    options=["Regular", "Pro", "Smart"],
+    options=["Regular", "Pro", "Smart", "Coverage"],
     index=1,
     horizontal=True,
 )
@@ -148,6 +156,12 @@ elif mode == "Smart":
     st.info(
         "Smart בוחר בין Regular, Pro ו-Elite לפי בדיקה היסטורית כרונולוגית, "
         "ואז מפיק 14 טורים. הבחירה מבוססת על ביצועי עבר ואינה מבטיחה חיזוי."
+    )
+elif mode == "Coverage":
+    st.info(
+        "Coverage מפיק 14 טורים ייחודיים שבהם כל זוג חולק לכל היותר מספר ראשי אחד. "
+        "כך מתקבל הכיסוי התאורטי המרבי לסיכוי של לפחות 4 מתוך 6 במספרים הראשיים. "
+        "המצב אינו חוזה את ההגרלה ואינו מגדיל את סיכוי הג׳קפוט מעל הסיכוי התאורטי של 14 טורים."
     )
 else:
     st.info(
@@ -171,6 +185,11 @@ if st.button(
     ):
         if mode == "Smart":
             result, tickets = generate_smart_tickets(
+                dataset=dataset,
+                seed=seed,
+            )
+        elif mode == "Coverage":
+            result, tickets = generate_coverage_tickets(
                 dataset=dataset,
                 seed=seed,
             )

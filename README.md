@@ -81,7 +81,9 @@ These are empirical backtest observations only. They are **not evidence of guara
 
 Coverage is a separate, coverage-oriented mode that returns exactly **14 unique tickets** with no more than one main number shared by any pair of tickets. Under the uniform 6-of-37 draw model, this makes the events of hitting at least 4 main numbers on different tickets disjoint, so the portfolio achieves the mathematical maximum possible 4+-main-number coverage for 14 distinct lines.
 
-This is a portfolio-coverage guarantee, **not a prediction of which numbers will be drawn**. It does not increase the chance of matching all six main numbers (or the full jackpot with the strong number) beyond the chance from purchasing 14 distinct valid lines. The Coverage correctness checks run in a dedicated GitHub Actions workflow.
+The app also calculates exact coverage for **3+, 4+, 5+, and 6/6 main-number matches** for the 14 displayed tickets. The 3+ metric measures the probability that at least one line matches at least three main numbers, which is the lowest main-number match tier for a prize under the published Israeli Lotto prize table. It is a useful “any prize” indicator, while Coverage mode's construction specifically maximizes 4+ coverage; the two goals are not interchangeable. The strong number affects the prize tier, and its inclusion does not change the main-number coverage calculation.
+
+These are exact combinatorial probabilities under a uniform 6-of-37 draw model, **not predictions of which numbers will be drawn**. The method does not increase the chance of matching all six main numbers (or the full jackpot with the strong number) beyond the chance from purchasing 14 distinct valid lines. The Coverage correctness checks and overlap-cap comparisons run in a dedicated GitHub Actions workflow. Prize-tier reference: [published Israeli Lotto prize table](https://www.pais.co.il/download/files/Lotto-8306.pdf).
 
 
 ## Evaluation Philosophy

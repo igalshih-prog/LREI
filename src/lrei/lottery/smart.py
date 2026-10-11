@@ -7,7 +7,7 @@ from statistics import mean
 
 from .dataset import LotteryDataset
 from .elite import EliteProConfig, EliteProRecommendationEngine
-from .any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
+from .any_prize_coverage_engine import AnyPrizeCoverageConfig, AnyPrizeCoverageRecommendationEngine
 from .coverage_engine import CoverageRecommendationEngine
 from .pro import ProConfig, ProRecommendationEngine
 from .prize_evaluation import evaluate_portfolio_prizes
@@ -210,7 +210,10 @@ class SmartRecommendationEngine:
         if selected == "coverage":
             return CoverageRecommendationEngine().recommend(dataset, seed=seed)
         if selected == "coverage_any_prize":
-            return AnyPrizeCoverageRecommendationEngine().recommend(dataset, seed=seed)
+            candidate_count = min(100, self.config.recommendation_candidate_count)
+            return AnyPrizeCoverageRecommendationEngine(
+                AnyPrizeCoverageConfig(candidate_count=candidate_count, max_tickets=14)
+            ).recommend(dataset, seed=seed)
         if selected == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(dataset),

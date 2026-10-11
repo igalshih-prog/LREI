@@ -63,7 +63,7 @@ Smart offers three explicit objectives:
 
 - **4+ main-number coverage:** uses the exact Coverage portfolio construction. Its 14 unique tickets share at most one main number per pair, making the events of hitting at least 4 of 6 main numbers disjoint. Under a uniform 6-of-37 draw model, this maximizes the probability of at least one 4+ main-number hit among 14 tickets.
 - **Historical mean-match selection:** uses only earlier draws to compare Regular, Pro, and Elite by average main-number matches on a chronological validation window, then runs the selected model on the full available history.
-- **Experimental actual-prize selection:** compares the same models by whether at least one of their 14 tickets would have reached an actual prize tier on the historical validation draws, including the strong number. This is opt-in and can be noisy; it is not established as a better predictor.
+- **Experimental actual-prize selection:** compares the models by a normalized score for the best prize tier in each historical validation draw: 1.0 for tier 1, decreasing to 0.125 for tier 8, and zero when no ticket wins. The strong number changes the tier score when relevant. This is a heuristic score, not a monetary expected-value calculation, and it is not established as a better predictor.
 
 The prize evaluator maps all eight official prize tiers and measures the outcome of each ticket against a draw. Both historical objectives are walk-forward tests, not guarantees. All objectives return exactly **14 recommended tickets**. The coverage objective is a mathematically grounded portfolio-design choice, not a prediction of the winning numbers. It retains the same theoretical jackpot probability as any other set of 14 distinct valid lines.
 

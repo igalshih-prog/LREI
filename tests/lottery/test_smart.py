@@ -895,9 +895,23 @@ def test_smart_prize_metric_scores_actual_prize_outcome():
             RecommendedTicket(numbers=(20, 21, 22, 23, 24, 25), strong_number=7),
         ),
     })()
+    tier_eight = type("Result", (), {
+        "recommended_tickets": ((1, 2, 3, 12, 13, 14),),
+        "recommended_tickets_with_strong": (
+            RecommendedTicket(numbers=(1, 2, 3, 12, 13, 14), strong_number=1),
+        ),
+    })()
+    tier_seven = type("Result", (), {
+        "recommended_tickets": ((1, 2, 3, 12, 13, 14),),
+        "recommended_tickets_with_strong": (
+            RecommendedTicket(numbers=(1, 2, 3, 12, 13, 14), strong_number=7),
+        ),
+    })()
 
     assert engine._validation_score(winning, target) == 1.0
     assert engine._validation_score(losing, target) == 0.0
+    assert engine._validation_score(tier_eight, target) == 0.125
+    assert engine._validation_score(tier_seven, target) == 0.25
 
 
 @pytest.mark.slow
@@ -910,6 +924,7 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     variants = {"mean": "mean", "prize": "prize"}
     any_prize = {name: [] for name in variants}
     mean_hits = {name: [] for name in variants}
+    prize_score = {name: [] for name in variants}
     tier_counts = {name: {tier: 0 for tier in range(1, 9)} for name in variants}
 
     for offset, target in enumerate(draws[start:]):
@@ -930,6 +945,10 @@ def test_smart_prize_metric_walk_forward_diagnostic():
                 result.recommended_tickets_with_strong, target
             )
             any_prize[name].append(float(prize_result.any_prize))
+            best_tier = prize_result.best_prize_tier
+            prize_score[name].append(
+                0.0 if best_tier is None else (9.0 - best_tier) / 8.0
+            )
             main_hits = [
                 len(set(ticket) & set(target.numbers))
                 for ticket in result.recommended_tickets
@@ -941,6 +960,10 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     paired_prize_delta = [
         prize - baseline
         for prize, baseline in zip(any_prize["prize"], any_prize["mean"])
+    ]
+    paired_score_delta = [
+        score - baseline
+        for score, baseline in zip(prize_score["prize"], prize_score["mean"])
     ]
 
     def bootstrap_ci(values, seed=20261031, samples=3000):
@@ -955,20 +978,28 @@ def test_smart_prize_metric_walk_forward_diagnostic():
         )
 
     ci = bootstrap_ci(paired_prize_delta)
+    score_ci = bootstrap_ci(paired_score_delta, seed=20261101)
     print("Smart actual-prize metric walk-forward diagnostic:")
     print(f"  holdout draws={holdout}")
     for name in variants:
         print(
             f"  {name}: any-prize rate={mean(any_prize[name]):.4%}, "
+            f"mean best-prize score={mean(prize_score[name]):.4f}, "
             f"mean main hits/ticket={mean(mean_hits[name]):.4f}, "
             f"prize tiers={tier_counts[name]}"
         )
     print(
         f"  prize-selection - mean-selection any-prize rate="
-        f"{mean(paired_prize_delta):+.4%}"
+        f"{mean(paired_prize_delta):+.4%}, "
+        f"95% bootstrap CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]"
     )
-    print(f"  paired bootstrap 95% CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]")
+    print(
+        f"  prize-selection - mean-selection best-tier score="
+        f"{mean(paired_score_delta):+.4f}, "
+        f"95% bootstrap CI=[{score_ci[0]:+.4f}, {score_ci[1]:+.4f}]"
+    )
 
     assert len(paired_prize_delta) == holdout
+    assert len(paired_score_delta) == holdout
     assert all(value in (0.0, 1.0) for name in variants for value in any_prize[name])
     assert all(0.0 <= value <= 6.0 for name in variants for value in mean_hits[name])

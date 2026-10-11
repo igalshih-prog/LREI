@@ -96,7 +96,10 @@ class SmartRecommendationEngine:
                     RecommendedTicket(numbers=tuple(ticket))
                     for ticket in result.recommended_tickets
                 )
-            return float(evaluate_portfolio_prizes(prize_tickets, target).any_prize)
+            prize_outcome = evaluate_portfolio_prizes(prize_tickets, target)
+            if prize_outcome.best_prize_tier is None:
+                return 0.0
+            return (9.0 - prize_outcome.best_prize_tier) / 8.0
 
         actual = set(target.numbers)
         hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]

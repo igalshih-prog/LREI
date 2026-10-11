@@ -26,6 +26,7 @@ The project analyzes historical lottery draws, scores numbers using multiple his
 - Constrained-random portfolio baselines
 - Reproducible evaluation using seeds
 - Automated testing with GitHub Actions
+- [Model validation protocol and promotion criteria](MODEL_VALIDATION_PLAN.md)
 - Streamlit application
 
 ## Recommendation Modes

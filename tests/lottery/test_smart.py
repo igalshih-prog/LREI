@@ -10,6 +10,7 @@ from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 from lrei.lottery.prize_evaluation import evaluate_portfolio_prizes
+from lrei.lottery.evaluation import paired_block_bootstrap_ci
 
 
 def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
@@ -199,17 +200,14 @@ def test_smart_robust_walk_forward_against_models_and_random():
     print(f"  Pro={mean(pro_scores):.4f}")
     print(f"  Random={mean(random_scores):.4f}")
     def bootstrap_ci(values, seed=20261008, samples=5000):
-        bootstrap_rng = random.Random(seed)
-        estimates = [mean(values[bootstrap_rng.randrange(len(values))] for _ in values) for _ in range(samples)]
-        estimates.sort()
-        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+        return paired_block_bootstrap_ci(values, seed=seed, samples=samples, block_size=5)
 
     smart_elite_ci = bootstrap_ci(smart_vs_elite)
     smart_random_ci = bootstrap_ci(smart_vs_random, seed=20261009)
     print(f"  Smart-Elite={mean(smart_vs_elite):+.4f}")
     print(f"  Smart-Random={mean(smart_vs_random):+.4f}")
-    print(f"  Smart-Elite 95% CI=[{smart_elite_ci[0]:+.4f}, {smart_elite_ci[1]:+.4f}]")
-    print(f"  Smart-Random 95% CI=[{smart_random_ci[0]:+.4f}, {smart_random_ci[1]:+.4f}]")
+    print(f"  Smart-Elite 95% block-bootstrap CI=[{smart_elite_ci[0]:+.4f}, {smart_elite_ci[1]:+.4f}]")
+    print(f"  Smart-Random 95% block-bootstrap CI=[{smart_random_ci[0]:+.4f}, {smart_random_ci[1]:+.4f}]")
     print(f"  selections={selections}")
 
     assert len(smart_scores) == holdout
@@ -557,7 +555,7 @@ def test_smart_calibration_multi_origin_robust_diagnostic():
         print(
             f"  {name}: mean={mean(values):.4f}, "
             f"delta={mean(difference):+.4f}, "
-            f"95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}], "
+            f"95% block-bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}], "
             f"origins={[round(x, 4) for x in origin_means[name]]}, "
             f"selections={selections[name]}"
         )
@@ -617,16 +615,7 @@ def test_smart_tail_metric_robust_walk_forward_diagnostic():
                 )
 
     def bootstrap_ci(values, seed=20261013, samples=5000):
-        rng = random.Random(seed)
-        estimates = [
-            mean(values[rng.randrange(len(values))] for _ in values)
-            for _ in range(samples)
-        ]
-        estimates.sort()
-        return (
-            estimates[int(0.025 * (len(estimates) - 1))],
-            estimates[int(0.975 * (len(estimates) - 1))],
-        )
+        return paired_block_bootstrap_ci(values, seed=seed, samples=samples, block_size=5)
 
     mean_difference = [
         tail - mean_value
@@ -769,13 +758,7 @@ def test_smart_multi_origin_robust_random_baseline_diagnostic():
         )
 
     def ci(values, seed):
-        bootstrap_rng = random.Random(seed)
-        estimates = [
-            mean(values[bootstrap_rng.randrange(len(values))] for _ in values)
-            for _ in range(5000)
-        ]
-        estimates.sort()
-        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+        return paired_block_bootstrap_ci(values, seed=seed, samples=5000, block_size=5)
 
     paired_ci = ci(paired, 20261011)
     four_plus_delta = mean(a - b for a, b in zip(smart_best_4, random_best_4))
@@ -787,9 +770,9 @@ def test_smart_multi_origin_robust_random_baseline_diagnostic():
     print(f"  holdout={holdout}, random_portfolios_per_draw={random_portfolios_per_draw}")
     print(f"  theoretical_random_mean_hits/ticket={6.0 * 6.0 / 37.0:.4f}")
     print(f"  Smart={mean(smart_means):.4f}, Random={mean(random_means):.4f}")
-    print(f"  Smart-Random={mean(paired):+.4f}, 95% CI=[{paired_ci[0]:+.4f}, {paired_ci[1]:+.4f}]")
-    print(f"  best 4+ delta={four_plus_delta:+.4f}, 95% CI=[{four_plus_ci[0]:+.4f}, {four_plus_ci[1]:+.4f}]")
-    print(f"  best 5+ delta={five_plus_delta:+.4f}, 95% CI=[{five_plus_ci[0]:+.4f}, {five_plus_ci[1]:+.4f}]")
+    print(f"  Smart-Random={mean(paired):+.4f}, 95% block-bootstrap CI=[{paired_ci[0]:+.4f}, {paired_ci[1]:+.4f}]")
+    print(f"  best 4+ delta={four_plus_delta:+.4f}, 95% block-bootstrap CI=[{four_plus_ci[0]:+.4f}, {four_plus_ci[1]:+.4f}]")
+    print(f"  best 5+ delta={five_plus_delta:+.4f}, 95% block-bootstrap CI=[{five_plus_ci[0]:+.4f}, {five_plus_ci[1]:+.4f}]")
 
     assert len(paired) == holdout
     assert all(0 <= value <= 6 for value in smart_means + random_means)
@@ -979,15 +962,7 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     ]
 
     def bootstrap_ci(values, seed=20261031, samples=3000):
-        rng = random.Random(seed)
-        estimates = sorted(
-            mean(values[rng.randrange(len(values))] for _ in values)
-            for _ in range(samples)
-        )
-        return (
-            estimates[int(0.025 * (samples - 1))],
-            estimates[int(0.975 * (samples - 1))],
-        )
+        return paired_block_bootstrap_ci(values, seed=seed, samples=samples, block_size=5)
 
     ci = bootstrap_ci(paired_prize_delta)
     score_ci = bootstrap_ci(paired_score_delta, seed=20261101)
@@ -1003,12 +978,12 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     print(
         f"  prize-selection - mean-selection any-prize rate="
         f"{mean(paired_prize_delta):+.4%}, "
-        f"95% bootstrap CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]"
+        f"95% block-bootstrap CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]"
     )
     print(
         f"  prize-selection - mean-selection best-tier score="
         f"{mean(paired_score_delta):+.4f}, "
-        f"95% bootstrap CI=[{score_ci[0]:+.4f}, {score_ci[1]:+.4f}]"
+        f"95% block-bootstrap CI=[{score_ci[0]:+.4f}, {score_ci[1]:+.4f}]"
     )
 
     assert len(paired_prize_delta) == holdout

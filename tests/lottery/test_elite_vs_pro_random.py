@@ -1240,7 +1240,7 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
             if name == "regular":
                 result = engine.recommend(
                     LotteryStatistics.from_dataset(history),
-                    ticket_count=50,
+                    ticket_count=14,
                     seed=110000 + offset,
                 )
             else:
@@ -1323,7 +1323,7 @@ def test_elite_meta_model_selection_walk_forward_diagnostic():
         if name == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(history),
-                ticket_count=50,
+                ticket_count=14,
                 seed=seed,
             )
         if name == "pro":
@@ -1347,19 +1347,18 @@ def test_elite_meta_model_selection_walk_forward_diagnostic():
             train = LotteryDataset(history.draws[:-calibration_draws])
             model_scores = {}
             for model_index, name in enumerate(("regular", "pro", "elite")):
-                values = []
-                for validation_index, validation_draw in enumerate(validation):
-                    candidate = recommend_model(
-                        name,
-                        LotteryDataset(train.draws[: len(train.draws)]),
-                        131000 + model_index * 1000 + offset * 31 + validation_index,
+                candidate = recommend_model(
+                    name,
+                    train,
+                    131000 + model_index * 1000 + offset * 31,
+                )
+                values = [
+                    mean(
+                        len(set(ticket) & set(validation_draw.numbers))
+                        for ticket in candidate.recommended_tickets
                     )
-                    values.append(
-                        mean(
-                            len(set(ticket) & set(validation_draw.numbers))
-                            for ticket in candidate.recommended_tickets
-                        )
-                    )
+                    for validation_draw in validation
+                ]
                 model_scores[name] = mean(values)
 
             selected = max(model_scores, key=model_scores.get)
@@ -1405,7 +1404,7 @@ def test_elite_meta_model_multi_origin_stability_diagnostic():
         if name == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(history),
-                ticket_count=50,
+                ticket_count=14,
                 seed=seed,
             )
         if name == "pro":
@@ -1435,19 +1434,18 @@ def test_elite_meta_model_multi_origin_stability_diagnostic():
             train = LotteryDataset(history.draws[:-calibration_draws])
             model_scores = {}
             for model_index, name in enumerate(("regular", "pro", "elite")):
-                values = []
-                for validation_index, validation_draw in enumerate(validation):
-                    candidate = recommend_model(
-                        name,
-                        train,
-                        141000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
+                candidate = recommend_model(
+                    name,
+                    train,
+                    141000 + origin_index * 10000 + model_index * 1000 + offset * 31,
+                )
+                values = [
+                    mean(
+                        len(set(ticket) & set(validation_draw.numbers))
+                        for ticket in candidate.recommended_tickets
                     )
-                    values.append(
-                        mean(
-                            len(set(ticket) & set(validation_draw.numbers))
-                            for ticket in candidate.recommended_tickets
-                        )
-                    )
+                    for validation_draw in validation
+                ]
                 model_scores[name] = mean(values)
 
             selected = max(model_scores, key=model_scores.get)
@@ -1688,7 +1686,7 @@ def test_elite_meta_portfolio_multi_model_walk_forward_diagnostic():
         if name == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(history),
-                ticket_count=50,
+                ticket_count=14,
                 seed=seed,
             )
         if name == "pro":
@@ -1717,19 +1715,18 @@ def test_elite_meta_portfolio_multi_model_walk_forward_diagnostic():
             validation = history.draws[-calibration_draws:]
             model_scores = {}
             for model_index, name in enumerate(("regular", "pro", "elite")):
-                values = []
-                for validation_index, validation_draw in enumerate(validation):
-                    candidate = recommend_model(
-                        name,
-                        train,
-                        141000 + model_index * 1000 + offset * 31 + validation_index,
+                candidate = recommend_model(
+                    name,
+                    train,
+                    141000 + model_index * 1000 + offset * 31,
+                )
+                values = [
+                    mean(
+                        len(set(ticket) & set(validation_draw.numbers))
+                        for ticket in candidate.recommended_tickets
                     )
-                    values.append(
-                        mean(
-                            len(set(ticket) & set(validation_draw.numbers))
-                            for ticket in candidate.recommended_tickets
-                        )
-                    )
+                    for validation_draw in validation
+                ]
                 model_scores[name] = mean(values)
             baseline = 6.0 * 6.0 / 37.0
             weights = {
@@ -2121,7 +2118,7 @@ def test_elite_meta_model_margin_multi_origin_diagnostic():
     def recommend_model(name, history, seed):
         if name == "regular":
             return RecommendationEngine().recommend(
-                LotteryStatistics.from_dataset(history), ticket_count=50, seed=seed
+                LotteryStatistics.from_dataset(history), ticket_count=14, seed=seed
             )
         if name == "pro":
             return ProRecommendationEngine(
@@ -2146,19 +2143,18 @@ def test_elite_meta_model_margin_multi_origin_diagnostic():
             train = LotteryDataset(history.draws[:-calibration_draws])
             scores = {}
             for model_index, name in enumerate(("regular", "pro", "elite")):
-                values = []
-                for validation_index, validation_draw in enumerate(validation):
-                    candidate = recommend_model(
-                        name,
-                        train,
-                        151000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
+                candidate = recommend_model(
+                    name,
+                    train,
+                    151000 + origin_index * 10000 + model_index * 1000 + offset * 31,
+                )
+                values = [
+                    mean(
+                        len(set(ticket) & set(validation_draw.numbers))
+                        for ticket in candidate.recommended_tickets
                     )
-                    values.append(
-                        mean(
-                            len(set(ticket) & set(validation_draw.numbers))
-                            for ticket in candidate.recommended_tickets
-                        )
-                    )
+                    for validation_draw in validation
+                ]
                 scores[name] = mean(values)
 
             best_alternative = max(scores["regular"], scores["pro"])
@@ -2210,7 +2206,7 @@ def test_elite_conservative_meta_selector_margin_diagnostic():
     def recommend_model(name, history, seed):
         if name == "regular":
             return RecommendationEngine().recommend(
-                LotteryStatistics.from_dataset(history), ticket_count=50, seed=seed
+                LotteryStatistics.from_dataset(history), ticket_count=14, seed=seed
             )
         if name == "pro":
             return ProRecommendationEngine(
@@ -2232,16 +2228,15 @@ def test_elite_conservative_meta_selector_margin_diagnostic():
             train = LotteryDataset(history.draws[:-calibration_draws])
             model_scores = {}
             for model_index, name in enumerate(("regular", "pro", "elite")):
-                values = []
-                for validation_index, validation_draw in enumerate(validation):
-                    candidate = recommend_model(
-                        name,
-                        train,
-                        161000 + origin_index * 10000 + model_index * 1000 + offset * 31 + validation_index,
-                    )
-                    values.append(
-                        mean(len(set(ticket) & set(validation_draw.numbers)) for ticket in candidate.recommended_tickets)
-                    )
+                candidate = recommend_model(
+                    name,
+                    train,
+                    161000 + origin_index * 10000 + model_index * 1000 + offset * 31,
+                )
+                values = [
+                    mean(len(set(ticket) & set(validation_draw.numbers)) for ticket in candidate.recommended_tickets)
+                    for validation_draw in validation
+                ]
                 model_scores[name] = mean(values)
 
             best_score = max(model_scores.values())

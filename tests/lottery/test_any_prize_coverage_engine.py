@@ -155,3 +155,84 @@ def test_any_prize_candidate_pool_size_ablation():
     assert all(greedy > random_mean for greedy, random_mean in results.values())
     assert all(0.0 < greedy <= 1.0 for greedy, _ in results.values())
     assert all(0.0 < random_mean <= 1.0 for _, random_mean in results.values())
+
+
+@pytest.mark.slow
+def test_any_prize_candidate_pool_size_multi_seed_diagnostic():
+    """Test whether larger candidate pools improve exact coverage across independent pools."""
+    pool_sizes = (100, 250, 500)
+    seeds = tuple(20261020 + offset for offset in range(10))
+    greedy_by_size = {size: [] for size in pool_sizes}
+    random_by_size = {size: [] for size in pool_sizes}
+
+    for pool_seed in seeds:
+        rng = random.Random(pool_seed)
+        candidates = []
+        seen = set()
+        while len(candidates) < max(pool_sizes):
+            ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+            if ticket not in seen:
+                seen.add(ticket)
+                candidates.append(ticket)
+
+        engine = AnyPrizeCoverageRecommendationEngine(
+            AnyPrizeCoverageConfig(candidate_count=max(pool_sizes), max_tickets=14)
+        )
+        masks = tuple(engine._coverage_mask(ticket, engine._choose) for ticket in candidates)
+
+        for size in pool_sizes:
+            _, covered_count, _ = engine._select_candidate_pool(
+                candidates[:size], masks[:size]
+            )
+            greedy_by_size[size].append(covered_count / TOTAL_DRAWS)
+
+            baseline_rng = random.Random(pool_seed + 1_000_000 + size)
+            random_coverage = []
+            for _ in range(100):
+                chosen = baseline_rng.sample(range(size), 14)
+                covered = 0
+                for index in chosen:
+                    covered |= masks[index]
+                random_coverage.append(covered.bit_count() / TOTAL_DRAWS)
+            random_by_size[size].append(mean(random_coverage))
+
+    def seed_bootstrap_ci(values, bootstrap_seed):
+        bootstrap_rng = random.Random(bootstrap_seed)
+        estimates = [
+            mean(values[bootstrap_rng.randrange(len(values))] for _ in values)
+            for _ in range(5000)
+        ]
+        estimates.sort()
+        return (
+            estimates[int(0.025 * (len(estimates) - 1))],
+            estimates[int(0.975 * (len(estimates) - 1))],
+        )
+
+    print("Any-prize candidate-pool multi-seed diagnostic (10 independent pools):")
+    for size in pool_sizes:
+        greedy = greedy_by_size[size]
+        random_mean = random_by_size[size]
+        delta = [left - right for left, right in zip(greedy, random_mean)]
+        ci = seed_bootstrap_ci(delta, 20261100 + size)
+        print(
+            f"  pool={size}: greedy_mean={mean(greedy):.4%}, "
+            f"range=[{min(greedy):.4%}, {max(greedy):.4%}], "
+            f"same-pool_random_mean={mean(random_mean):.4%}, "
+            f"mean_delta={mean(delta):+.4%}, seed-bootstrap_CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]"
+        )
+
+    for larger, smaller in ((250, 100), (500, 100), (500, 250)):
+        paired = [
+            big - small
+            for big, small in zip(greedy_by_size[larger], greedy_by_size[smaller])
+        ]
+        ci = seed_bootstrap_ci(paired, 20261200 + larger)
+        print(
+            f"  pool {larger} - {smaller}: mean={mean(paired):+.4%}, "
+            f"positive_pools={sum(value > 0 for value in paired)}/{len(paired)}, "
+            f"seed-bootstrap_CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]"
+        )
+
+    assert all(len(values) == len(seeds) for values in greedy_by_size.values())
+    assert all(0.0 < value <= 1.0 for values in greedy_by_size.values() for value in values)
+    assert all(0.0 < value <= 1.0 for values in random_by_size.values() for value in values)

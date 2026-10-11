@@ -217,3 +217,21 @@ def test_walk_forward_rejects_invalid_sizes():
 
     with pytest.raises(DatasetError):
         WalkForwardDataset(dataset, train_size=1, test_size=1)
+
+
+def test_csv_dataset_loader_rejects_invalid_official_draw_values(tmp_path):
+    cases = (
+        ("1,2,3,4,5", "3", "exactly six main numbers"),
+        ("1,2,3,4,5,38", "3", "between 1 and 37"),
+        ("1,2,3,4,5,6", "8", "strong_number must be between 1 and 7"),
+        ("1,2,3,4,5,6", "0", "strong_number must be positive"),
+    )
+    for index, (numbers, strong_number, message) in enumerate(cases):
+        csv_file = tmp_path / f"invalid_draw_{index}.csv"
+        csv_file.write_text(
+            "draw_id,numbers,date,strong_number\n"
+            f'draw-{index},"{numbers}",2026-10-10,{strong_number}\n',
+            encoding="utf-8",
+        )
+        with pytest.raises(DatasetError, match=message):
+            CsvDatasetLoader().load(csv_file)

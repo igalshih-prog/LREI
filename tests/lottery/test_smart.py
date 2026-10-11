@@ -1003,3 +1003,21 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     assert len(paired_score_delta) == holdout
     assert all(value in (0.0, 1.0) for name in variants for value in any_prize[name])
     assert all(0.0 <= value <= 6.0 for name in variants for value in mean_hits[name])
+
+
+def test_smart_any_prize_objective_uses_coverage_engine():
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    engine = SmartRecommendationEngine(
+        SmartConfig(
+            objective="coverage_any_prize",
+            recommendation_candidate_count=14,
+        )
+    )
+
+    selected, scores = engine.select_model(dataset)
+    result = engine.recommend(dataset, seed=20261011)
+
+    assert selected == "coverage_any_prize"
+    assert scores == {"coverage_any_prize": 1.0}
+    assert len(result.recommended_tickets) == 14
+    assert len(set(result.recommended_tickets)) == 14

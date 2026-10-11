@@ -5,6 +5,7 @@ import pytest
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
+from lrei.lottery.evaluation import paired_block_bootstrap_ci
 
 pytestmark = pytest.mark.slow
 
@@ -77,7 +78,7 @@ def test_pro_against_multiple_random_baselines_walk_forward():
 
     positive_draws = sum(value > 0 for value in paired_differences)
     tied_draws = sum(value == 0 for value in paired_differences)
-    difference_ci = _bootstrap_ci(paired_differences)
+    difference_ci = paired_block_bootstrap_ci(paired_differences, block_size=5, seed=20261011)
 
     expected_random_mean = 6.0 * 6.0 / 37.0
 
@@ -87,7 +88,7 @@ def test_pro_against_multiple_random_baselines_walk_forward():
     print(f"Pro mean hits / ticket: {mean(pro_average_hits):.4f}")
     print(f"Random mean hits / ticket: {mean(random_average_hits):.4f}")
     print(f"Mean paired difference: {mean(paired_differences):+.4f}")
-    print(f"95% bootstrap CI for paired difference: [{difference_ci[0]:+.4f}, {difference_ci[1]:+.4f}]")
+    print(f"95% paired 5-draw block-bootstrap CI for difference: [{difference_ci[0]:+.4f}, {difference_ci[1]:+.4f}]")
     print(f"Draws where Pro > random mean: {positive_draws}/{holdout}")
     print(f"Draws tied: {tied_draws}/{holdout}")
     print(f"Pro best-ticket hits: {mean(pro_best_hits):.4f}")

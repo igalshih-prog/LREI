@@ -191,3 +191,18 @@ jobs:
           python-version: "3.11"
       - run: pip install -e . pytest
       - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_conservative_meta_selector_margin_diagnostic"
+
+  any_prize_coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e . pytest
+      - name: Run exact any-prize coverage tests and benchmark
+        run: python -m pytest tests/lottery/test_any_prize_coverage_engine.py -q -s

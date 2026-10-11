@@ -9,6 +9,7 @@ from lrei.lottery.recommendation import RecommendedTicket
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+from lrei.lottery.prize_evaluation import evaluate_portfolio_prizes
 
 
 def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
@@ -897,3 +898,77 @@ def test_smart_prize_metric_scores_actual_prize_outcome():
 
     assert engine._validation_score(winning, target) == 1.0
     assert engine._validation_score(losing, target) == 0.0
+
+
+@pytest.mark.slow
+def test_smart_prize_metric_walk_forward_diagnostic():
+    """Compare mean-match and actual-prize selection on unseen chronological draws."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(30, max(24, len(draws) // 38))
+    start = len(draws) - holdout
+    variants = {"mean": "mean", "prize": "prize"}
+    any_prize = {name: [] for name in variants}
+    mean_hits = {name: [] for name in variants}
+    tier_counts = {name: {tier: 0 for tier in range(1, 9)} for name in variants}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        for name, metric in variants.items():
+            engine = SmartRecommendationEngine(
+                SmartConfig(
+                    calibration_draws=6,
+                    calibration_candidate_count=40,
+                    recommendation_candidate_count=50,
+                    min_history_draws=60,
+                    calibration_origins=2,
+                    selection_metric=metric,
+                )
+            )
+            result = engine.recommend(history, seed=210000 + offset)
+            prize_result = evaluate_portfolio_prizes(
+                result.recommended_tickets_with_strong, target
+            )
+            any_prize[name].append(float(prize_result.any_prize))
+            main_hits = [
+                len(set(ticket) & set(target.numbers))
+                for ticket in result.recommended_tickets
+            ]
+            mean_hits[name].append(mean(main_hits))
+            for tier, count in prize_result.prize_tier_counts.items():
+                tier_counts[name][tier] += count
+
+    paired_prize_delta = [
+        prize - baseline
+        for prize, baseline in zip(any_prize["prize"], any_prize["mean"])
+    ]
+
+    def bootstrap_ci(values, seed=20261031, samples=3000):
+        rng = random.Random(seed)
+        estimates = sorted(
+            mean(values[rng.randrange(len(values))] for _ in values)
+            for _ in range(samples)
+        )
+        return (
+            estimates[int(0.025 * (samples - 1))],
+            estimates[int(0.975 * (samples - 1))],
+        )
+
+    ci = bootstrap_ci(paired_prize_delta)
+    print("Smart actual-prize metric walk-forward diagnostic:")
+    print(f"  holdout draws={holdout}")
+    for name in variants:
+        print(
+            f"  {name}: any-prize rate={mean(any_prize[name]):.4%}, "
+            f"mean main hits/ticket={mean(mean_hits[name]):.4f}, "
+            f"prize tiers={tier_counts[name]}"
+        )
+    print(
+        f"  prize-selection - mean-selection any-prize rate="
+        f"{mean(paired_prize_delta):+.4%}"
+    )
+    print(f"  paired bootstrap 95% CI=[{ci[0]:+.4%}, {ci[1]:+.4%}]")
+
+    assert len(paired_prize_delta) == holdout
+    assert all(value in (0.0, 1.0) for name in variants for value in any_prize[name])
+    assert all(0.0 <= value <= 6.0 for name in variants for value in mean_hits[name])

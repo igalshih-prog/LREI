@@ -5,6 +5,7 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.pro import ProRecommendationEngine
 
 
+import pytest
 def test_pro_portfolio_quality_invariants():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     result = ProRecommendationEngine().recommend(dataset, seed=20260916)
@@ -55,6 +56,7 @@ def test_pro_coverage_is_stable_across_seeds():
     assert max(coverages) <= 37
 
 
+@pytest.mark.slow
 def test_pro_portfolio_selector_ablation():
     """Compare selector tradeoffs on a small fixed walk-forward sample."""
     from statistics import mean
@@ -96,6 +98,7 @@ def test_pro_portfolio_selector_ablation():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_pro_candidate_generation_ablation():
     """Compare candidate-generation settings on a small walk-forward sample."""
     from statistics import mean
@@ -163,6 +166,7 @@ def test_pro_candidate_generation_ablation():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_pro_candidate_pool_diversity_diagnostic():
     """Measure whether the candidate generator is creating a sufficiently broad pool."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -211,6 +215,7 @@ def test_pro_structural_gate_has_bounded_retries():
     assert len(result.generated_tickets) == 20
     assert len(result.recommended_tickets) == 14
 
+@pytest.mark.slow
 def test_pro_number_signal_calibration_diagnostic():
     """Measure whether Pro number scores retain signal on unseen draws."""
     from statistics import mean
@@ -247,6 +252,7 @@ def test_pro_number_signal_calibration_diagnostic():
     assert all(0 <= value <= top_k for value in bottom_hits)
 
 
+@pytest.mark.slow
 def test_pro_affinity_prior_robust_walk_forward_diagnostic():
     """Compare Bayesian affinity priors on a longer unseen holdout."""
     from statistics import mean
@@ -287,6 +293,7 @@ def test_pro_affinity_prior_robust_walk_forward_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_pro_candidate_score_weight_robust_walk_forward_diagnostic():
     """Compare candidate score component weights on an unseen holdout."""
     from statistics import mean

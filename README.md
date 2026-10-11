@@ -75,7 +75,7 @@ The latest clean walk-forward model-selection diagnostic found:
 - Elite Pro remained close to Regular.
 - Adaptive candidate allocation showed only a small, statistically uncertain difference from the conservative allocation.
 
-A separate conservative meta-selector diagnostic showed a positive historical delta when selecting among Regular/Pro/Elite using prior validation draws. LREI is therefore adding this as a separate **Smart** mode for further walk-forward validation rather than silently replacing Elite production behavior.
+Earlier meta-selector diagnostics suggested a positive historical delta, but a methodological audit found that several comparisons regenerated a new random portfolio for each validation draw and gave Regular 50 tickets while Pro/Elite used 14. Those comparisons have been corrected to use one fixed portfolio per validation window and an equal 14-ticket budget. The earlier positive result is not treated as evidence of improvement until the corrected walk-forward runs support it. Smart remains a separate model-selection mode; it does not silently replace Elite production behavior.
 
 These are empirical backtest observations only. They are **not evidence of guaranteed predictive advantage**.
 

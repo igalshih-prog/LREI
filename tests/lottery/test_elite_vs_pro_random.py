@@ -1203,6 +1203,7 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
     from lrei.lottery.recommendation import RecommendationEngine
     from lrei.lottery.statistics import LotteryStatistics
     from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+    from lrei.lottery.pro import ProConfig
 
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -1222,7 +1223,7 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
 
         engines = {
             "regular": RecommendationEngine(),
-            "pro": ProRecommendationEngine(),
+            "pro": ProRecommendationEngine(ProConfig(candidate_count=200, max_tickets=14)),
             "elite_equal": EliteProRecommendationEngine(EliteProConfig(
                 candidate_count=200, max_tickets=14,
             )),

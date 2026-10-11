@@ -843,3 +843,30 @@ def test_smart_model_selection_is_independent_of_final_ticket_seed():
     )
     selections = [engine.select_model(dataset, seed=seed)[0] for seed in (1, 17, 20261010, 999999)]
     assert len(set(selections)) == 1
+
+
+def test_smart_coverage_objective_selects_exact_coverage_engine():
+    engine = SmartRecommendationEngine(SmartConfig(objective="coverage_4plus"))
+    selected, scores = engine.select_model(LotteryDataset(draws=[]))
+    assert selected == "coverage"
+    assert scores == {"coverage": 1.0}
+
+
+def test_smart_rejects_invalid_objective():
+    with pytest.raises(ValueError, match="objective"):
+        SmartConfig(objective="guess_the_jackpot")
+
+
+@pytest.mark.slow
+def test_smart_coverage_objective_preserves_exact_portfolio_guarantees():
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    result = SmartRecommendationEngine(
+        SmartConfig(objective="coverage_4plus")
+    ).recommend(dataset, seed=20261011)
+    tickets = result.recommended_tickets
+    assert len(tickets) == 14
+    assert len(set(tickets)) == 14
+    assert all(
+        len(set(left) & set(right)) <= 1
+        for left, right in __import__("itertools").combinations(tickets, 2)
+    )

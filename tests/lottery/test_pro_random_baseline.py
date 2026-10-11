@@ -4,6 +4,9 @@ from statistics import mean
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
+import pytest
+
+pytestmark = pytest.mark.slow
 
 
 def _hits(tickets, actual):

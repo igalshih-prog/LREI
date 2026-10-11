@@ -9,10 +9,12 @@ TICKET = (1, 2, 3, 4, 5, 6)
 
 
 def test_exact_single_ticket_coverage_counts_match_combinatorics():
+    three_plus = portfolio_coverage([TICKET], threshold=3)
     four_plus = portfolio_coverage([TICKET], threshold=4)
     five_plus = portfolio_coverage([TICKET], threshold=5)
     jackpot = portfolio_coverage([TICKET], threshold=6)
 
+    assert three_plus["covered_draws"] == comb(6, 3) * comb(31, 3) + comb(6, 4) * comb(31, 2) + comb(6, 5) * comb(31, 1) + 1
     assert four_plus["covered_draws"] == comb(6, 4) * comb(31, 2) + comb(6, 5) * comb(31, 1) + 1
     assert five_plus["covered_draws"] == comb(6, 5) * comb(31, 1) + 1
     assert jackpot["covered_draws"] == 1

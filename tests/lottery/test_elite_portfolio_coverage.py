@@ -118,3 +118,54 @@ def test_elite_exact_portfolio_coverage_diagnostic():
         f"  theoretical 6/6 + strong-number probability for 14 distinct lines: "
         f"1 in {1 / full_jackpot_probability:,.0f}"
     )
+
+
+def test_elite_any_prize_coverage_diagnostic():
+    """Compare exact chance of any prize (3+ main hits) across overlap caps."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    variants = {"overlap_1": 1, "overlap_2": 2, "overlap_3": 3, "overlap_4": 4}
+    coverage = {name: [] for name in variants}
+    random_coverage = []
+
+    for seed in range(6):
+        for name, max_overlap in variants.items():
+            engine = EliteProRecommendationEngine(
+                EliteProConfig(
+                    candidate_count=1000,
+                    max_overlap=max_overlap,
+                    max_tickets=14,
+                    adaptive_weights=False,
+                    adaptive_candidate_weights=False,
+                )
+            )
+            portfolio = engine.recommend(dataset, seed=51000 + seed).recommended_tickets
+            assert len(portfolio) == 14
+            assert len(set(portfolio)) == 14
+            assert all(
+                len(set(left) & set(right)) <= max_overlap
+                for left, right in combinations(portfolio, 2)
+            )
+            coverage[name].append(
+                portfolio_coverage(portfolio, threshold=3)["probability"]
+            )
+
+        random_portfolio = _random_portfolio(random.Random(52000 + seed))
+        random_coverage.append(
+            portfolio_coverage(random_portfolio, threshold=3)["probability"]
+        )
+
+    print("Exact probability of at least one prize (3+ main hits) under uniform 6/37 draws:")
+    print(f"  random: {mean(random_coverage):.6%}")
+    for name, values in coverage.items():
+        paired = [value - baseline for value, baseline in zip(values, random_coverage)]
+        ci = _bootstrap_ci(paired, seed=20261020 + variants[name])
+        print(
+            f"  {name}: {mean(values):.6%}, "
+            f"delta vs random={mean(paired):+.6%}, "
+            f"paired bootstrap 95% CI=[{ci[0]:+.6%}, {ci[1]:+.6%}]"
+        )
+
+    assert len(random_coverage) == 6
+    assert all(len(values) == 6 for values in coverage.values())
+    assert all(0.0 <= value <= 1.0 for value in random_coverage)
+    assert all(0.0 <= value <= 1.0 for values in coverage.values() for value in values)

@@ -7,6 +7,7 @@ from statistics import mean
 
 from .dataset import LotteryDataset
 from .elite import EliteProConfig, EliteProRecommendationEngine
+from .coverage_engine import CoverageRecommendationEngine
 from .pro import ProConfig, ProRecommendationEngine
 from .recommendation import RecommendationEngine, RecommendationResult
 from .statistics import LotteryStatistics
@@ -29,6 +30,7 @@ class SmartConfig:
     tail_weight_5: float = 1.00
     tail_weight_6: float = 2.00
     calibration_seed: int = 314159
+    objective: str = "historical"
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:
@@ -49,6 +51,8 @@ class SmartConfig:
             raise ValueError("stability_penalty must be non-negative")
         if self.selection_metric not in {"mean", "tail", "jackpot"}:
             raise ValueError("selection_metric must be 'mean', 'tail', or 'jackpot'")
+        if self.objective not in {"historical", "coverage_4plus"}:
+            raise ValueError("objective must be 'historical' or 'coverage_4plus'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
             raise ValueError("tail weights must be non-negative")
 
@@ -105,6 +109,10 @@ class SmartRecommendationEngine:
         )
 
     def select_model(self, dataset: LotteryDataset, seed: int | None = None) -> tuple[str, dict[str, float]]:
+        if self.config.objective == "coverage_4plus":
+            # This objective is solved analytically by the Coverage engine;
+            # historical model selection would only add noise to a known optimum.
+            return "coverage", {"coverage": 1.0}
         if len(dataset) < self.config.min_history_draws:
             return "elite", {}
 
@@ -181,6 +189,8 @@ class SmartRecommendationEngine:
         return best_name, raw_means
 
     def _recommend_selected(self, selected: str, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
+        if selected == "coverage":
+            return CoverageRecommendationEngine().recommend(dataset, seed=seed)
         if selected == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(dataset),

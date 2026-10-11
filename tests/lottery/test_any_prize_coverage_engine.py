@@ -105,3 +105,53 @@ def test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool():
 
     assert len(selected) == 14
     assert greedy_probability > random_mean
+
+
+@pytest.mark.slow
+def test_any_prize_candidate_pool_size_ablation():
+    """Compare exact greedy coverage across nested pool sizes and same-pool random portfolios."""
+    rng = random.Random(20261013)
+    pool_sizes = (100, 250, 500)
+    candidate_count = max(pool_sizes)
+    candidates = []
+    seen = set()
+    while len(candidates) < candidate_count:
+        ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+        if ticket not in seen:
+            seen.add(ticket)
+            candidates.append(ticket)
+
+    engine = AnyPrizeCoverageRecommendationEngine(
+        AnyPrizeCoverageConfig(candidate_count=candidate_count, max_tickets=14)
+    )
+    # Each mask describes every 6/37 outcome for which that ticket has 3+ hits.
+    # Reuse masks for nested prefixes so the comparison isolates pool size.
+    masks = tuple(engine._coverage_mask(ticket, engine._choose) for ticket in candidates)
+    baseline_rng = random.Random(20261014)
+    baseline_trials = 100
+    results = {}
+
+    for size in pool_sizes:
+        selected, covered_count, _ = engine._select_candidate_pool(
+            candidates[:size], masks[:size]
+        )
+        greedy_probability = covered_count / TOTAL_DRAWS
+        random_probabilities = []
+        for _ in range(baseline_trials):
+            chosen = baseline_rng.sample(range(size), 14)
+            covered = 0
+            for index in chosen:
+                covered |= masks[index]
+            random_probabilities.append(covered.bit_count() / TOTAL_DRAWS)
+        random_mean = mean(random_probabilities)
+        results[size] = (greedy_probability, random_mean)
+        print(
+            f"  pool={size}: greedy={greedy_probability:.4%}, "
+            f"same-pool random={random_mean:.4%}, "
+            f"delta={greedy_probability - random_mean:+.4%}"
+        )
+
+    print("Any-prize candidate-pool size ablation (exact 3+ main-hit coverage):")
+    assert all(greedy > random_mean for greedy, random_mean in results.values())
+    assert all(0.0 < greedy <= 1.0 for greedy, _ in results.values())
+    assert all(0.0 < random_mean <= 1.0 for _, random_mean in results.values())

@@ -6,9 +6,9 @@ from statistics import mean
 import pytest
 
 from lrei.lottery.any_prize_coverage_engine import (
+    AnyPrizeCoverageConfig,
     AnyPrizeCoverageRecommendationEngine,
     TOTAL_DRAWS,
-    AnyPrizeCoverageConfig,
 )
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.portfolio_coverage import portfolio_coverage

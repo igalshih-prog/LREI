@@ -7,6 +7,7 @@ pytestmark = pytest.mark.slow
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+from lrei.lottery.evaluation import paired_block_bootstrap_ci
 from lrei.lottery.pro import ProRecommendationEngine
 
 
@@ -155,7 +156,7 @@ def test_elite_robust_baseline_walk_forward_diagnostic():
         random_means.append(random_mean)
         paired.append(elite_mean - random_mean)
 
-    ci = _bootstrap_ci(paired, seed=20260921)
+    ci = paired_block_bootstrap_ci(paired, seed=20260921, block_size=5)
     print("Elite robust baseline diagnostic:")
     print(f"  holdout={holdout}")
     print(f"  Elite mean hits/ticket={mean(elite_means):.4f}")
@@ -194,7 +195,7 @@ def test_elite_candidate_allocation_robust_walk_forward_diagnostic():
             results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
 
     difference = [ewma - equal for ewma, equal in zip(results["ewma_heavy"], results["equal"])]
-    ci = _bootstrap_ci(difference, seed=20260922)
+    ci = paired_block_bootstrap_ci(difference, seed=20260922, block_size=5)
 
     print("Elite candidate-allocation robust diagnostic:")
     for name, values in results.items():
@@ -235,7 +236,7 @@ def test_elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic():
             results[name].append(mean(len(set(ticket) & actual) for ticket in result.recommended_tickets))
 
     difference = [adaptive - equal for adaptive, equal in zip(results["adaptive"], results["equal"])]
-    ci = _bootstrap_ci(difference, seed=20260923)
+    ci = paired_block_bootstrap_ci(difference, seed=20260923, block_size=5)
 
     print("Elite adaptive candidate-allocation robust diagnostic:")
     for name, values in results.items():
@@ -1260,7 +1261,7 @@ def test_clean_model_selection_regular_pro_elite_walk_forward():
         if name == "regular":
             continue
         difference = [candidate - base for candidate, base in zip(values, baseline)]
-        ci = _bootstrap_ci(difference, seed=20260930 + list(variants).index(name))
+        ci = paired_block_bootstrap_ci(difference, seed=20260930 + list(variants).index(name), block_size=5)
         print(f"  {name} - regular={mean(difference):+.4f}, 95% CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
 
     assert all(len(values) == holdout for values in results.values())
@@ -2092,7 +2093,7 @@ def test_elite_against_constrained_random_jackpot_walk_forward():
     print(f"  mean hits: Elite={mean(elite_mean):.4f}, random={mean(random_mean):.4f}, diff={mean(paired_mean):+.4f}")
     print(f"  best ticket: Elite={mean(elite_best):.4f}, random={mean(random_best):.4f}, diff={mean(paired_best):+.4f}")
     for label, values in (("4+", paired_4), ("5+", paired_5), ("6", paired_6)):
-        ci = _bootstrap_ci(values, seed=20261070 + len(label))
+        ci = paired_block_bootstrap_ci(values, seed=20261070 + len(label), block_size=5)
         print(f"  {label}: diff={mean(values):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
 
     assert len(paired_mean) == holdout

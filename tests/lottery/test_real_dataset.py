@@ -45,9 +45,12 @@ def test_real_lottery_dataset_is_chronological_contiguous_and_fresh():
     latest_date = dates[-1]
     today_utc = datetime.now(timezone.utc).date()
     age_days = (today_utc - latest_date).days
-    assert 0 <= age_days <= 14, (
+    # Israel Lotto draws are ordinarily held twice a week. Four days
+    # allows the Tue/Sat cadence while catching a missed published draw
+    # shortly after its expected release.
+    assert 0 <= age_days <= 4, (
         f"Lottery data is {age_days} days old (latest draw: {latest_date}); "
-        "refresh data/lottery.csv before relying on recent-window analysis."
+        "refresh data/lottery.csv with the latest published draw before relying on recent-window analysis."
     )
 
     assert all(draw.strong_number is not None and 1 <= draw.strong_number <= 7 for draw in dataset)

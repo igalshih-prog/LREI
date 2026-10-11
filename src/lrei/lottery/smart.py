@@ -7,7 +7,10 @@ from statistics import mean
 
 from .dataset import LotteryDataset
 from .elite import EliteProConfig, EliteProRecommendationEngine
-from .any_prize_coverage_engine import AnyPrizeCoverageConfig, AnyPrizeCoverageRecommendationEngine
+from .any_prize_coverage_engine import (
+    AnyPrizeCoverageConfig,
+    AnyPrizeCoverageRecommendationEngine,
+)
 from .coverage_engine import CoverageRecommendationEngine
 from .pro import ProConfig, ProRecommendationEngine
 from .prize_evaluation import evaluate_portfolio_prizes

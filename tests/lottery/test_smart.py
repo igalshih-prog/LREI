@@ -135,7 +135,8 @@ def test_smart_robust_walk_forward_against_models_and_random():
     start = len(draws) - holdout
     config = SmartConfig(
         calibration_draws=6,
-        calibration_candidate_count=40,
+        calibration_candidate_count=100,
+        recommendation_candidate_count=100,
         calibration_origins=2,
         recency_decay=0.85,
         stability_penalty=0.10,
@@ -159,10 +160,17 @@ def test_smart_robust_walk_forward_against_models_and_random():
         selected, _ = engine.select_model(history, seed=203000 + offset)
         selections[selected] += 1
 
-        elite = EliteProRecommendationEngine().recommend(history, seed=203000 + offset)
+        elite = EliteProRecommendationEngine(
+            EliteProConfig(
+                candidate_count=100,
+                max_tickets=14,
+                adaptive_weights=False,
+                adaptive_candidate_weights=False,
+            )
+        ).recommend(history, seed=203000 + offset)
         pro = ProRecommendationEngine(
             __import__("lrei.lottery.pro", fromlist=["ProConfig"]).ProConfig(
-                candidate_count=60,
+                candidate_count=100,
                 max_tickets=14,
             )
         ).recommend(history, seed=203000 + offset)
@@ -172,6 +180,10 @@ def test_smart_robust_walk_forward_against_models_and_random():
             for _ in range(14)
         )
         actual = set(target.numbers)
+        assert len(smart.recommended_tickets) == 14
+        assert len(elite.recommended_tickets) == 14
+        assert len(pro.recommended_tickets) == 14
+        assert len(random_tickets) == 14
 
         smart_scores.append(mean(len(set(ticket) & actual) for ticket in smart.recommended_tickets))
         elite_scores.append(mean(len(set(ticket) & actual) for ticket in elite.recommended_tickets))

@@ -7,6 +7,7 @@ from statistics import mean
 
 from .dataset import LotteryDataset
 from .elite import EliteProConfig, EliteProRecommendationEngine
+from .any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from .coverage_engine import CoverageRecommendationEngine
 from .pro import ProConfig, ProRecommendationEngine
 from .prize_evaluation import evaluate_portfolio_prizes
@@ -52,8 +53,8 @@ class SmartConfig:
             raise ValueError("stability_penalty must be non-negative")
         if self.selection_metric not in {"mean", "tail", "jackpot", "prize"}:
             raise ValueError("selection_metric must be 'mean', 'tail', 'jackpot', or 'prize'")
-        if self.objective not in {"historical", "coverage_4plus"}:
-            raise ValueError("objective must be 'historical' or 'coverage_4plus'")
+        if self.objective not in {"historical", "coverage_4plus", "coverage_any_prize"}:
+            raise ValueError("objective must be 'historical', 'coverage_4plus', or 'coverage_any_prize'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
             raise ValueError("tail weights must be non-negative")
 
@@ -126,6 +127,10 @@ class SmartRecommendationEngine:
             # This objective is solved analytically by the Coverage engine;
             # historical model selection would only add noise to a known optimum.
             return "coverage", {"coverage": 1.0}
+        if self.config.objective == "coverage_any_prize":
+            # Optimize exact 3+-match draw coverage rather than fitting a noisy
+            # number predictor. The engine uses random candidate lines only.
+            return "coverage_any_prize", {"coverage_any_prize": 1.0}
         if len(dataset) < self.config.min_history_draws:
             return "elite", {}
 
@@ -204,6 +209,8 @@ class SmartRecommendationEngine:
     def _recommend_selected(self, selected: str, dataset: LotteryDataset, seed: int | None = None) -> RecommendationResult:
         if selected == "coverage":
             return CoverageRecommendationEngine().recommend(dataset, seed=seed)
+        if selected == "coverage_any_prize":
+            return AnyPrizeCoverageRecommendationEngine().recommend(dataset, seed=seed)
         if selected == "regular":
             return RecommendationEngine().recommend(
                 LotteryStatistics.from_dataset(dataset),

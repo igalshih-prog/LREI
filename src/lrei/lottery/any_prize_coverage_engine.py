@@ -106,12 +106,23 @@ class AnyPrizeCoverageRecommendationEngine:
         return cls.covered_draw_count(tickets) / TOTAL_DRAWS
 
     def _select_candidate_pool(
-        self, candidates: Sequence[tuple[int, ...]]
+        self,
+        candidates: Sequence[tuple[int, ...]],
+        masks: Sequence[int] | None = None,
     ) -> tuple[tuple[tuple[int, ...], ...], int, tuple[int, ...]]:
-        """Greedily select tickets and return exact covered count plus cached masks."""
+        """Greedily select tickets and return exact covered count plus cached masks.
+
+        Callers comparing nested candidate pools may pass precomputed masks to
+        avoid recalculating identical ticket outcome sets for each pool size.
+        """
         if len(candidates) < self.config.max_tickets:
             raise ValueError("candidate pool must cover max_tickets")
-        masks = tuple(self._coverage_mask(ticket, self._choose) for ticket in candidates)
+        if masks is None:
+            masks = tuple(self._coverage_mask(ticket, self._choose) for ticket in candidates)
+        elif len(masks) != len(candidates):
+            raise ValueError("candidate masks must match the candidate pool length")
+        else:
+            masks = tuple(masks)
         remaining = list(range(len(candidates)))
         selected: list[tuple[int, ...]] = []
         covered = 0

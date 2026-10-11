@@ -74,8 +74,12 @@ def generate_pro_tickets(dataset, seed: int):
     return result, tickets
 
 
-def generate_smart_tickets(dataset, seed: int, objective: str = "historical"):
-    engine = SmartRecommendationEngine(SmartConfig(objective=objective))
+def generate_smart_tickets(
+    dataset, seed: int, objective: str = "historical", selection_metric: str = "mean"
+):
+    engine = SmartRecommendationEngine(
+        SmartConfig(objective=objective, selection_metric=selection_metric)
+    )
     result = engine.recommend(dataset=dataset, seed=seed)
     tickets = result.recommended_tickets_with_strong[:14]
     return result, tickets
@@ -158,7 +162,8 @@ elif mode == "Smart":
         "מה מטרת ההמלצה?",
         options=[
             "מקסום כיסוי ל־4+ במספרים הראשיים",
-            "בחירה לפי ביצועים היסטוריים",
+            "בחירה לפי ממוצע התאמות היסטורי",
+            "ניסוי: בחירה לפי שיעור זכיות בפועל בהיסטוריה",
         ],
         index=0,
     )
@@ -167,15 +172,26 @@ elif mode == "Smart":
         if objective_label == "מקסום כיסוי ל־4+ במספרים הראשיים"
         else "historical"
     )
+    smart_selection_metric = (
+        "prize"
+        if objective_label == "ניסוי: בחירה לפי שיעור זכיות בפועל בהיסטוריה"
+        else "mean"
+    )
     if smart_objective == "coverage_4plus":
         st.info(
             "Smart משתמש בכיסוי מתמטי: 14 טורים ייחודיים שבהם כל זוג חולק לכל היותר מספר ראשי אחד. "
             "כך ממקסמים את הסיכוי שלפחות טור אחד יפגע ב־4 מתוך 6 מספרים ראשיים. "
             "סיכוי הג׳קפוט נשאר זהה לכל קבוצה של 14 טורים ייחודיים."
         )
+    elif smart_selection_metric == "prize":
+        st.info(
+            "ניסוי: Smart בוחר בין Regular, Pro ו-Elite לפי שיעור ההגרלות בבדיקת העבר "
+            "שבהן לפחות אחד מ־14 הטורים זכה במדרגת פרס בפועל, כולל המספר החזק. "
+            "המדד מבוסס על מדגם היסטורי קטן ועלול להיות רועש; הוא אינו תחזית לזכייה הבאה."
+        )
     else:
         st.info(
-            "Smart בוחר בין Regular, Pro ו-Elite לפי בדיקה היסטורית כרונולוגית, "
+            "Smart בוחר בין Regular, Pro ו-Elite לפי ממוצע התאמות בבדיקה היסטורית כרונולוגית, "
             "ואז מפיק 14 טורים. הבחירה מבוססת על ביצועי עבר ואינה מבטיחה חיזוי."
         )
 elif mode == "Coverage":
@@ -209,6 +225,7 @@ if st.button(
                 dataset=dataset,
                 seed=seed,
                 objective=smart_objective,
+                selection_metric=smart_selection_metric,
             )
         elif mode == "Coverage":
             result, tickets = generate_coverage_tickets(

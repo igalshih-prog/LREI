@@ -4,7 +4,8 @@ from statistics import mean
 
 import pytest
 
-from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
+from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset, LotteryDrawRecord
+from lrei.lottery.recommendation import RecommendedTicket
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
@@ -870,3 +871,29 @@ def test_smart_coverage_objective_preserves_exact_portfolio_guarantees():
         len(set(left) & set(right)) <= 1
         for left, right in __import__("itertools").combinations(tickets, 2)
     )
+
+
+def test_smart_prize_metric_scores_actual_prize_outcome():
+    """The opt-in prize metric evaluates the actual prize tiers, including strong."""
+    assert SmartConfig().selection_metric == "mean"
+    engine = SmartRecommendationEngine(SmartConfig(selection_metric="prize"))
+    target = LotteryDrawRecord(
+        draw_id="target",
+        numbers=(1, 2, 3, 4, 5, 6),
+        strong_number=7,
+    )
+    winning = type("Result", (), {
+        "recommended_tickets": ((1, 2, 3, 4, 5, 6),),
+        "recommended_tickets_with_strong": (
+            RecommendedTicket(numbers=(1, 2, 3, 4, 5, 6), strong_number=7),
+        ),
+    })()
+    losing = type("Result", (), {
+        "recommended_tickets": ((20, 21, 22, 23, 24, 25),),
+        "recommended_tickets_with_strong": (
+            RecommendedTicket(numbers=(20, 21, 22, 23, 24, 25), strong_number=7),
+        ),
+    })()
+
+    assert engine._validation_score(winning, target) == 1.0
+    assert engine._validation_score(losing, target) == 0.0

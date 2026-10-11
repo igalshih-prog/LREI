@@ -9,7 +9,8 @@ from .dataset import LotteryDataset
 from .elite import EliteProConfig, EliteProRecommendationEngine
 from .coverage_engine import CoverageRecommendationEngine
 from .pro import ProConfig, ProRecommendationEngine
-from .recommendation import RecommendationEngine, RecommendationResult
+from .prize_evaluation import evaluate_portfolio_prizes
+from .recommendation import RecommendationEngine, RecommendationResult, RecommendedTicket
 from .statistics import LotteryStatistics
 
 
@@ -49,8 +50,8 @@ class SmartConfig:
             raise ValueError("recency_decay must be in (0, 1]")
         if self.stability_penalty < 0:
             raise ValueError("stability_penalty must be non-negative")
-        if self.selection_metric not in {"mean", "tail", "jackpot"}:
-            raise ValueError("selection_metric must be 'mean', 'tail', or 'jackpot'")
+        if self.selection_metric not in {"mean", "tail", "jackpot", "prize"}:
+            raise ValueError("selection_metric must be 'mean', 'tail', 'jackpot', or 'prize'")
         if self.objective not in {"historical", "coverage_4plus"}:
             raise ValueError("objective must be 'historical' or 'coverage_4plus'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
@@ -88,6 +89,15 @@ class SmartRecommendationEngine:
         }
 
     def _validation_score(self, result: RecommendationResult, target) -> float:
+        if self.config.selection_metric == "prize":
+            prize_tickets = getattr(result, "recommended_tickets_with_strong", ())
+            if not prize_tickets:
+                prize_tickets = tuple(
+                    RecommendedTicket(numbers=tuple(ticket))
+                    for ticket in result.recommended_tickets
+                )
+            return float(evaluate_portfolio_prizes(prize_tickets, target).any_prize)
+
         actual = set(target.numbers)
         hits = [len(set(ticket) & actual) for ticket in result.recommended_tickets]
         mean_hits = mean(hits)

@@ -1,8 +1,6 @@
 import pytest
 from pathlib import Path
 
-pytestmark = pytest.mark.slow
-
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
@@ -124,6 +122,7 @@ def test_elite_propagates_candidate_generation_settings():
         assert engine.config.structural_gate_threshold == 0.24
 
 
+@pytest.mark.slow
 def test_elite_candidate_pool_diversity_diagnostic():
     config = EliteProConfig(candidate_count=300, max_tickets=14)
     engine = EliteProRecommendationEngine(config)
@@ -140,6 +139,7 @@ def test_elite_candidate_pool_diversity_diagnostic():
     assert unique_candidates > 0
     assert 1 <= covered_candidates <= 37
 
+@pytest.mark.slow
 def test_elite_weighting_ablation_diagnostic():
     """Compare fixed/adaptive ensemble settings without changing production defaults."""
     from statistics import mean
@@ -173,6 +173,7 @@ def test_elite_weighting_ablation_diagnostic():
     assert all(len(values) == holdout for values in results.values())
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
+@pytest.mark.slow
 def test_elite_candidate_allocation_ablation_diagnostic():
     """Compare candidate-source allocations without changing the default 1/3 mix."""
     from statistics import mean
@@ -286,6 +287,7 @@ def test_elite_consensus_scoring_is_opt_in_and_validated():
     assert first.recommended_tickets == second.recommended_tickets
 
 
+@pytest.mark.slow
 def test_elite_adaptive_consensus_multi_origin_robust_diagnostic():
     """Compare opt-in adaptive consensus with the current scoring across multiple origins."""
     from statistics import mean
@@ -329,6 +331,7 @@ def test_elite_adaptive_consensus_multi_origin_robust_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_signal_enhancement_walk_forward_diagnostic():
     """Compare opt-in momentum, consensus, and score calibration against current Elite."""
     from statistics import mean
@@ -362,6 +365,7 @@ def test_elite_signal_enhancement_walk_forward_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_elite_model_selection_robust_walk_forward_diagnostic():
     """Compare candidate Elite configurations on a longer chronological holdout."""
     from statistics import mean
@@ -426,6 +430,7 @@ def test_elite_model_selection_robust_walk_forward_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_elite_score_calibration_multi_origin_robust_diagnostic():
     """Check score calibration across three chronological origins, not only the latest holdout."""
     from statistics import mean
@@ -462,6 +467,7 @@ def test_elite_score_calibration_multi_origin_robust_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_recent_affinity_multi_origin_robust_diagnostic():
     """Compare current all-history affinity with an opt-in recent-affinity blend."""
     from statistics import mean
@@ -502,6 +508,7 @@ def test_elite_recent_affinity_multi_origin_robust_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_momentum_multi_origin_robust_diagnostic():
     """Check adaptive momentum across three chronological origins."""
     from statistics import mean
@@ -546,6 +553,7 @@ def test_elite_momentum_multi_origin_robust_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_top_model_multi_origin_robust_diagnostic():
     """Validate the strongest recent Elite variants across independent time origins."""
     from statistics import mean
@@ -592,6 +600,7 @@ def test_elite_top_model_multi_origin_robust_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_elite_candidate_calibration_origin_ablation_diagnostic():
     """Compare one-origin and multi-origin adaptive candidate calibration."""
     from statistics import mean
@@ -639,6 +648,7 @@ def test_elite_candidate_calibration_origin_ablation_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_number_signal_strength_multi_origin_robust_diagnostic():
     """Test score-signal strength across independent chronological origins."""
     from statistics import mean
@@ -675,6 +685,7 @@ def test_elite_number_signal_strength_multi_origin_robust_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for values in results.values())
 
 
+@pytest.mark.slow
 def test_elite_adaptive_candidate_weights_multi_origin_diagnostic():
     """Compare one-origin and three-origin candidate-source calibration."""
     from statistics import mean
@@ -722,6 +733,7 @@ def test_elite_adaptive_candidate_weights_multi_origin_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_signal_calibration_origin_ablation_diagnostic():
     """Compare one-origin and multi-origin Rank/Raw/EWMA calibration."""
     from statistics import mean
@@ -766,6 +778,7 @@ def test_elite_signal_calibration_origin_ablation_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_gap_signal_multi_origin_robust_diagnostic():
     """Compare recency/overdue gap signals against the current Elite baseline."""
     from statistics import mean
@@ -814,6 +827,7 @@ def test_elite_gap_signal_multi_origin_robust_diagnostic():
     assert all(all(0 <= value <= 6 for value in values) for value in results.values())
 
 
+@pytest.mark.slow
 def test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic():
     """Compare pair/triple-aware portfolio construction with the current portfolio."""
     from statistics import mean
@@ -879,6 +893,7 @@ def test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_elite_feature_stack_multi_origin_diagnostic():
     """Compare adaptive feature layers and their combined stack on independent origins."""
     from statistics import mean
@@ -958,6 +973,7 @@ def test_elite_consensus_config_regression():
     assert config.consensus_calibration_origins >= 1
 
 
+@pytest.mark.slow
 def test_elite_adaptive_feature_stack_multi_origin_diagnostic():
     """Compare the opt-in meta-selector with a fixed baseline on independent origins."""
     from statistics import mean
@@ -1085,6 +1101,7 @@ def test_elite_adaptive_strong_number_scores_are_valid():
     assert all(item.score >= 0.0 for item in scores)
 
 
+@pytest.mark.slow
 def test_elite_adaptive_strong_number_walk_forward_diagnostic():
     from statistics import mean
     from lrei.lottery.dataset import LotteryDataset

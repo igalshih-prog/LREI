@@ -283,19 +283,22 @@ if st.button(
 
     with st.expander("📐 כיסוי מתמטי של 14 הטורים", expanded=False):
         main_tickets = [ticket.numbers for ticket in tickets]
+        coverage_3 = portfolio_coverage(main_tickets, threshold=3)["probability"]
         coverage_4 = portfolio_coverage(main_tickets, threshold=4)["probability"]
         coverage_5 = portfolio_coverage(main_tickets, threshold=5)["probability"]
         coverage_6 = portfolio_coverage(main_tickets, threshold=6)["probability"]
         full_jackpot_probability = 14 / (comb(37, 6) * 7)
 
-        coverage_columns = st.columns(3)
-        coverage_columns[0].metric("לפחות 4/6 במספרים הראשיים", f"{coverage_4:.3%}")
-        coverage_columns[1].metric("לפחות 5/6 במספרים הראשיים", f"{coverage_5:.3%}")
-        coverage_columns[2].metric("6/6 במספרים הראשיים", f"{coverage_6:.5%}")
+        coverage_columns = st.columns(4)
+        coverage_columns[0].metric("לפחות 3/6 — כל זכייה", f"{coverage_3:.2%}")
+        coverage_columns[1].metric("לפחות 4/6 ראשיים", f"{coverage_4:.3%}")
+        coverage_columns[2].metric("לפחות 5/6 ראשיים", f"{coverage_5:.3%}")
+        coverage_columns[3].metric("6/6 ראשיים", f"{coverage_6:.5%}")
         st.caption(
-            "הכיסוי מחושב בדיוק מול כל צירופי 6/37 האפשריים, ומתייחס למספרים הראשיים בלבד. "
-            "הוא אינו תחזית לתוצאה הבאה. בהנחת הגרלה הוגנת וטורים ייחודיים, "
-            f"סיכוי הג׳קפוט המלא ב־14 טורים הוא 1 ל־{1 / full_jackpot_probability:,.0f}, "
+            "הכיסוי מחושב בדיוק מול כל צירופי 6/37 האפשריים. לפחות 3 מספרים ראשיים "
+            "מזכים בפרס כלשהו לפי כללי הלוטו; המספר החזק קובע אם זו רמת פרס גבוהה יותר. "
+            "המדדים הם הסתברויות תאורטיות להגרלה הוגנת, לא תחזית. "
+            f"סיכוי הג׳קפוט המלא ב־14 טורים ייחודיים הוא 1 ל־{1 / full_jackpot_probability:,.0f}, "
             "כולל המספר החזק; בחירת מספרים היסטוריים אינה משנה את הסיכוי התאורטי הזה."
         )
 

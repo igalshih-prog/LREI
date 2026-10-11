@@ -233,3 +233,28 @@ def test_backtester_exposes_baseline_aggregate_metrics():
     assert result.baseline_best_match >= 0
     assert result.baseline_total_matches >= 0
     assert result.baseline_average_matches >= 0.0
+
+
+
+def test_baseline_seed_is_stable_across_python_processes():
+    """Python's randomized hash must not change seeded baseline portfolios."""
+    script = (
+        "from lrei.lottery.backtesting import LotteryBacktester; "
+        "print(LotteryBacktester._baseline_seed(12345, 'draw-004'))"
+    )
+    outputs = []
+    for hash_seed in ("1", "918273"):
+        env = os.environ.copy()
+        env["PYTHONHASHSEED"] = hash_seed
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        outputs.append(completed.stdout.strip())
+
+    assert outputs[0] == outputs[1]
+    assert outputs[0] == str(LotteryBacktester._baseline_seed(12345, "draw-004"))
+    assert outputs[0] != str(LotteryBacktester._baseline_seed(12345, "draw-005"))

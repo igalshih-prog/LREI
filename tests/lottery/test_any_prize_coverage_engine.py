@@ -1,8 +1,12 @@
+import random
 from math import comb
 from pathlib import Path
 
+import pytest
+
 from lrei.lottery.any_prize_coverage_engine import (
     AnyPrizeCoverageRecommendationEngine,
+    TOTAL_DRAWS,
     AnyPrizeCoverageConfig,
 )
 from lrei.lottery.dataset import CsvDatasetLoader
@@ -61,3 +65,42 @@ def test_any_prize_config_bounds_candidate_pool_and_ticket_count():
         except ValueError:
             continue
         raise AssertionError(f"Expected ValueError for {config}")
+
+
+@pytest.mark.slow
+def test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool():
+    """Compare greedy exact coverage against random 14-line selections from the same pool."""
+    rng = random.Random(20261011)
+    candidate_count = 100
+    candidates = []
+    seen = set()
+    while len(candidates) < candidate_count:
+        ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+        if ticket not in seen:
+            seen.add(ticket)
+            candidates.append(ticket)
+
+    engine = AnyPrizeCoverageRecommendationEngine(
+        AnyPrizeCoverageConfig(candidate_count=candidate_count, max_tickets=14)
+    )
+    selected, covered_count, masks = engine._select_candidate_pool(candidates)
+    greedy_probability = covered_count / TOTAL_DRAWS
+
+    baseline_rng = random.Random(20261012)
+    random_probabilities = []
+    for _ in range(200):
+        chosen_indices = baseline_rng.sample(range(candidate_count), 14)
+        covered = 0
+        for index in chosen_indices:
+            covered |= masks[index]
+        random_probabilities.append(covered.bit_count() / TOTAL_DRAWS)
+
+    random_mean = mean(random_probabilities)
+    print("Exact any-prize coverage comparison:")
+    print(f"  candidate pool={candidate_count}; recommended tickets={len(selected)}")
+    print(f"  greedy exact 3+ coverage={greedy_probability:.4%}")
+    print(f"  random 14-of-same-pool mean={random_mean:.4%}")
+    print(f"  delta={greedy_probability - random_mean:+.4%}")
+
+    assert len(selected) == 14
+    assert greedy_probability > random_mean

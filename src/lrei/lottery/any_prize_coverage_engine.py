@@ -105,6 +105,28 @@ class AnyPrizeCoverageRecommendationEngine:
         """Return exact P(at least one ticket matches 3+ main numbers)."""
         return cls.covered_draw_count(tickets) / TOTAL_DRAWS
 
+    def _select_candidate_pool(
+        self, candidates: Sequence[tuple[int, ...]]
+    ) -> tuple[tuple[tuple[int, ...], ...], int, tuple[int, ...]]:
+        """Greedily select tickets and return exact covered count plus cached masks."""
+        if len(candidates) < self.config.max_tickets:
+            raise ValueError("candidate pool must cover max_tickets")
+        masks = tuple(self._coverage_mask(ticket, self._choose) for ticket in candidates)
+        remaining = list(range(len(candidates)))
+        selected: list[tuple[int, ...]] = []
+        covered = 0
+
+        while len(selected) < self.config.max_tickets:
+            best_index = max(
+                remaining,
+                key=lambda index: ((masks[index] & ~covered).bit_count(), -index),
+            )
+            selected.append(candidates[best_index])
+            covered |= masks[best_index]
+            remaining.remove(best_index)
+
+        return tuple(selected), covered.bit_count(), masks
+
     def recommend(
         self, dataset: LotteryDataset, seed: int | None = None
     ) -> RecommendationResult:
@@ -126,19 +148,7 @@ class AnyPrizeCoverageRecommendationEngine:
         if len(candidates) != self.config.candidate_count:
             raise ValueError("Could not build a unique candidate ticket pool")
 
-        masks = [self._coverage_mask(ticket, self._choose) for ticket in candidates]
-        remaining = list(range(len(candidates)))
-        selected: list[tuple[int, ...]] = []
-        covered = 0
-
-        while len(selected) < self.config.max_tickets:
-            best_index = max(
-                remaining,
-                key=lambda index: ((masks[index] & ~covered).bit_count(), -index),
-            )
-            selected.append(candidates[best_index])
-            covered |= masks[best_index]
-            remaining.remove(best_index)
+        selected, _, _ = self._select_candidate_pool(candidates)
 
         strong_scores = tuple(
             NumberScore(number=number, score=1.0 / 7.0)

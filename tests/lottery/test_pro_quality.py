@@ -1,11 +1,12 @@
-from pathlib import Path
 from itertools import combinations
+from pathlib import Path
+
+import pytest
 
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.pro import ProRecommendationEngine
 
 
-import pytest
 def test_pro_portfolio_quality_invariants():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     result = ProRecommendationEngine().recommend(dataset, seed=20260916)

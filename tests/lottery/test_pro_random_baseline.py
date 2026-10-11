@@ -1,10 +1,10 @@
 import random
 from pathlib import Path
 from statistics import mean
+import pytest
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
-import pytest
 
 pytestmark = pytest.mark.slow
 

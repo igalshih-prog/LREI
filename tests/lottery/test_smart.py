@@ -1,6 +1,8 @@
+import random
 from pathlib import Path
 from statistics import mean
-import random
+
+import pytest
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
@@ -8,7 +10,6 @@ from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
 
-import pytest
 def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
     """Create a reproducible random baseline portfolio for Smart diagnostics."""
     return tuple(

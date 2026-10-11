@@ -1,10 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
-import pytest
 
 pytestmark = pytest.mark.slow
 

@@ -4,10 +4,11 @@ from math import comb
 from pathlib import Path
 from statistics import mean
 
+import pytest
+
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProRecommendationEngine, EliteProConfig
 from lrei.lottery.portfolio_coverage import portfolio_coverage
-import pytest
 
 pytestmark = pytest.mark.slow
 

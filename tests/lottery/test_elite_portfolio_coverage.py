@@ -20,6 +20,28 @@ def _random_portfolio(rng, count=14):
     return tuple(sorted(tickets))
 
 
+def _random_compatible_portfolio(rng, count=14, max_overlap=1, max_attempts=250000):
+    """Generate a random portfolio subject to the same overlap constraint."""
+    tickets = []
+    failed_attempts = 0
+    while len(tickets) < count:
+        candidate = tuple(sorted(rng.sample(range(1, 38), 6)))
+        if all(
+            len(set(candidate) & set(existing)) <= max_overlap
+            for existing in tickets
+        ):
+            tickets.append(candidate)
+            failed_attempts = 0
+        else:
+            failed_attempts += 1
+            if failed_attempts >= max_attempts:
+                raise RuntimeError(
+                    "Could not construct a random compatible portfolio "
+                    f"with max_overlap={max_overlap}"
+                )
+    return tuple(tickets)
+
+
 def _bootstrap_ci(values, seed=20261010, samples=5000):
     rng = random.Random(seed)
     estimates = [mean(values[rng.randrange(len(values))] for _ in values) for _ in range(samples)]
@@ -126,6 +148,7 @@ def test_elite_any_prize_coverage_diagnostic():
     variants = {"overlap_1": 1, "overlap_2": 2, "overlap_3": 3, "overlap_4": 4}
     coverage = {name: [] for name in variants}
     random_coverage = []
+    constrained_random_coverage = []
 
     for seed in range(6):
         for name, max_overlap in variants.items():
@@ -154,8 +177,22 @@ def test_elite_any_prize_coverage_diagnostic():
             portfolio_coverage(random_portfolio, threshold=3)["probability"]
         )
 
+        constrained_portfolio = _random_compatible_portfolio(
+            random.Random(53000 + seed), max_overlap=1
+        )
+        assert len(constrained_portfolio) == 14
+        assert len(set(constrained_portfolio)) == 14
+        assert all(
+            len(set(left) & set(right)) <= 1
+            for left, right in combinations(constrained_portfolio, 2)
+        )
+        constrained_random_coverage.append(
+            portfolio_coverage(constrained_portfolio, threshold=3)["probability"]
+        )
+
     print("Exact probability of at least one prize (3+ main hits) under uniform 6/37 draws:")
-    print(f"  random: {mean(random_coverage):.6%}")
+    print(f"  random, unconstrained: {mean(random_coverage):.6%}")
+    print(f"  random, max_overlap=1: {mean(constrained_random_coverage):.6%}")
     for name, values in coverage.items():
         paired = [value - baseline for value, baseline in zip(values, random_coverage)]
         ci = _bootstrap_ci(paired, seed=20261020 + variants[name])
@@ -165,7 +202,19 @@ def test_elite_any_prize_coverage_diagnostic():
             f"paired bootstrap 95% CI=[{ci[0]:+.6%}, {ci[1]:+.6%}]"
         )
 
+    elite_vs_constrained_random = [
+        elite - baseline
+        for elite, baseline in zip(coverage["overlap_1"], constrained_random_coverage)
+    ]
+    constrained_ci = _bootstrap_ci(elite_vs_constrained_random, seed=20261030)
+    print(
+        f"  overlap_1 LREI - constrained random="
+        f"{mean(elite_vs_constrained_random):+.6%}, "
+        f"paired bootstrap 95% CI=[{constrained_ci[0]:+.6%}, {constrained_ci[1]:+.6%}]"
+    )
+
     assert len(random_coverage) == 6
+    assert len(constrained_random_coverage) == 6
     assert all(len(values) == 6 for values in coverage.values())
-    assert all(0.0 <= value <= 1.0 for value in random_coverage)
+    assert all(0.0 <= value <= 1.0 for value in random_coverage + constrained_random_coverage)
     assert all(0.0 <= value <= 1.0 for values in coverage.values() for value in values)

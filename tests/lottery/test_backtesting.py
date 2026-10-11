@@ -4,8 +4,6 @@ import sys
 
 import pytest
 
-from lrei.lottery.backtesting import LotteryBacktester
-
 from lrei.lottery.backtesting import (
     BacktestResult,
     LotteryBacktester,

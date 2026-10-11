@@ -1,6 +1,7 @@
 import random
 from math import comb
 from pathlib import Path
+from statistics import mean
 
 import pytest
 

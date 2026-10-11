@@ -341,24 +341,30 @@ if st.button(
 
     st.divider()
 
-    st.subheader("📊 Top Number Scores")
-
-    for score in sorted(
-        result.scores,
-        key=lambda item: (-item.score, item.number),
-    )[:10]:
-        st.write(
-            f"Number {score.number:02d} — "
-            f"{score.score:.6f}"
+    if mode == "Smart" and smart_objective == "coverage_any_prize":
+        st.subheader("📊 ציוני מספרים")
+        st.caption(
+            "במצב כיסוי לזכייה כלשהי אין דירוג ניבוי למספרים הראשיים או למספר החזק. "
+            "המספרים נבחרים כדי להרחיב את כיסוי התוצאות שבהן לפחות טור אחד פוגע ב־3+ "
+            "מספרים ראשיים; כל צירוף ראשי יחיד עדיין שווה בהסתברות להגרלה הוגנת."
         )
+    else:
+        st.subheader("📊 Top Number Scores")
+        for score in sorted(
+            result.scores,
+            key=lambda item: (-item.score, item.number),
+        )[:10]:
+            st.write(
+                f"Number {score.number:02d} — "
+                f"{score.score:.6f}"
+            )
 
-    st.subheader("⭐ Strong Number Scores")
-
-    for score in sorted(
-        result.strong_scores,
-        key=lambda item: (-item.score, item.number),
-    )[:7]:
-        st.write(
-            f"Strong {score.number:02d} — "
-            f"{score.score:.6f}"
-        )
+        st.subheader("⭐ Strong Number Scores")
+        for score in sorted(
+            result.strong_scores,
+            key=lambda item: (-item.score, item.number),
+        )[:7]:
+            st.write(
+                f"Strong {score.number:02d} — "
+                f"{score.score:.6f}"
+            )

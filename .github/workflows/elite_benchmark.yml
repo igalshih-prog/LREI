@@ -12,6 +12,7 @@ on:
       - "data/lottery.csv"
       - "tests/lottery/test_elite_vs_pro_random.py"
       - "tests/lottery/test_elite_pro.py"
+      - "tests/lottery/test_any_prize_coverage_engine.py"
       - ".github/workflows/elite_benchmark.yml"
   workflow_dispatch:
 

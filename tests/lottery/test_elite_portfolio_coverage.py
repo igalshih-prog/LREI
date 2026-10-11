@@ -7,6 +7,9 @@ from statistics import mean
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProRecommendationEngine, EliteProConfig
 from lrei.lottery.portfolio_coverage import portfolio_coverage
+import pytest
+
+pytestmark = pytest.mark.slow
 
 
 def _random_portfolio(rng, count=14):

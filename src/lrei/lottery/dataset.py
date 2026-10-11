@@ -147,6 +147,18 @@ class CsvDatasetLoader:
                             row.get(self.strong_number_column)
                         )
                         numbers = self._parse_numbers(raw_numbers)
+                        if len(numbers) != 6:
+                            raise InvalidDrawError(
+                                "A lottery draw must contain exactly six main numbers"
+                            )
+                        if any(number < 1 or number > 37 for number in numbers):
+                            raise InvalidDrawError(
+                                "Main lottery numbers must be between 1 and 37"
+                            )
+                        if strong_number is not None and not 1 <= strong_number <= 7:
+                            raise InvalidDrawError(
+                                "strong_number must be between 1 and 7"
+                            )
                         draws.append(
                             LotteryDrawRecord(
                                 draw_id=draw_id,

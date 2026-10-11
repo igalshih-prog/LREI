@@ -59,13 +59,14 @@ The purpose of these additional layers is to test whether more sophisticated his
 
 ### Smart mode
 
-Smart offers three explicit objectives:
+Smart offers four explicit objectives:
 
 - **4+ main-number coverage:** uses the exact Coverage portfolio construction. Its 14 unique tickets share at most one main number per pair, making the events of hitting at least 4 of 6 main numbers disjoint. Under a uniform 6-of-37 draw model, this maximizes the probability of at least one 4+ main-number hit among 14 tickets.
+- **Any-prize coverage (3+ main hits):** samples a bounded pool of valid random tickets and greedily chooses 14 lines that add the most previously uncovered 6/37 draw outcomes where at least one line hits 3+ main numbers. Each ticket's outcome set and the final portfolio coverage are exact; the greedy search is an approximation over the candidate pool, not a global-optimum proof. This objective does not use historical frequencies to predict numbers.
 - **Historical mean-match selection:** uses only earlier draws to compare Regular, Pro, and Elite by average main-number matches on a chronological validation window, then runs the selected model on the full available history.
 - **Experimental actual-prize selection:** compares the models by a normalized score for the best prize tier in each historical validation draw: 1.0 for tier 1, decreasing to 0.125 for tier 8, and zero when no ticket wins. The strong number changes the tier score when relevant. This is a heuristic score, not a monetary expected-value calculation, and it is not established as a better predictor.
 
-The prize evaluator maps all eight official prize tiers and measures the outcome of each ticket against a draw. Both historical objectives are walk-forward tests, not guarantees. All objectives return exactly **14 recommended tickets**. The coverage objective is a mathematically grounded portfolio-design choice, not a prediction of the winning numbers. It retains the same theoretical jackpot probability as any other set of 14 distinct valid lines.
+The prize evaluator maps all eight official prize tiers and measures the outcome of each ticket against a draw. The historical objectives use walk-forward tests, not guarantees. All objectives return exactly **14 recommended tickets**. The two coverage objectives optimize portfolio structure, not the prediction of winning numbers. Neither changes the theoretical jackpot probability compared with any other set of 14 distinct valid lines.
 
 
 The latest clean walk-forward model-selection diagnostic found:

@@ -8,6 +8,7 @@ from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
 
 
+import pytest
 def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
     """Create a reproducible random baseline portfolio for Smart diagnostics."""
     return tuple(
@@ -16,6 +17,7 @@ def _random_portfolio(rng, max_number=37, ticket_size=6, ticket_count=14):
     )
 
 
+@pytest.mark.slow
 def test_smart_returns_exactly_14_tickets():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     result = SmartRecommendationEngine(
@@ -24,6 +26,7 @@ def test_smart_returns_exactly_14_tickets():
     assert len(result.recommended_tickets) == 14
 
 
+@pytest.mark.slow
 def test_smart_selection_is_reproducible():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     engine = SmartRecommendationEngine(
@@ -43,6 +46,7 @@ def test_smart_rejects_invalid_calibration_origins():
         raise AssertionError("Expected ValueError for calibration_origins=0")
 
 
+@pytest.mark.slow
 def test_smart_walk_forward_diagnostic():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -120,6 +124,7 @@ def test_smart_selection_prefers_recent_consistent_performance():
         weighted[name] = weighted_mean - engine.config.stability_penalty * stability
     assert max(weighted, key=weighted.get) == "pro"
 
+@pytest.mark.slow
 def test_smart_robust_walk_forward_against_models_and_random():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -235,6 +240,7 @@ def test_smart_jackpot_metric_is_opt_in_and_uses_best_ticket():
     assert engine._validation_score(result, Target()) == 4.5
 
 
+@pytest.mark.slow
 def test_smart_jackpot_metric_walk_forward_diagnostic():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -279,6 +285,7 @@ def test_smart_jackpot_metric_walk_forward_diagnostic():
     )
 
 
+@pytest.mark.slow
 def test_smart_tail_metric_walk_forward_diagnostic():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     draws = list(dataset.draws)
@@ -336,6 +343,7 @@ def test_smart_tail_metric_walk_forward_diagnostic():
     )
 
 
+@pytest.mark.slow
 def test_smart_validation_weighted_portfolio_ensemble_diagnostic():
     """Compare single-model Smart selection with a validation-weighted 14-ticket ensemble."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -414,6 +422,7 @@ def test_smart_validation_weighted_portfolio_ensemble_diagnostic():
     assert all(value == value for value in difference)
 
 
+@pytest.mark.slow
 def test_smart_calibration_recency_margin_ablation():
     """Find a more stable Smart selector without changing its production defaults."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -469,6 +478,7 @@ def test_smart_calibration_recency_margin_ablation():
     assert all(len(values) == holdout for values in tail4.values())
 
 
+@pytest.mark.slow
 def test_smart_calibration_multi_origin_robust_diagnostic():
     """Stress-test Smart calibration choices across independent chronological origins."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -548,6 +558,7 @@ def test_smart_calibration_multi_origin_robust_diagnostic():
     )
 
 
+@pytest.mark.slow
 def test_smart_tail_metric_robust_walk_forward_diagnostic():
     """Compare mean-vs-tail Smart selection on a longer holdout."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -684,6 +695,7 @@ def test_smart_calibration_reuses_one_portfolio_per_model_and_origin():
     assert calls == {"regular": 2, "pro": 2, "elite": 2}
 
 
+@pytest.mark.slow
 def test_smart_multi_origin_robust_random_baseline_diagnostic():
     """Compare Smart with repeated random portfolios over a longer unseen tail."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -769,6 +781,7 @@ def test_smart_multi_origin_robust_random_baseline_diagnostic():
     assert all(value == value for value in paired)
 
 
+@pytest.mark.slow
 def test_smart_selection_seed_stability_walk_forward_diagnostic():
     """Measure whether Smart's selected model is stable across generator seeds."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
@@ -816,6 +829,7 @@ def test_smart_selection_seed_stability_walk_forward_diagnostic():
     assert all(0.0 <= value <= 6.0 for values in scores.values() for value in values)
 
 
+@pytest.mark.slow
 def test_smart_model_selection_is_independent_of_final_ticket_seed():
     """Calibration must not change model choice just because ticket seed changes."""
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))

@@ -8,7 +8,7 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
-from lrei.lottery.smart import SmartRecommendationEngine
+from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.coverage_engine import CoverageRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
@@ -74,8 +74,8 @@ def generate_pro_tickets(dataset, seed: int):
     return result, tickets
 
 
-def generate_smart_tickets(dataset, seed: int):
-    engine = SmartRecommendationEngine()
+def generate_smart_tickets(dataset, seed: int, objective: str = "historical"):
+    engine = SmartRecommendationEngine(SmartConfig(objective=objective))
     result = engine.recommend(dataset=dataset, seed=seed)
     tickets = result.recommended_tickets_with_strong[:14]
     return result, tickets
@@ -147,16 +147,37 @@ mode = st.radio(
     horizontal=True,
 )
 
+smart_objective = "historical"
 if mode == "Pro":
     st.info(
         "Pro משתמש בהרכב Ensemble של Rank, Raw Frequency ו-EWMA, "
         "צירופי זוגות ושלשות, פרופיל מבני ואופטימיזציה מקומית של 14 הטורים יחד."
     )
 elif mode == "Smart":
-    st.info(
-        "Smart בוחר בין Regular, Pro ו-Elite לפי בדיקה היסטורית כרונולוגית, "
-        "ואז מפיק 14 טורים. הבחירה מבוססת על ביצועי עבר ואינה מבטיחה חיזוי."
+    objective_label = st.selectbox(
+        "מה מטרת ההמלצה?",
+        options=[
+            "מקסום כיסוי ל־4+ במספרים הראשיים",
+            "בחירה לפי ביצועים היסטוריים",
+        ],
+        index=0,
     )
+    smart_objective = (
+        "coverage_4plus"
+        if objective_label == "מקסום כיסוי ל־4+ במספרים הראשיים"
+        else "historical"
+    )
+    if smart_objective == "coverage_4plus":
+        st.info(
+            "Smart משתמש בכיסוי מתמטי: 14 טורים ייחודיים שבהם כל זוג חולק לכל היותר מספר ראשי אחד. "
+            "כך ממקסמים את הסיכוי שלפחות טור אחד יפגע ב־4 מתוך 6 מספרים ראשיים. "
+            "סיכוי הג׳קפוט נשאר זהה לכל קבוצה של 14 טורים ייחודיים."
+        )
+    else:
+        st.info(
+            "Smart בוחר בין Regular, Pro ו-Elite לפי בדיקה היסטורית כרונולוגית, "
+            "ואז מפיק 14 טורים. הבחירה מבוססת על ביצועי עבר ואינה מבטיחה חיזוי."
+        )
 elif mode == "Coverage":
     st.info(
         "Coverage מפיק 14 טורים ייחודיים שבהם כל זוג חולק לכל היותר מספר ראשי אחד. "
@@ -187,6 +208,7 @@ if st.button(
             result, tickets = generate_smart_tickets(
                 dataset=dataset,
                 seed=seed,
+                objective=smart_objective,
             )
         elif mode == "Coverage":
             result, tickets = generate_coverage_tickets(

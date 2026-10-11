@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import random
 from dataclasses import dataclass
 
@@ -144,6 +145,12 @@ class LotteryBacktester:
             or RecommendationEngine()
         )
 
+    @staticmethod
+    def _baseline_seed(case_seed: int, draw_id: str) -> int:
+        """Derive a process-independent random-baseline seed for one draw."""
+        digest = hashlib.blake2b(draw_id.encode("utf-8"), digest_size=8).digest()
+        return case_seed ^ int.from_bytes(digest, "big")
+
     def run(
         self,
         dataset: LotteryDataset,
@@ -260,10 +267,7 @@ class LotteryBacktester:
                 )
 
                 baseline_rng = random.Random(
-                    case_seed
-                    + hash(
-                        test_draw.draw_id
-                    ) % 1_000_000
+                    self._baseline_seed(case_seed, test_draw.draw_id)
                 )
 
                 baseline_tickets = (

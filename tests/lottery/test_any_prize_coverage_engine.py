@@ -195,6 +195,7 @@ def test_any_prize_candidate_pool_size_multi_seed_diagnostic():
     seeds = tuple(20261020 + offset for offset in range(10))
     greedy_by_size = {size: [] for size in pool_sizes}
     random_by_size = {size: [] for size in pool_sizes}
+    local_swap_deltas = []
 
     for pool_seed in seeds:
         rng = random.Random(pool_seed)
@@ -216,6 +217,14 @@ def test_any_prize_candidate_pool_size_multi_seed_diagnostic():
                 candidates[:size], masks[:size]
             )
             greedy_by_size[size].append(covered_count / TOTAL_DRAWS)
+            if size == 100:
+                no_swap_engine = AnyPrizeCoverageRecommendationEngine(
+                    AnyPrizeCoverageConfig(candidate_count=100, max_tickets=14, local_swap_passes=0)
+                )
+                _, greedy_only_count, _ = no_swap_engine._select_candidate_pool(
+                    candidates[:size], masks[:size]
+                )
+                local_swap_deltas.append((covered_count - greedy_only_count) / TOTAL_DRAWS)
 
             baseline_rng = random.Random(pool_seed + 1_000_000 + size)
             random_coverage = []
@@ -240,6 +249,12 @@ def test_any_prize_candidate_pool_size_multi_seed_diagnostic():
         )
 
     print("Any-prize candidate-pool multi-seed diagnostic (10 independent pools):")
+    swap_ci = seed_bootstrap_ci(local_swap_deltas, 20261299)
+    print(
+        f"  local-swap vs greedy-only at pool=100: mean_delta={mean(local_swap_deltas):+.4%}, "
+        f"improved_pools={sum(value > 0 for value in local_swap_deltas)}/{len(local_swap_deltas)}, "
+        f"seed-bootstrap_CI=[{swap_ci[0]:+.4%}, {swap_ci[1]:+.4%}]"
+    )
     for size in pool_sizes:
         greedy = greedy_by_size[size]
         random_mean = random_by_size[size]

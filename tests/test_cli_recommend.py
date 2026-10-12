@@ -183,4 +183,6 @@ def test_smart_mode_reports_portfolio_objective_without_fake_number_ranks():
     assert "Recommended tickets: 14" in result.output
     assert "Smart objective: coverage_4plus" in result.output
     assert "maximize the probability of at least one" in result.output
+    assert "Exact 4+ main-number coverage: 4.31%" in result.output
+    assert "uniform 6-of-37 draw model" in result.output
     assert "TOP NUMBER SCORES" not in result.output

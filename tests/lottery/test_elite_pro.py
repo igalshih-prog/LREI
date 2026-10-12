@@ -1253,3 +1253,25 @@ def test_elite_pro_rejects_invalid_candidate_adaptation_settings():
             pass
         else:
             raise AssertionError(f"Expected ValueError for {kwargs}")
+
+
+def test_elite_feature_stack_origin_win_rate_uses_each_origin():
+    engine = EliteProRecommendationEngine(EliteProConfig())
+
+    # A candidate that wins only one of three origins must not be treated
+    # as winning the whole validation history.
+    assert engine._origin_win_rate(
+        [0.12, 0.08, 0.09],
+        [0.10, 0.10, 0.10],
+    ) == 1 / 3
+
+    # Missing origin results fail closed rather than weakening the stability gate.
+    assert engine._origin_win_rate(
+        [0.12, 0.08],
+        [0.10, 0.10, 0.10],
+    ) == 0.0
+
+    assert engine._origin_win_rate(
+        [0.12, 0.11, 0.14],
+        [0.10, 0.10, 0.10],
+    ) == 1.0

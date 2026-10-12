@@ -25,6 +25,7 @@ class SmartConfig:
     calibration_draws: int = 12
     calibration_candidate_count: int = 200
     recommendation_candidate_count: int = 2000
+    coverage_candidate_count: int = 250
     min_history_draws: int = 60
     selection_margin: float = 0.0
     calibration_origins: int = 3
@@ -44,6 +45,8 @@ class SmartConfig:
             raise ValueError("calibration_candidate_count must be at least 14")
         if self.recommendation_candidate_count < 14:
             raise ValueError("recommendation_candidate_count must be at least 14")
+        if not 14 <= self.coverage_candidate_count <= 500:
+            raise ValueError("coverage_candidate_count must be between 14 and 500")
         if self.min_history_draws < self.calibration_draws + 20:
             raise ValueError("min_history_draws is too small for calibration")
         if self.selection_margin < 0:
@@ -213,7 +216,7 @@ class SmartRecommendationEngine:
         if selected == "coverage":
             return CoverageRecommendationEngine().recommend(dataset, seed=seed)
         if selected == "coverage_any_prize":
-            candidate_count = min(100, self.config.recommendation_candidate_count)
+            candidate_count = self.config.coverage_candidate_count
             return AnyPrizeCoverageRecommendationEngine(
                 AnyPrizeCoverageConfig(candidate_count=candidate_count, max_tickets=14)
             ).recommend(dataset, seed=seed)

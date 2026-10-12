@@ -992,12 +992,22 @@ def test_smart_prize_metric_walk_forward_diagnostic():
     assert all(0.0 <= value <= 6.0 for name in variants for value in mean_hits[name])
 
 
+def test_smart_coverage_candidate_budget_is_separate_and_bounded():
+    config = SmartConfig(recommendation_candidate_count=14)
+    assert config.coverage_candidate_count == 250
+    with pytest.raises(ValueError, match="coverage_candidate_count"):
+        SmartConfig(coverage_candidate_count=13)
+    with pytest.raises(ValueError, match="coverage_candidate_count"):
+        SmartConfig(coverage_candidate_count=501)
+
+
 def test_smart_any_prize_objective_uses_coverage_engine():
     dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
     engine = SmartRecommendationEngine(
         SmartConfig(
             objective="coverage_any_prize",
             recommendation_candidate_count=14,
+            coverage_candidate_count=14,
         )
     )
 

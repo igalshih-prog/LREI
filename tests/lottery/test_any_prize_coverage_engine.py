@@ -55,6 +55,13 @@ def test_any_prize_engine_returns_fourteen_valid_unique_tickets():
     )
 
 
+def test_any_prize_config_uses_validated_coverage_defaults():
+    config = AnyPrizeCoverageConfig()
+    assert config.candidate_count == 250
+    assert config.max_tickets == 14
+    assert config.local_swap_passes == 2
+
+
 def test_any_prize_config_bounds_candidate_pool_and_ticket_count():
     for config in (
         {"candidate_count": 13},

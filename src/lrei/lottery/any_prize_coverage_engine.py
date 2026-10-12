@@ -29,9 +29,9 @@ TOTAL_DRAWS = comb(MAX_NUMBER, DRAW_SIZE)
 class AnyPrizeCoverageConfig:
     """Bounded settings for exact any-prize coverage selection."""
 
-    candidate_count: int = 100
+    candidate_count: int = 250
     max_tickets: int = 14
-    local_swap_passes: int = 1
+    local_swap_passes: int = 2
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:

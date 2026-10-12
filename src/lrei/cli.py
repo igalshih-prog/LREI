@@ -14,7 +14,7 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProRecommendationEngine
-from lrei.lottery.smart import SmartRecommendationEngine
+from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 
 app = typer.Typer(
@@ -125,6 +125,13 @@ def recommend(
             help="Recommendation engine: regular, pro, elite, or smart.",
         ),
     ] = "elite",
+    objective: Annotated[
+        Literal["coverage_any_prize", "coverage_4plus", "historical"],
+        typer.Option(
+            "--objective",
+            help="Smart-only objective: coverage_any_prize (default), coverage_4plus, or historical model selection.",
+        ),
+    ] = "coverage_any_prize",
 ) -> None:
     """Generate lottery recommendations from historical data."""
 
@@ -146,8 +153,11 @@ def recommend(
 
     statistics = LotteryStatistics.from_dataset(dataset)
 
+    smart_objective = None
     if mode == "smart":
-        result = SmartRecommendationEngine().recommend(dataset, seed=seed)
+        smart_engine = SmartRecommendationEngine(SmartConfig(objective=objective))
+        result = smart_engine.recommend(dataset, seed=seed)
+        smart_objective = smart_engine.config.objective
     elif mode == "elite":
         result = EliteProRecommendationEngine().recommend(
             dataset,
@@ -223,26 +233,51 @@ def recommend(
                 f"Ticket {index:02d}: {numbers}"
             )
 
-    typer.echo()
-    typer.echo("TOP NUMBER SCORES")
-    typer.echo("-" * 70)
-
-    for score in result.scores[:10]:
-        typer.echo(
-            f"Number {score.number:>2} | "
-            f"Score: {score.score:.6f}"
-        )
-
-    if result.strong_scores:
+    if mode == "smart":
         typer.echo()
-        typer.echo("STRONG NUMBER SCORES")
+        typer.echo(f"Smart objective: {smart_objective}")
+        if smart_objective == "coverage_any_prize":
+            typer.echo(
+                "Portfolio goal: maximize exact coverage of 6/37 draws with "
+                "at least one ticket matching 3+ main numbers."
+            )
+            typer.echo(
+                "This optimizes portfolio coverage; it does not predict the "
+                "winning numbers or improve jackpot odds."
+            )
+        elif smart_objective == "coverage_4plus":
+            typer.echo(
+                "Portfolio goal: maximize the probability of at least one "
+                "ticket matching 4+ main numbers."
+            )
+            typer.echo(
+                "This optimizes portfolio structure; it does not predict "
+                "the winning numbers or improve jackpot odds."
+            )
+
+    # Coverage objectives use deliberately flat number scores and random
+    # strong numbers, so presenting them as ranked predictions would mislead.
+    if mode != "smart" or smart_objective == "historical":
+        typer.echo()
+        typer.echo("TOP NUMBER SCORES")
         typer.echo("-" * 70)
 
-        for score in result.strong_scores[:10]:
+        for score in result.scores[:10]:
             typer.echo(
-                f"Strong {score.number:>2} | "
+                f"Number {score.number:>2} | "
                 f"Score: {score.score:.6f}"
             )
+
+        if result.strong_scores:
+            typer.echo()
+            typer.echo("STRONG NUMBER SCORES")
+            typer.echo("-" * 70)
+
+            for score in result.strong_scores[:10]:
+                typer.echo(
+                    f"Strong {score.number:>2} | "
+                    f"Score: {score.score:.6f}"
+                )
 
     typer.echo()
     typer.echo("=" * 70)

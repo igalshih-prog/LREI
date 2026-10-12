@@ -9,6 +9,7 @@ from lrei.lottery.recommendation import RecommendedTicket
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
+from lrei.lottery.portfolio_coverage import portfolio_coverage
 from lrei.lottery.prize_evaluation import evaluate_portfolio_prizes
 from lrei.lottery.evaluation import paired_block_bootstrap_ci
 
@@ -875,6 +876,10 @@ def test_smart_coverage_objective_preserves_exact_portfolio_guarantees():
         len(set(left) & set(right)) <= 1
         for left, right in __import__("itertools").combinations(tickets, 2)
     )
+    exact = portfolio_coverage(tickets, threshold=4)
+    expected_probability = 14 * (15 * 465 + 6 * 31 + 1) / 2_324_784
+    assert exact["probability"] == expected_probability
+    assert round(100 * exact["probability"], 2) == 4.31
 
 
 def test_smart_prize_metric_scores_actual_prize_outcome():

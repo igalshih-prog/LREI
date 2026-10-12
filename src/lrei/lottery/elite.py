@@ -516,6 +516,16 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
                 results[strength].extend(len(set(ordered) & set(draw.numbers)) for draw in validation)
         valid = {strength: mean(values) for strength, values in results.items() if values}
         return max(valid, key=valid.get) if valid else self.config.consensus_strength
+    @staticmethod
+    def _origin_win_rate(candidate_results, baseline_results) -> float:
+        """Return the fraction of paired validation origins won by a candidate."""
+        if len(candidate_results) != len(baseline_results) or not baseline_results:
+            return 0.0
+        return sum(
+            candidate > baseline
+            for candidate, baseline in zip(candidate_results, baseline_results)
+        ) / len(baseline_results)
+
     def _adaptive_feature_stack(self, dataset: LotteryDataset) -> str:
         """Select a feature combination from trailing multi-origin validation."""
         if not self.config.adaptive_feature_stack or self.config.feature_stack_calibration_draws <= 0:
@@ -575,19 +585,7 @@ class EliteProRecommendationEngine(ProRecommendationEngine):
         for name, score in valid.items():
             if name == "baseline" or score < baseline_mean + self.config.feature_stack_min_improvement:
                 continue
-            origin_wins = 0
-            comparable_origins = 0
-            for origin_index in range(origins):
-                left = origin_index * block
-                right = left + block
-                base_values = results["baseline"][left:right]
-                candidate_values = results[name][left:right]
-                if not base_values or not candidate_values:
-                    continue
-                comparable_origins += 1
-                if mean(candidate_values) > mean(base_values):
-                    origin_wins += 1
-            win_rate = origin_wins / comparable_origins if comparable_origins else 0.0
+            win_rate = self._origin_win_rate(results[name], results["baseline"])
             if win_rate >= self.config.feature_stack_min_origin_win_rate:
                 eligible.append((score, name))
         return max(eligible)[1] if eligible else "baseline"

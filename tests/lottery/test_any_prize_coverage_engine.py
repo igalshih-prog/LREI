@@ -60,12 +60,43 @@ def test_any_prize_config_bounds_candidate_pool_and_ticket_count():
         {"candidate_count": 13},
         {"candidate_count": 501},
         {"max_tickets": 13},
+        {"local_swap_passes": -1},
+        {"local_swap_passes": 11},
     ):
         try:
             AnyPrizeCoverageConfig(**config)
         except ValueError:
             continue
         raise AssertionError(f"Expected ValueError for {config}")
+
+
+def test_local_swap_refinement_never_reduces_exact_coverage():
+    """Every accepted local swap must preserve or improve union coverage."""
+    rng = random.Random(20261015)
+    candidates = []
+    seen = set()
+    while len(candidates) < 22:
+        ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+        if ticket not in seen:
+            seen.add(ticket)
+            candidates.append(ticket)
+
+    # Small synthetic masks exercise selection without rebuilding millions of
+    # real draw outcomes; exact production masks are tested above.
+    mask_rng = random.Random(20261016)
+    masks = tuple(mask_rng.getrandbits(256) for _ in candidates)
+    baseline = AnyPrizeCoverageRecommendationEngine(
+        AnyPrizeCoverageConfig(candidate_count=len(candidates), local_swap_passes=0)
+    )
+    refined = AnyPrizeCoverageRecommendationEngine(
+        AnyPrizeCoverageConfig(candidate_count=len(candidates), local_swap_passes=2)
+    )
+    baseline_tickets, baseline_count, _ = baseline._select_candidate_pool(candidates, masks)
+    refined_tickets, refined_count, _ = refined._select_candidate_pool(candidates, masks)
+
+    assert len(baseline_tickets) == len(refined_tickets) == 14
+    assert len(set(refined_tickets)) == 14
+    assert refined_count >= baseline_count
 
 
 @pytest.mark.slow
@@ -99,7 +130,7 @@ def test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool():
     random_mean = mean(random_probabilities)
     print("Exact any-prize coverage comparison:")
     print(f"  candidate pool={candidate_count}; recommended tickets={len(selected)}")
-    print(f"  greedy exact 3+ coverage={greedy_probability:.4%}")
+    print(f"  greedy+local-swap exact 3+ coverage={greedy_probability:.4%}")
     print(f"  random 14-of-same-pool mean={random_mean:.4%}")
     print(f"  delta={greedy_probability - random_mean:+.4%}")
 
@@ -146,7 +177,7 @@ def test_any_prize_candidate_pool_size_ablation():
         random_mean = mean(random_probabilities)
         results[size] = (greedy_probability, random_mean)
         print(
-            f"  pool={size}: greedy={greedy_probability:.4%}, "
+            f"  pool={size}: greedy+local-swap={greedy_probability:.4%}, "
             f"same-pool random={random_mean:.4%}, "
             f"delta={greedy_probability - random_mean:+.4%}"
         )

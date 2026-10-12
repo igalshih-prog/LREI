@@ -3,6 +3,15 @@
 from __future__ import annotations
 
 import logging
+import sys
+
+
+class _CurrentStderrHandler(logging.StreamHandler):
+    """Resolve stderr at emission, even between CLI and library calls."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.stream = sys.stderr
+        super().emit(record)
 
 
 def configure_logging(level: str) -> None:
@@ -16,8 +25,8 @@ def configure_logging(level: str) -> None:
         if getattr(existing, "_lrei_owned", False):
             logger.removeHandler(existing)
             existing.close()
-    handler = logging.StreamHandler()
-    handler._lrei_owned = True
+    handler = _CurrentStderrHandler()
+    setattr(handler, "_lrei_owned", True)
     handler.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )

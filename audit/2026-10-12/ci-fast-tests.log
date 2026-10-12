@@ -1,0 +1,1067 @@
+﻿2026-10-12T16:33:28.6951971Z Current runner version: '2.337.0'
+2026-10-12T16:33:28.6988483Z ##[group]Runner Image Provisioner
+2026-10-12T16:33:28.6990183Z Hosted Compute Agent
+2026-10-12T16:33:28.6991396Z Version: 20261002.596
+2026-10-12T16:33:28.6992521Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-12T16:33:28.6993844Z Build Date: 2026-10-02T22:28:27Z
+2026-10-12T16:33:28.6995160Z Worker ID: {5b622815-432a-4bf8-b891-7b05220fc662}
+2026-10-12T16:33:28.6996430Z Region: centralus
+2026-10-12T16:33:28.6997622Z Cloud: Azure
+2026-10-12T16:33:28.6998707Z ##[endgroup]
+2026-10-12T16:33:28.7001297Z ##[group]Operating System
+2026-10-12T16:33:28.7002508Z Ubuntu
+2026-10-12T16:33:28.7003575Z 24.04.5
+2026-10-12T16:33:28.7004586Z LTS
+2026-10-12T16:33:28.7005555Z ##[endgroup]
+2026-10-12T16:33:28.7006695Z ##[group]Runner Image
+2026-10-12T16:33:28.7007834Z Image: ubuntu-24.04
+2026-10-12T16:33:28.7008901Z Version: 20261004.327.1
+2026-10-12T16:33:28.7011575Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-12T16:33:28.7014429Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-12T16:33:28.7016250Z ##[endgroup]
+2026-10-12T16:33:28.7018238Z ##[group]GITHUB_TOKEN Permissions
+2026-10-12T16:33:28.7021420Z Contents: read
+2026-10-12T16:33:28.7022342Z Metadata: read
+2026-10-12T16:33:28.7023341Z ##[endgroup]
+2026-10-12T16:33:28.7026209Z Secret source: Actions
+2026-10-12T16:33:28.7027813Z Cache mode: write
+2026-10-12T16:33:28.7028900Z Prepare workflow directory
+2026-10-12T16:33:28.7419986Z Prepare all required actions
+2026-10-12T16:33:28.7489598Z Getting action download info
+2026-10-12T16:33:29.0721851Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-12T16:33:29.9911623Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-12T16:33:30.0698112Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-12T16:33:30.2824866Z Complete job name: test
+2026-10-12T16:33:30.3661314Z ##[group]Run actions/checkout@v4
+2026-10-12T16:33:30.3662636Z with:
+2026-10-12T16:33:30.3663176Z   repository: igalshih-prog/LREI
+2026-10-12T16:33:30.3667499Z   token: ***
+2026-10-12T16:33:30.3667987Z   ssh-strict: true
+2026-10-12T16:33:30.3668481Z   ssh-user: git
+2026-10-12T16:33:30.3668975Z   persist-credentials: true
+2026-10-12T16:33:30.3669843Z   clean: true
+2026-10-12T16:33:30.3670352Z   sparse-checkout-cone-mode: true
+2026-10-12T16:33:30.3670934Z   fetch-depth: 1
+2026-10-12T16:33:30.3671456Z   fetch-tags: false
+2026-10-12T16:33:30.3671960Z   show-progress: true
+2026-10-12T16:33:30.3672475Z   lfs: false
+2026-10-12T16:33:30.3672934Z   submodules: false
+2026-10-12T16:33:30.3673426Z   set-safe-directory: true
+2026-10-12T16:33:30.3674004Z   allow-unsafe-pr-checkout: false
+2026-10-12T16:33:30.3675057Z ##[endgroup]
+2026-10-12T16:33:30.4738762Z Syncing repository: igalshih-prog/LREI
+2026-10-12T16:33:30.4741267Z ##[group]Getting Git version info
+2026-10-12T16:33:30.4742131Z Working directory is '/home/runner/work/LREI/LREI'
+2026-10-12T16:33:30.4743234Z [command]/usr/bin/git version
+2026-10-12T16:33:30.4802361Z git version 2.55.0
+2026-10-12T16:33:30.4826879Z ##[endgroup]
+2026-10-12T16:33:30.4843354Z Temporarily overriding HOME='/home/runner/work/_temp/2ca00e08-f43d-4d05-887e-6936ad74d54a' before making global git config changes
+2026-10-12T16:33:30.4845642Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T16:33:30.4849798Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LREI/LREI
+2026-10-12T16:33:30.4902587Z Deleting the contents of '/home/runner/work/LREI/LREI'
+2026-10-12T16:33:30.4914591Z ##[group]Initializing the repository
+2026-10-12T16:33:30.4920995Z [command]/usr/bin/git init /home/runner/work/LREI/LREI
+2026-10-12T16:33:30.5017468Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-12T16:33:30.5020385Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-12T16:33:30.5022619Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-12T16:33:30.5024161Z hint: call:
+2026-10-12T16:33:30.5024931Z hint:
+2026-10-12T16:33:30.5025990Z hint: 	git config --global init.defaultBranch <name>
+2026-10-12T16:33:30.5026955Z hint:
+2026-10-12T16:33:30.5027684Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-12T16:33:30.5028739Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-12T16:33:30.5029967Z hint:
+2026-10-12T16:33:30.5030460Z hint: 	git branch -m <name>
+2026-10-12T16:33:30.5031219Z hint:
+2026-10-12T16:33:30.5032395Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-12T16:33:30.5033867Z Initialized empty Git repository in /home/runner/work/LREI/LREI/.git/
+2026-10-12T16:33:30.5035773Z [command]/usr/bin/git remote add origin https://github.com/igalshih-prog/LREI
+2026-10-12T16:33:30.5087072Z ##[endgroup]
+2026-10-12T16:33:30.5088058Z ##[group]Disabling automatic garbage collection
+2026-10-12T16:33:30.5092047Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-12T16:33:30.5125925Z ##[endgroup]
+2026-10-12T16:33:30.5126761Z ##[group]Setting up auth
+2026-10-12T16:33:30.5134321Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T16:33:30.5168304Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T16:33:30.5544509Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T16:33:30.5585683Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T16:33:30.5844329Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T16:33:30.5882898Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T16:33:30.6146493Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-12T16:33:30.6184321Z ##[endgroup]
+2026-10-12T16:33:30.6185918Z ##[group]Fetching the repository
+2026-10-12T16:33:30.6195568Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5ec8a96c690689828b8321b87d706c92ce1b70a7:refs/remotes/pull/1/merge
+2026-10-12T16:33:31.0334938Z From https://github.com/igalshih-prog/LREI
+2026-10-12T16:33:31.0336850Z  * [new ref]         5ec8a96c690689828b8321b87d706c92ce1b70a7 -> pull/1/merge
+2026-10-12T16:33:31.0341480Z ##[endgroup]
+2026-10-12T16:33:31.0343257Z ##[group]Determining the checkout info
+2026-10-12T16:33:31.0345207Z ##[endgroup]
+2026-10-12T16:33:31.0350689Z [command]/usr/bin/git sparse-checkout disable
+2026-10-12T16:33:31.0407465Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-12T16:33:31.0450777Z ##[group]Checking out the ref
+2026-10-12T16:33:31.0455969Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1/merge
+2026-10-12T16:33:31.0560412Z Note: switching to 'refs/remotes/pull/1/merge'.
+2026-10-12T16:33:31.0562018Z 
+2026-10-12T16:33:31.0563386Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-12T16:33:31.0566942Z changes and commit them, and you can discard any commits you make in this
+2026-10-12T16:33:31.0570189Z state without impacting any branches by switching back to a branch.
+2026-10-12T16:33:31.0571818Z 
+2026-10-12T16:33:31.0572826Z If you want to create a new branch to retain commits you create, you may
+2026-10-12T16:33:31.0575216Z do so (now or later) by using -c with the switch command. Example:
+2026-10-12T16:33:31.0576584Z 
+2026-10-12T16:33:31.0577433Z   git switch -c <new-branch-name>
+2026-10-12T16:33:31.0578370Z 
+2026-10-12T16:33:31.0578946Z Or undo this operation with:
+2026-10-12T16:33:31.0580091Z 
+2026-10-12T16:33:31.0580660Z   git switch -
+2026-10-12T16:33:31.0581435Z 
+2026-10-12T16:33:31.0582566Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-12T16:33:31.0584196Z 
+2026-10-12T16:33:31.0585954Z HEAD is now at 5ec8a96 Merge 9d3579624a8a164a5c869a200116022d444109ea into a2bee20868c02a13e2b08dabc57cd397b1fdcf8d
+2026-10-12T16:33:31.0591233Z ##[endgroup]
+2026-10-12T16:33:31.0618177Z [command]/usr/bin/git log -1 --format=%H
+2026-10-12T16:33:31.0646061Z 5ec8a96c690689828b8321b87d706c92ce1b70a7
+2026-10-12T16:33:31.1124984Z ##[group]Run actions/setup-python@v5
+2026-10-12T16:33:31.1126255Z with:
+2026-10-12T16:33:31.1127154Z   python-version: 3.10
+2026-10-12T16:33:31.1128179Z   check-latest: false
+2026-10-12T16:33:31.1138500Z   token: ***
+2026-10-12T16:33:31.1139588Z   update-environment: true
+2026-10-12T16:33:31.1140724Z   allow-prereleases: false
+2026-10-12T16:33:31.1141812Z   freethreaded: false
+2026-10-12T16:33:31.1142801Z ##[endgroup]
+2026-10-12T16:33:31.2502497Z ##[group]Installed versions
+2026-10-12T16:33:31.2594751Z (node:2316) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T16:33:31.2599445Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T16:33:31.2602389Z Successfully set up CPython (3.10.22)
+2026-10-12T16:33:31.2605402Z ##[endgroup]
+2026-10-12T16:33:31.2801508Z ##[group]Run python -m pip install --upgrade pip && pip install -e .
+2026-10-12T16:33:31.2803554Z [36;1mpython -m pip install --upgrade pip && pip install -e .[0m
+2026-10-12T16:33:31.3272798Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:31.3274003Z env:
+2026-10-12T16:33:31.3275175Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:31.3277100Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib/pkgconfig
+2026-10-12T16:33:31.3279007Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:31.3280893Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:31.3282625Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:31.3284348Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib
+2026-10-12T16:33:31.3285800Z ##[endgroup]
+2026-10-12T16:33:33.6841163Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages (26.2.1)
+2026-10-12T16:33:34.2986488Z Obtaining file:///home/runner/work/LREI/LREI
+2026-10-12T16:33:34.3006218Z   Installing build dependencies: started
+2026-10-12T16:33:35.4058328Z   Installing build dependencies: finished with status 'done'
+2026-10-12T16:33:35.4066200Z   Checking if build backend supports build_editable: started
+2026-10-12T16:33:35.4529621Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-12T16:33:35.4537941Z   Getting requirements to build editable: started
+2026-10-12T16:33:35.5922634Z   Getting requirements to build editable: finished with status 'done'
+2026-10-12T16:33:35.5942528Z   Installing backend dependencies: started
+2026-10-12T16:33:36.1773883Z   Installing backend dependencies: finished with status 'done'
+2026-10-12T16:33:36.1783098Z   Preparing editable metadata (pyproject.toml): started
+2026-10-12T16:33:36.3735355Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-12T16:33:36.4823398Z Collecting platformdirs>=4.3.0 (from lrei==0.1.0)
+2026-10-12T16:33:36.5510315Z   Downloading platformdirs-4.12.4-py3-none-any.whl.metadata (5.5 kB)
+2026-10-12T16:33:36.5977400Z Collecting typer>=0.15.0 (from lrei==0.1.0)
+2026-10-12T16:33:36.6089327Z   Downloading typer-0.27.3-py3-none-any.whl.metadata (16 kB)
+2026-10-12T16:33:36.6372692Z Collecting shellingham>=1.3.0 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.6484455Z   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+2026-10-12T16:33:36.7032421Z Collecting rich>=13.8.0 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.7142242Z   Downloading rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+2026-10-12T16:33:36.7369852Z Collecting annotated-doc>=0.0.2 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.7514725Z   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+2026-10-12T16:33:36.7770231Z Collecting markdown-it-py>=2.2.0 (from rich>=13.8.0->typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.7884766Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+2026-10-12T16:33:36.8225585Z Collecting pygments<3.0.0,>=2.13.0 (from rich>=13.8.0->typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.8338780Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-10-12T16:33:36.8551232Z Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.8.0->typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:36.8659845Z   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2026-10-12T16:33:36.8804328Z Downloading platformdirs-4.12.4-py3-none-any.whl (32 kB)
+2026-10-12T16:33:36.8969574Z Downloading typer-0.27.3-py3-none-any.whl (123 kB)
+2026-10-12T16:33:36.9219701Z Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+2026-10-12T16:33:36.9359407Z Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-12T16:33:36.9595753Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-10-12T16:33:36.9850195Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 46.6 MB/s  0:00:00
+2026-10-12T16:33:36.9958950Z Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-12T16:33:37.0089862Z Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-12T16:33:37.0216005Z Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+2026-10-12T16:33:37.0490532Z Building wheels for collected packages: lrei
+2026-10-12T16:33:37.0499383Z   Building editable for lrei (pyproject.toml): started
+2026-10-12T16:33:37.0817055Z   Building editable for lrei (pyproject.toml): finished with status 'done'
+2026-10-12T16:33:37.0823834Z   Created wheel for lrei: filename=lrei-0.1.0-py3-none-any.whl size=5693 sha256=c1546a2935dd023dfd5ae21fc6a63dda953e0d1d10cc832c7fc0c941ca50cfef
+2026-10-12T16:33:37.0825550Z   Stored in directory: /tmp/pip-ephem-wheel-cache-q4q79ayw/wheels/ad/2f/bc/ea0538d1bb9bb3f39f8a870b29f677b369bdde3ca60e46f214
+2026-10-12T16:33:37.0840099Z Successfully built lrei
+2026-10-12T16:33:37.1183689Z Installing collected packages: shellingham, pygments, platformdirs, mdurl, annotated-doc, markdown-it-py, rich, typer, lrei
+2026-10-12T16:33:38.2003605Z 
+2026-10-12T16:33:38.2024418Z Successfully installed annotated-doc-0.0.5 lrei-0.1.0 markdown-it-py-4.2.0 mdurl-0.1.2 platformdirs-4.12.4 pygments-2.21.0 rich-15.0.0 shellingham-1.5.4 typer-0.27.3
+2026-10-12T16:33:38.2651953Z ##[group]Run pip install pytest
+2026-10-12T16:33:38.2652301Z [36;1mpip install pytest[0m
+2026-10-12T16:33:38.2717193Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:38.2717444Z env:
+2026-10-12T16:33:38.2717719Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:38.2718183Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib/pkgconfig
+2026-10-12T16:33:38.2718613Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:38.2718987Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:38.2719622Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:38.2720005Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib
+2026-10-12T16:33:38.2720320Z ##[endgroup]
+2026-10-12T16:33:38.7287266Z Collecting pytest
+2026-10-12T16:33:38.8082080Z   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+2026-10-12T16:33:38.8349291Z Collecting exceptiongroup>=1 (from pytest)
+2026-10-12T16:33:38.8487833Z   Downloading exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+2026-10-12T16:33:38.8705287Z Collecting iniconfig>=1.0.1 (from pytest)
+2026-10-12T16:33:38.8839768Z   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+2026-10-12T16:33:38.8965852Z Collecting packaging>=22 (from pytest)
+2026-10-12T16:33:38.9071678Z   Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-10-12T16:33:38.9132993Z Collecting pluggy<2,>=1.5 (from pytest)
+2026-10-12T16:33:38.9148016Z   Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-10-12T16:33:38.9166624Z Requirement already satisfied: pygments>=2.7.2 in /opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages (from pytest) (2.21.0)
+2026-10-12T16:33:38.9418470Z Collecting tomli>=1 (from pytest)
+2026-10-12T16:33:38.9433716Z   Using cached tomli-2.5.0-py3-none-any.whl.metadata (10 kB)
+2026-10-12T16:33:38.9703770Z Collecting typing-extensions>=4.6.0 (from exceptiongroup>=1->pytest)
+2026-10-12T16:33:38.9840873Z   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+2026-10-12T16:33:39.0025120Z Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-12T16:33:39.0536990Z Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-12T16:33:39.0668552Z Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+2026-10-12T16:33:39.0817750Z Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+2026-10-12T16:33:39.0848670Z Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-12T16:33:39.0863278Z Using cached tomli-2.5.0-py3-none-any.whl (14 kB)
+2026-10-12T16:33:39.0995560Z Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-12T16:33:39.1509742Z Installing collected packages: typing-extensions, tomli, pluggy, packaging, iniconfig, exceptiongroup, pytest
+2026-10-12T16:33:39.5329237Z 
+2026-10-12T16:33:39.5357750Z Successfully installed exceptiongroup-1.3.1 iniconfig-2.3.1 packaging-26.3 pluggy-1.6.0 pytest-9.1.1 tomli-2.5.0 typing-extensions-4.16.0
+2026-10-12T16:33:39.5849980Z ##[group]Run python -m compileall -q app.py src
+2026-10-12T16:33:39.5850412Z [36;1mpython -m compileall -q app.py src[0m
+2026-10-12T16:33:39.5914704Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:39.5914960Z env:
+2026-10-12T16:33:39.5915237Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.5915704Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib/pkgconfig
+2026-10-12T16:33:39.5916141Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.5916530Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.5916988Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.5917385Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib
+2026-10-12T16:33:39.5917707Z ##[endgroup]
+2026-10-12T16:33:39.6807903Z ##[group]Run python -m pytest -rA -m "not slow" --junitxml=fast-tests.xml -o junit_logging=all
+2026-10-12T16:33:39.6808592Z [36;1mpython -m pytest -rA -m "not slow" --junitxml=fast-tests.xml -o junit_logging=all[0m
+2026-10-12T16:33:39.6872970Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:39.6873223Z env:
+2026-10-12T16:33:39.6873491Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.6873933Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib/pkgconfig
+2026-10-12T16:33:39.6874401Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.6874791Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.6875176Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T16:33:39.6875566Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib
+2026-10-12T16:33:39.6875889Z ##[endgroup]
+2026-10-12T16:33:40.9226100Z ============================= test session starts ==============================
+2026-10-12T16:33:40.9227039Z platform linux -- Python 3.10.22, pytest-9.1.1, pluggy-1.6.0
+2026-10-12T16:33:40.9227699Z rootdir: /home/runner/work/LREI/LREI
+2026-10-12T16:33:40.9228203Z configfile: pyproject.toml
+2026-10-12T16:33:40.9228457Z testpaths: tests
+2026-10-12T16:33:40.9228684Z plugins: platformdirs-4.12.4
+2026-10-12T16:33:40.9228978Z collected 345 items / 95 deselected / 250 selected
+2026-10-12T16:33:40.9229520Z 
+2026-10-12T16:34:27.9789029Z tests/lottery/test_ablation.py .                                         [  0%]
+2026-10-12T16:34:31.7043464Z tests/lottery/test_any_prize_coverage_engine.py ......                   [  2%]
+2026-10-12T16:34:36.4793544Z tests/lottery/test_backtest_report.py .                                  [  3%]
+2026-10-12T16:34:37.2354372Z tests/lottery/test_backtesting.py .............                          [  8%]
+2026-10-12T16:34:37.2411893Z tests/lottery/test_baseline.py ......                                    [ 10%]
+2026-10-12T16:34:37.2422550Z tests/lottery/test_coverage_engine.py .                                  [ 11%]
+2026-10-12T16:34:37.2603490Z tests/lottery/test_dataset.py ................                           [ 17%]
+2026-10-12T16:34:37.2625922Z tests/lottery/test_elite_config_validation.py ..                         [ 18%]
+2026-10-12T16:34:43.3223206Z tests/lottery/test_elite_pro.py ........................                 [ 28%]
+2026-10-12T16:34:43.9731203Z tests/lottery/test_evaluation.py ..........                              [ 32%]
+2026-10-12T16:34:43.9821861Z tests/lottery/test_generator.py ..........                               [ 36%]
+2026-10-12T16:34:44.0663550Z tests/lottery/test_integration.py ..                                     [ 36%]
+2026-10-12T16:35:31.5766871Z tests/lottery/test_multi_seed_evaluation.py .                            [ 37%]
+2026-10-12T16:35:31.5888768Z tests/lottery/test_optimizer.py ..............                           [ 42%]
+2026-10-12T16:35:31.7973306Z tests/lottery/test_p0_validation.py .....................                [ 51%]
+2026-10-12T16:35:31.9020283Z tests/lottery/test_portfolio_coverage.py ........                        [ 54%]
+2026-10-12T16:35:31.9076783Z tests/lottery/test_predictor.py .........                                [ 58%]
+2026-10-12T16:35:31.9270696Z tests/lottery/test_prize_evaluation.py ...................               [ 65%]
+2026-10-12T16:35:46.4358438Z tests/lottery/test_pro.py ....                                           [ 67%]
+2026-10-12T16:46:49.4058232Z tests/lottery/test_pro_backtest.py .                                     [ 67%]
+2026-10-12T16:46:49.4082830Z tests/lottery/test_pro_portfolio_refinement.py ..                        [ 68%]
+2026-10-12T16:47:27.4200579Z tests/lottery/test_pro_quality.py ....                                   [ 70%]
+2026-10-12T16:49:48.6906887Z tests/lottery/test_pro_scoring_ablation.py .                             [ 70%]
+2026-10-12T16:59:07.6917269Z tests/lottery/test_pro_scoring_variants.py .                             [ 70%]
+2026-10-12T16:59:22.0580959Z tests/lottery/test_real_backtest.py ...                                  [ 72%]
+2026-10-12T16:59:22.1858676Z tests/lottery/test_real_dataset.py ...                                   [ 73%]
+2026-10-12T16:59:22.2782225Z tests/lottery/test_recommendation.py ......                              [ 75%]
+2026-10-12T16:59:22.2800999Z tests/lottery/test_report_builder.py ..                                  [ 76%]
+2026-10-12T17:00:09.6885378Z tests/lottery/test_robustness.py .                                       [ 76%]
+2026-10-12T17:00:09.6944027Z tests/lottery/test_selection.py .......                                  [ 79%]
+2026-10-12T17:00:12.1048129Z tests/lottery/test_smart.py ............                                 [ 84%]
+2026-10-12T17:00:26.4524187Z tests/lottery/test_strong_number_backtest.py .....                       [ 86%]
+2026-10-12T17:00:45.4721700Z tests/lottery/test_strong_number_backtest_metrics.py ...                 [ 87%]
+2026-10-12T17:00:45.7345271Z tests/lottery/test_strong_number_evaluation.py ......                    [ 90%]
+2026-10-12T17:00:45.8998406Z tests/lottery/test_strong_number_pipeline.py ....                        [ 91%]
+2026-10-12T17:00:50.6769686Z tests/lottery/test_strong_number_report.py .                             [ 92%]
+2026-10-12T17:01:09.6399724Z tests/lottery/test_ticket_count_details.py .                             [ 92%]
+2026-10-12T17:04:18.9954988Z tests/lottery/test_ticket_count_evaluation.py .                          [ 92%]
+2026-10-12T17:04:19.0125083Z tests/test_cli.py ..                                                     [ 93%]
+2026-10-12T17:04:58.9621408Z tests/test_cli_recommend.py ..........                                   [ 97%]
+2026-10-12T17:04:58.9648635Z tests/test_config.py ..                                                  [ 98%]
+2026-10-12T17:04:59.0144063Z tests/test_database.py ..                                                [ 99%]
+2026-10-12T17:04:59.0156983Z tests/test_logging.py .                                                  [ 99%]
+2026-10-12T17:04:59.0373051Z tests/test_package.py .                                                  [100%]
+2026-10-12T17:04:59.0373781Z 
+2026-10-12T17:04:59.0374158Z ==================================== PASSES ====================================
+2026-10-12T17:04:59.0375052Z _____________________________ test_ablation_report _____________________________
+2026-10-12T17:04:59.0375735Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0376178Z 
+2026-10-12T17:04:59.0376361Z =================================================================
+2026-10-12T17:04:59.0377056Z LREI ABLATION TEST — FAIR COMPARISON
+2026-10-12T17:04:59.0377476Z =================================================================
+2026-10-12T17:04:59.0377923Z Evaluation cases per seed: 141
+2026-10-12T17:04:59.0378286Z Tickets per model: 14
+2026-10-12T17:04:59.0378589Z Seeds: 10
+2026-10-12T17:04:59.0378746Z 
+2026-10-12T17:04:59.0378881Z Random baseline:       13.5645
+2026-10-12T17:04:59.0379591Z Frequency only:        13.6369
+2026-10-12T17:04:59.0379878Z Frequency + Recency:   13.5986
+2026-10-12T17:04:59.0380164Z After optimizer:       13.6830
+2026-10-12T17:04:59.0380343Z 
+2026-10-12T17:04:59.0380451Z Frequency vs Random:   +0.0723
+2026-10-12T17:04:59.0380725Z Recency vs Frequency:  -0.0383
+2026-10-12T17:04:59.0381066Z Optimizer effect:      +0.0461
+2026-10-12T17:04:59.0381350Z =================================================================
+2026-10-12T17:04:59.0381774Z _____________________________ test_backtest_report _____________________________
+2026-10-12T17:04:59.0382278Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0382584Z 
+2026-10-12T17:04:59.0382691Z ==================================================
+2026-10-12T17:04:59.0382995Z LREI REAL DATA BACKTEST
+2026-10-12T17:04:59.0383241Z ==================================================
+2026-10-12T17:04:59.0383537Z Dataset draws: 1141
+2026-10-12T17:04:59.0383758Z Test cases: 141
+2026-10-12T17:04:59.0384157Z 
+2026-10-12T17:04:59.0384244Z LREI
+2026-10-12T17:04:59.0384433Z Best match: 4
+2026-10-12T17:04:59.0384647Z Total matches: 1917
+2026-10-12T17:04:59.0384880Z Average matches: 13.5957
+2026-10-12T17:04:59.0385033Z 
+2026-10-12T17:04:59.0385123Z RANDOM BASELINE
+2026-10-12T17:04:59.0385331Z Best match: 4
+2026-10-12T17:04:59.0385538Z Total matches: 1956
+2026-10-12T17:04:59.0385764Z Average matches: 13.8723
+2026-10-12T17:04:59.0385974Z 
+2026-10-12T17:04:59.0386060Z COMPARISON
+2026-10-12T17:04:59.0386319Z Average difference: -0.2766
+2026-10-12T17:04:59.0386576Z Total difference: -39
+2026-10-12T17:04:59.0386823Z ==================================================
+2026-10-12T17:04:59.0387223Z __________________________ test_multi_seed_evaluation __________________________
+2026-10-12T17:04:59.0387728Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0388035Z 
+2026-10-12T17:04:59.0388161Z =================================================================
+2026-10-12T17:04:59.0388492Z LREI MULTI-SEED EVALUATION
+2026-10-12T17:04:59.0388768Z =================================================================
+2026-10-12T17:04:59.0389239Z Dataset draws: 1141
+2026-10-12T17:04:59.0389466Z Seeds tested: 10
+2026-10-12T17:04:59.0389712Z Generated candidates per model: 50
+2026-10-12T17:04:59.0390008Z Evaluated tickets per model: 14
+2026-10-12T17:04:59.0390163Z 
+2026-10-12T17:04:59.0390237Z LREI
+2026-10-12T17:04:59.0390412Z Average matches: 13.5965
+2026-10-12T17:04:59.0390719Z 
+2026-10-12T17:04:59.0390803Z RANDOM BASELINE
+2026-10-12T17:04:59.0390999Z Average matches: 13.5773
+2026-10-12T17:04:59.0391133Z 
+2026-10-12T17:04:59.0391208Z COMPARISON
+2026-10-12T17:04:59.0391392Z LREI advantage: +0.0191
+2026-10-12T17:04:59.0391620Z =================================================================
+2026-10-12T17:04:59.0392011Z ________________ test_print_regular_vs_pro_historical_backtest _________________
+2026-10-12T17:04:59.0392475Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0392741Z 
+2026-10-12T17:04:59.0392878Z === REGULAR vs PRO (strict chronological backtest) ===
+2026-10-12T17:04:59.0393177Z Dataset draws: 1141
+2026-10-12T17:04:59.0393370Z Test draws: 141
+2026-10-12T17:04:59.0393564Z Tickets per draw: 14
+2026-10-12T17:04:59.0393806Z Regular average total main-number matches: 13.3901
+2026-10-12T17:04:59.0394129Z Pro average total main-number matches:     13.2979
+2026-10-12T17:04:59.0394438Z Regular average best ticket:                2.5674
+2026-10-12T17:04:59.0394740Z Pro average best ticket:                    2.3688
+2026-10-12T17:04:59.0395017Z Regular best >= 3: 74
+2026-10-12T17:04:59.0395219Z Pro best >= 3:     49
+2026-10-12T17:04:59.0395416Z Regular best >= 4: 6
+2026-10-12T17:04:59.0395611Z Pro best >= 4:     7
+2026-10-12T17:04:59.0395806Z Regular best >= 5: 0
+2026-10-12T17:04:59.0395999Z Pro best >= 5:     0
+2026-10-12T17:04:59.0396190Z Regular best >= 6: 0
+2026-10-12T17:04:59.0396379Z Pro best >= 6:     0
+2026-10-12T17:04:59.0396594Z Regular strong-number matches: 273
+2026-10-12T17:04:59.0396855Z Pro strong-number matches:     264
+2026-10-12T17:04:59.0397185Z _______________________ test_pro_scoring_ablation_smoke ________________________
+2026-10-12T17:04:59.0397622Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0397964Z Ablation draws: 20
+2026-10-12T17:04:59.0398177Z rank_blend mean hits / ticket: 0.9643
+2026-10-12T17:04:59.0398449Z rank_plus_ewma mean hits / ticket: 0.9036
+2026-10-12T17:04:59.0398760Z rank_plus_bayesian_affinity mean hits / ticket: 0.9607
+2026-10-12T17:04:59.0399207Z signal_75 mean hits / ticket: 0.9643
+2026-10-12T17:04:59.0399470Z signal_50 mean hits / ticket: 0.8893
+2026-10-12T17:04:59.0399723Z signal_25 mean hits / ticket: 1.0036
+2026-10-12T17:04:59.0400059Z _________________ test_pro_rank_vs_raw_frequency_walk_forward __________________
+2026-10-12T17:04:59.0400621Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0400991Z Scoring-variant walk-forward draws: 60
+2026-10-12T17:04:59.0401263Z Rank-normalized Pro: 0.9655
+2026-10-12T17:04:59.0401497Z Raw-frequency Pro:   0.9310
+2026-10-12T17:04:59.0401727Z Raw minus rank:      -0.0345
+2026-10-12T17:04:59.0402044Z ____________________ test_backtest_robustness_across_seeds _____________________
+2026-10-12T17:04:59.0402479Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0402741Z 
+2026-10-12T17:04:59.0402844Z ============================================================
+2026-10-12T17:04:59.0403199Z LREI ROBUSTNESS TEST — 10 SEEDS
+2026-10-12T17:04:59.0403450Z ============================================================
+2026-10-12T17:04:59.0403750Z Seed 0: LREI=13.6099 | Random=13.5248 | Diff=+0.0851
+2026-10-12T17:04:59.0404063Z Seed 1: LREI=13.5745 | Random=13.5957 | Diff=-0.0213
+2026-10-12T17:04:59.0404365Z Seed 2: LREI=13.4113 | Random=14.1489 | Diff=-0.7376
+2026-10-12T17:04:59.0404669Z Seed 3: LREI=13.6099 | Random=13.2199 | Diff=+0.3901
+2026-10-12T17:04:59.0404974Z Seed 4: LREI=13.6596 | Random=13.3972 | Diff=+0.2624
+2026-10-12T17:04:59.0405268Z Seed 5: LREI=13.8085 | Random=13.3972 | Diff=+0.4113
+2026-10-12T17:04:59.0405568Z Seed 6: LREI=13.6170 | Random=13.7163 | Diff=-0.0993
+2026-10-12T17:04:59.0405862Z Seed 7: LREI=13.5461 | Random=13.7730 | Diff=-0.2270
+2026-10-12T17:04:59.0406159Z Seed 8: LREI=13.5674 | Random=13.6950 | Diff=-0.1277
+2026-10-12T17:04:59.0406453Z Seed 9: LREI=13.5603 | Random=13.3050 | Diff=+0.2553
+2026-10-12T17:04:59.0406777Z 
+2026-10-12T17:04:59.0406865Z Mean LREI average: 13.5965
+2026-10-12T17:04:59.0407089Z Mean Random average: 13.5773
+2026-10-12T17:04:59.0407313Z Mean difference: +0.0191
+2026-10-12T17:04:59.0407453Z 
+2026-10-12T17:04:59.0407529Z LREI wins: 5/10
+2026-10-12T17:04:59.0407719Z Random wins: 5/10
+2026-10-12T17:04:59.0407910Z Ties: 0/10
+2026-10-12T17:04:59.0408011Z 
+2026-10-12T17:04:59.0408091Z Best LREI match: 5
+2026-10-12T17:04:59.0408287Z Best Random match: 5
+2026-10-12T17:04:59.0408507Z ============================================================
+2026-10-12T17:04:59.0408863Z __________________________ test_strong_number_report ___________________________
+2026-10-12T17:04:59.0409419Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0409689Z 
+2026-10-12T17:04:59.0409782Z ============================================================
+2026-10-12T17:04:59.0410054Z LREI STRONG NUMBER BACKTEST
+2026-10-12T17:04:59.0410299Z ============================================================
+2026-10-12T17:04:59.0410563Z Dataset draws: 1141
+2026-10-12T17:04:59.0410759Z Test cases: 141
+2026-10-12T17:04:59.0410867Z 
+2026-10-12T17:04:59.0410950Z LREI STRONG NUMBER
+2026-10-12T17:04:59.0411150Z Correct predictions: 282
+2026-10-12T17:04:59.0411383Z Average correct predictions: 2.0000
+2026-10-12T17:04:59.0411555Z 
+2026-10-12T17:04:59.0411634Z RANDOM STRONG NUMBER
+2026-10-12T17:04:59.0411840Z Correct predictions: 293
+2026-10-12T17:04:59.0412068Z Average correct predictions: 2.0780
+2026-10-12T17:04:59.0412237Z 
+2026-10-12T17:04:59.0412312Z COMPARISON
+2026-10-12T17:04:59.0412504Z LREI advantage: -0.0780
+2026-10-12T17:04:59.0412729Z ============================================================
+2026-10-12T17:04:59.0413076Z __________________________ test_ticket_count_details ___________________________
+2026-10-12T17:04:59.0413495Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0413761Z 
+2026-10-12T17:04:59.0413873Z ======================================================================
+2026-10-12T17:04:59.0414165Z LREI TICKET COUNT DETAILS
+2026-10-12T17:04:59.0414404Z ======================================================================
+2026-10-12T17:04:59.0414607Z 
+2026-10-12T17:04:59.0414687Z REQUESTED TICKETS: 10
+2026-10-12T17:04:59.0414959Z Generated tickets per case: min=10, max=10, average=10.00
+2026-10-12T17:04:59.0415332Z Recommended tickets per case: min=14, max=14, average=14.00
+2026-10-12T17:04:59.0415777Z LREI average matches: 13.5957
+2026-10-12T17:04:59.0416019Z Random average matches: 13.8723
+2026-10-12T17:04:59.0416566Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0416870Z 
+2026-10-12T17:04:59.0417066Z REQUESTED TICKETS: 20
+2026-10-12T17:04:59.0417473Z Generated tickets per case: min=20, max=20, average=20.00
+2026-10-12T17:04:59.0417970Z Recommended tickets per case: min=14, max=14, average=14.00
+2026-10-12T17:04:59.0418396Z LREI average matches: 13.5957
+2026-10-12T17:04:59.0418790Z Random average matches: 13.8723
+2026-10-12T17:04:59.0428258Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0428560Z 
+2026-10-12T17:04:59.0428662Z REQUESTED TICKETS: 50
+2026-10-12T17:04:59.0428961Z Generated tickets per case: min=50, max=50, average=50.00
+2026-10-12T17:04:59.0429575Z Recommended tickets per case: min=14, max=14, average=14.00
+2026-10-12T17:04:59.0429921Z LREI average matches: 13.5957
+2026-10-12T17:04:59.0430185Z Random average matches: 13.8723
+2026-10-12T17:04:59.0430485Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0430740Z 
+2026-10-12T17:04:59.0430828Z REQUESTED TICKETS: 100
+2026-10-12T17:04:59.0431121Z Generated tickets per case: min=100, max=100, average=100.00
+2026-10-12T17:04:59.0431519Z Recommended tickets per case: min=14, max=14, average=14.00
+2026-10-12T17:04:59.0431847Z LREI average matches: 13.5957
+2026-10-12T17:04:59.0432087Z Random average matches: 13.8723
+2026-10-12T17:04:59.0432568Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0432810Z 
+2026-10-12T17:04:59.0432914Z ======================================================================
+2026-10-12T17:04:59.0433290Z _________________________ test_ticket_count_evaluation _________________________
+2026-10-12T17:04:59.0433736Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:04:59.0434006Z 
+2026-10-12T17:04:59.0434121Z ======================================================================
+2026-10-12T17:04:59.0434420Z LREI TICKET COUNT EVALUATION
+2026-10-12T17:04:59.0434679Z ======================================================================
+2026-10-12T17:04:59.0434962Z Dataset draws: 1141
+2026-10-12T17:04:59.0435179Z Seeds per ticket count: 10
+2026-10-12T17:04:59.0435331Z 
+2026-10-12T17:04:59.0435418Z TICKETS PER MODEL: 10
+2026-10-12T17:04:59.0435792Z LREI average:   13.5965
+2026-10-12T17:04:59.0436176Z Random average: 13.5773
+2026-10-12T17:04:59.0436518Z LREI advantage: +0.0191
+2026-10-12T17:04:59.0436791Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0437117Z TICKETS PER MODEL: 20
+2026-10-12T17:04:59.0437324Z LREI average:   13.5965
+2026-10-12T17:04:59.0437528Z Random average: 13.5773
+2026-10-12T17:04:59.0437734Z LREI advantage: +0.0191
+2026-10-12T17:04:59.0437990Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0438363Z TICKETS PER MODEL: 50
+2026-10-12T17:04:59.0438747Z LREI average:   13.5965
+2026-10-12T17:04:59.0439146Z Random average: 13.5773
+2026-10-12T17:04:59.0439364Z LREI advantage: +0.0191
+2026-10-12T17:04:59.0439633Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0439951Z TICKETS PER MODEL: 100
+2026-10-12T17:04:59.0440158Z LREI average:   13.5965
+2026-10-12T17:04:59.0440360Z Random average: 13.5773
+2026-10-12T17:04:59.0440566Z LREI advantage: +0.0191
+2026-10-12T17:04:59.0440831Z ----------------------------------------------------------------------
+2026-10-12T17:04:59.0441065Z 
+2026-10-12T17:04:59.0441143Z FINAL SUMMARY
+2026-10-12T17:04:59.0441356Z ======================================================================
+2026-10-12T17:04:59.0441691Z  10 tickets | LREI=13.5965 | Random=13.5773 | Diff=+0.0191
+2026-10-12T17:04:59.0442038Z  20 tickets | LREI=13.5965 | Random=13.5773 | Diff=+0.0191
+2026-10-12T17:04:59.0442393Z  50 tickets | LREI=13.5965 | Random=13.5773 | Diff=+0.0191
+2026-10-12T17:04:59.0442879Z 100 tickets | LREI=13.5965 | Random=13.5773 | Diff=+0.0191
+2026-10-12T17:04:59.0443214Z ======================================================================
+2026-10-12T17:04:59.0443610Z ___________________ test_database_persists_and_lists_entries ___________________
+2026-10-12T17:04:59.0444067Z ----------------------------- Captured stderr call -----------------------------
+2026-10-12T17:04:59.0444419Z --- Logging error ---
+2026-10-12T17:04:59.0444652Z Traceback (most recent call last):
+2026-10-12T17:04:59.0450630Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/logging/__init__.py", line 1103, in emit
+2026-10-12T17:04:59.0451205Z     stream.write(msg + self.terminator)
+2026-10-12T17:04:59.0451522Z ValueError: I/O operation on closed file.
+2026-10-12T17:04:59.0451801Z Call stack:
+2026-10-12T17:04:59.0452311Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+2026-10-12T17:04:59.0452836Z     return _run_code(code, main_globals, None,
+2026-10-12T17:04:59.0453327Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 86, in _run_code
+2026-10-12T17:04:59.0453790Z     exec(code, run_globals)
+2026-10-12T17:04:59.0454310Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pytest/__main__.py", line 9, in <module>
+2026-10-12T17:04:59.0454865Z     raise SystemExit(_console_main())
+2026-10-12T17:04:59.0455475Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+2026-10-12T17:04:59.0456286Z     code = _main(prog=_get_prog_name(sys.argv))
+2026-10-12T17:04:59.0456887Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 229, in _main
+2026-10-12T17:04:59.0457526Z     ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+2026-10-12T17:04:59.0458169Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0458810Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0459855Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0460493Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0461160Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0461715Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0462294Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 377, in pytest_cmdline_main
+2026-10-12T17:04:59.0462860Z     return wrap_session(config, _main)
+2026-10-12T17:04:59.0463406Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 330, in wrap_session
+2026-10-12T17:04:59.0463980Z     session.exitstatus = doit(config, session) or 0
+2026-10-12T17:04:59.0464537Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 384, in _main
+2026-10-12T17:04:59.0465073Z     config.hook.pytest_runtestloop(session=session)
+2026-10-12T17:04:59.0465638Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0466280Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0466974Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0467613Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0468263Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0468804Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0469733Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 408, in pytest_runtestloop
+2026-10-12T17:04:59.0470431Z     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+2026-10-12T17:04:59.0471083Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0471718Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0472394Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0473007Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0473640Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0474170Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0474760Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 118, in pytest_runtest_protocol
+2026-10-12T17:04:59.0475367Z     runtestprotocol(item, nextitem=nextitem)
+2026-10-12T17:04:59.0475942Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 139, in runtestprotocol
+2026-10-12T17:04:59.0476531Z     reports.append(call_and_report(item, "call", log))
+2026-10-12T17:04:59.0477132Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 249, in call_and_report
+2026-10-12T17:04:59.0477863Z     call = CallInfo.from_call(
+2026-10-12T17:04:59.0478379Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 361, in from_call
+2026-10-12T17:04:59.0478895Z     result: TResult | None = func()
+2026-10-12T17:04:59.0479704Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 250, in <lambda>
+2026-10-12T17:04:59.0480270Z     lambda: runtest_hook(item=item, **kwds),
+2026-10-12T17:04:59.0480816Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0481465Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0482144Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0482765Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0483418Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0483958Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0484529Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+2026-10-12T17:04:59.0485076Z     item.runtest()
+2026-10-12T17:04:59.0485556Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 1707, in runtest
+2026-10-12T17:04:59.0486109Z     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+2026-10-12T17:04:59.0486680Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0487315Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0487984Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0488604Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0489371Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0489900Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0490600Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 167, in pytest_pyfunc_call
+2026-10-12T17:04:59.0491182Z     result = testfunction(**testargs)
+2026-10-12T17:04:59.0491717Z   File "/home/runner/work/LREI/LREI/tests/test_database.py", line 13, in test_database_persists_and_lists_entries
+2026-10-12T17:04:59.0492249Z     first_entry = database.add_entry("first")
+2026-10-12T17:04:59.0492675Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 62, in add_entry
+2026-10-12T17:04:59.0493065Z     self.initialize()
+2026-10-12T17:04:59.0493433Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 54, in initialize
+2026-10-12T17:04:59.0493873Z     logger.info("database initialized at %s", self.path)
+2026-10-12T17:04:59.0494203Z Message: 'database initialized at %s'
+2026-10-12T17:04:59.0494681Z Arguments: (PosixPath('/tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3'),)
+2026-10-12T17:04:59.0495165Z --- Logging error ---
+2026-10-12T17:04:59.0495395Z Traceback (most recent call last):
+2026-10-12T17:04:59.0495878Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/logging/__init__.py", line 1103, in emit
+2026-10-12T17:04:59.0496361Z     stream.write(msg + self.terminator)
+2026-10-12T17:04:59.0496657Z ValueError: I/O operation on closed file.
+2026-10-12T17:04:59.0496919Z Call stack:
+2026-10-12T17:04:59.0497342Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+2026-10-12T17:04:59.0497841Z     return _run_code(code, main_globals, None,
+2026-10-12T17:04:59.0498439Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 86, in _run_code
+2026-10-12T17:04:59.0498882Z     exec(code, run_globals)
+2026-10-12T17:04:59.0499680Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pytest/__main__.py", line 9, in <module>
+2026-10-12T17:04:59.0500236Z     raise SystemExit(_console_main())
+2026-10-12T17:04:59.0500826Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+2026-10-12T17:04:59.0501421Z     code = _main(prog=_get_prog_name(sys.argv))
+2026-10-12T17:04:59.0501998Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 229, in _main
+2026-10-12T17:04:59.0502634Z     ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+2026-10-12T17:04:59.0503265Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0503917Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0504587Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0505201Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0505842Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0506380Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0506943Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 377, in pytest_cmdline_main
+2026-10-12T17:04:59.0507503Z     return wrap_session(config, _main)
+2026-10-12T17:04:59.0508033Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 330, in wrap_session
+2026-10-12T17:04:59.0508591Z     session.exitstatus = doit(config, session) or 0
+2026-10-12T17:04:59.0509275Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 384, in _main
+2026-10-12T17:04:59.0509836Z     config.hook.pytest_runtestloop(session=session)
+2026-10-12T17:04:59.0510403Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0511037Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0511847Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0512485Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0513132Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0513671Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0514233Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 408, in pytest_runtestloop
+2026-10-12T17:04:59.0514900Z     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+2026-10-12T17:04:59.0515545Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0516179Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0516847Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0517460Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0518095Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0518630Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0519333Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 118, in pytest_runtest_protocol
+2026-10-12T17:04:59.0520071Z     runtestprotocol(item, nextitem=nextitem)
+2026-10-12T17:04:59.0520660Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 139, in runtestprotocol
+2026-10-12T17:04:59.0521245Z     reports.append(call_and_report(item, "call", log))
+2026-10-12T17:04:59.0521854Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 249, in call_and_report
+2026-10-12T17:04:59.0522402Z     call = CallInfo.from_call(
+2026-10-12T17:04:59.0522908Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 361, in from_call
+2026-10-12T17:04:59.0523430Z     result: TResult | None = func()
+2026-10-12T17:04:59.0523937Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 250, in <lambda>
+2026-10-12T17:04:59.0524465Z     lambda: runtest_hook(item=item, **kwds),
+2026-10-12T17:04:59.0525009Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0525641Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0526309Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0526920Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0527576Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0528110Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0528673Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+2026-10-12T17:04:59.0529433Z     item.runtest()
+2026-10-12T17:04:59.0529919Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 1707, in runtest
+2026-10-12T17:04:59.0530473Z     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+2026-10-12T17:04:59.0531045Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0531679Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0532468Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0533089Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0533728Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0534263Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0534822Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 167, in pytest_pyfunc_call
+2026-10-12T17:04:59.0535390Z     result = testfunction(**testargs)
+2026-10-12T17:04:59.0535912Z   File "/home/runner/work/LREI/LREI/tests/test_database.py", line 14, in test_database_persists_and_lists_entries
+2026-10-12T17:04:59.0536437Z     second_entry = database.add_entry("second")
+2026-10-12T17:04:59.0536875Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 62, in add_entry
+2026-10-12T17:04:59.0537262Z     self.initialize()
+2026-10-12T17:04:59.0537631Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 54, in initialize
+2026-10-12T17:04:59.0538074Z     logger.info("database initialized at %s", self.path)
+2026-10-12T17:04:59.0538407Z Message: 'database initialized at %s'
+2026-10-12T17:04:59.0538887Z Arguments: (PosixPath('/tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3'),)
+2026-10-12T17:04:59.0539659Z --- Logging error ---
+2026-10-12T17:04:59.0539904Z Traceback (most recent call last):
+2026-10-12T17:04:59.0540412Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/logging/__init__.py", line 1103, in emit
+2026-10-12T17:04:59.0541048Z     stream.write(msg + self.terminator)
+2026-10-12T17:04:59.0541341Z ValueError: I/O operation on closed file.
+2026-10-12T17:04:59.0541607Z Call stack:
+2026-10-12T17:04:59.0542040Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+2026-10-12T17:04:59.0542538Z     return _run_code(code, main_globals, None,
+2026-10-12T17:04:59.0543024Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/runpy.py", line 86, in _run_code
+2026-10-12T17:04:59.0543469Z     exec(code, run_globals)
+2026-10-12T17:04:59.0543966Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pytest/__main__.py", line 9, in <module>
+2026-10-12T17:04:59.0544515Z     raise SystemExit(_console_main())
+2026-10-12T17:04:59.0545092Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+2026-10-12T17:04:59.0545694Z     code = _main(prog=_get_prog_name(sys.argv))
+2026-10-12T17:04:59.0546273Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/config/__init__.py", line 229, in _main
+2026-10-12T17:04:59.0546916Z     ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+2026-10-12T17:04:59.0547557Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0548200Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0548870Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0549632Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0550281Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0550815Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0551391Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 377, in pytest_cmdline_main
+2026-10-12T17:04:59.0551957Z     return wrap_session(config, _main)
+2026-10-12T17:04:59.0552493Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 330, in wrap_session
+2026-10-12T17:04:59.0553050Z     session.exitstatus = doit(config, session) or 0
+2026-10-12T17:04:59.0553729Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 384, in _main
+2026-10-12T17:04:59.0554284Z     config.hook.pytest_runtestloop(session=session)
+2026-10-12T17:04:59.0554852Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0555486Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0556149Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0556770Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0557412Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0557945Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0558505Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/main.py", line 408, in pytest_runtestloop
+2026-10-12T17:04:59.0559315Z     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+2026-10-12T17:04:59.0559991Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0560641Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0561306Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0562058Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0562698Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0563232Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0563824Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 118, in pytest_runtest_protocol
+2026-10-12T17:04:59.0564421Z     runtestprotocol(item, nextitem=nextitem)
+2026-10-12T17:04:59.0565000Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 139, in runtestprotocol
+2026-10-12T17:04:59.0565589Z     reports.append(call_and_report(item, "call", log))
+2026-10-12T17:04:59.0566191Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 249, in call_and_report
+2026-10-12T17:04:59.0566748Z     call = CallInfo.from_call(
+2026-10-12T17:04:59.0567261Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 361, in from_call
+2026-10-12T17:04:59.0567781Z     result: TResult | None = func()
+2026-10-12T17:04:59.0568293Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 250, in <lambda>
+2026-10-12T17:04:59.0568826Z     lambda: runtest_hook(item=item, **kwds),
+2026-10-12T17:04:59.0569495Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0570417Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0571111Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0571731Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0572371Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0572914Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0573492Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+2026-10-12T17:04:59.0574053Z     item.runtest()
+2026-10-12T17:04:59.0574681Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 1707, in runtest
+2026-10-12T17:04:59.0575242Z     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+2026-10-12T17:04:59.0575814Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_hooks.py", line 512, in __call__
+2026-10-12T17:04:59.0576452Z     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+2026-10-12T17:04:59.0577117Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_manager.py", line 120, in _hookexec
+2026-10-12T17:04:59.0577737Z     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+2026-10-12T17:04:59.0578373Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/pluggy/_callers.py", line 121, in _multicall
+2026-10-12T17:04:59.0578904Z     res = hook_impl.function(*args)
+2026-10-12T17:04:59.0579726Z   File "/opt/hostedtoolcache/Python/3.10.22/x64/lib/python3.10/site-packages/_pytest/python.py", line 167, in pytest_pyfunc_call
+2026-10-12T17:04:59.0580304Z     result = testfunction(**testargs)
+2026-10-12T17:04:59.0580829Z   File "/home/runner/work/LREI/LREI/tests/test_database.py", line 18, in test_database_persists_and_lists_entries
+2026-10-12T17:04:59.0581466Z     assert [entry.message for entry in database.list_entries()] == ["second", "first"]
+2026-10-12T17:04:59.0582028Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 78, in list_entries
+2026-10-12T17:04:59.0582431Z     self.initialize()
+2026-10-12T17:04:59.0582800Z   File "/home/runner/work/LREI/LREI/src/lrei/database.py", line 54, in initialize
+2026-10-12T17:04:59.0583437Z     logger.info("database initialized at %s", self.path)
+2026-10-12T17:04:59.0583767Z Message: 'database initialized at %s'
+2026-10-12T17:04:59.0584316Z Arguments: (PosixPath('/tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3'),)
+2026-10-12T17:04:59.0584895Z ------------------------------ Captured log call -------------------------------
+2026-10-12T17:04:59.0585585Z INFO     lrei.database:database.py:54 database initialized at /tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3
+2026-10-12T17:04:59.0586489Z INFO     lrei.database:database.py:54 database initialized at /tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3
+2026-10-12T17:04:59.0587379Z INFO     lrei.database:database.py:54 database initialized at /tmp/pytest-of-runner/pytest-0/test_database_persists_and_lis0/lrei.sqlite3
+2026-10-12T17:04:59.0588071Z -------- generated xml file: /home/runner/work/LREI/LREI/fast-tests.xml --------
+2026-10-12T17:04:59.0588519Z =========================== short test summary info ============================
+2026-10-12T17:04:59.0589022Z PASSED tests/lottery/test_ablation.py::test_ablation_report
+2026-10-12T17:04:59.0589768Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_ticket_mask_count_matches_exact_single_ticket_combinatorics
+2026-10-12T17:04:59.0590527Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_bitmask_union_matches_exact_two_ticket_coverage
+2026-10-12T17:04:59.0591258Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_engine_returns_fourteen_valid_unique_tickets
+2026-10-12T17:04:59.0591997Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_config_uses_validated_coverage_defaults
+2026-10-12T17:04:59.0592734Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_config_bounds_candidate_pool_and_ticket_count
+2026-10-12T17:04:59.0593483Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_local_swap_refinement_never_reduces_exact_coverage
+2026-10-12T17:04:59.0594079Z PASSED tests/lottery/test_backtest_report.py::test_backtest_report
+2026-10-12T17:04:59.0594548Z PASSED tests/lottery/test_backtesting.py::test_backtester_returns_result
+2026-10-12T17:04:59.0595077Z PASSED tests/lottery/test_backtesting.py::test_backtester_evaluates_chronologically
+2026-10-12T17:04:59.0595622Z PASSED tests/lottery/test_backtesting.py::test_backtester_records_ticket_counts
+2026-10-12T17:04:59.0596356Z PASSED tests/lottery/test_backtesting.py::test_backtester_match_metrics_are_non_negative
+2026-10-12T17:04:59.0596907Z PASSED tests/lottery/test_backtesting.py::test_backtester_is_reproducible
+2026-10-12T17:04:59.0597436Z PASSED tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_train_size
+2026-10-12T17:04:59.0597998Z PASSED tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_test_size
+2026-10-12T17:04:59.0598555Z PASSED tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_ticket_count
+2026-10-12T17:04:59.0599274Z PASSED tests/lottery/test_backtesting.py::test_backtester_rejects_dataset_that_is_too_small
+2026-10-12T17:04:59.0599881Z PASSED tests/lottery/test_backtesting.py::test_backtester_includes_random_baseline_results
+2026-10-12T17:04:59.0600478Z PASSED tests/lottery/test_backtesting.py::test_backtester_baseline_uses_same_ticket_count
+2026-10-12T17:04:59.0601089Z PASSED tests/lottery/test_backtesting.py::test_backtester_exposes_baseline_aggregate_metrics
+2026-10-12T17:04:59.0601719Z PASSED tests/lottery/test_backtesting.py::test_baseline_seed_is_stable_across_python_processes
+2026-10-12T17:04:59.0602309Z PASSED tests/lottery/test_baseline.py::test_random_baseline_generates_valid_ticket
+2026-10-12T17:04:59.0602834Z PASSED tests/lottery/test_baseline.py::test_random_baseline_is_reproducible
+2026-10-12T17:04:59.0603364Z PASSED tests/lottery/test_baseline.py::test_random_baseline_different_seeds_can_differ
+2026-10-12T17:04:59.0603911Z PASSED tests/lottery/test_baseline.py::test_random_baseline_rejects_invalid_count
+2026-10-12T17:04:59.0604616Z PASSED tests/lottery/test_baseline.py::test_random_baseline_rejects_invalid_configuration
+2026-10-12T17:04:59.0605201Z PASSED tests/lottery/test_baseline.py::test_random_baseline_supports_custom_range
+2026-10-12T17:04:59.0605850Z PASSED tests/lottery/test_coverage_engine.py::test_coverage_config_rejects_settings_that_break_exact_4plus_coverage
+2026-10-12T17:04:59.0606471Z PASSED tests/lottery/test_dataset.py::test_lottery_draw_record_valid
+2026-10-12T17:04:59.0606988Z PASSED tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_empty_id
+2026-10-12T17:04:59.0607520Z PASSED tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_empty_numbers
+2026-10-12T17:04:59.0608077Z PASSED tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_duplicate_numbers
+2026-10-12T17:04:59.0608660Z PASSED tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_non_positive_numbers
+2026-10-12T17:04:59.0609334Z PASSED tests/lottery/test_dataset.py::test_lottery_dataset_basic_operations
+2026-10-12T17:04:59.0609823Z PASSED tests/lottery/test_dataset.py::test_empty_dataset_latest_raises
+2026-10-12T17:04:59.0610282Z PASSED tests/lottery/test_dataset.py::test_dataset_statistics
+2026-10-12T17:04:59.0610707Z PASSED tests/lottery/test_dataset.py::test_empty_dataset_statistics
+2026-10-12T17:04:59.0611130Z PASSED tests/lottery/test_dataset.py::test_csv_dataset_loader
+2026-10-12T17:04:59.0611628Z PASSED tests/lottery/test_dataset.py::test_csv_dataset_loader_supports_semicolon_separator
+2026-10-12T17:04:59.0612177Z PASSED tests/lottery/test_dataset.py::test_csv_dataset_loader_missing_file
+2026-10-12T17:04:59.0612678Z PASSED tests/lottery/test_dataset.py::test_csv_dataset_loader_invalid_numbers
+2026-10-12T17:04:59.0613140Z PASSED tests/lottery/test_dataset.py::test_walk_forward_dataset
+2026-10-12T17:04:59.0613596Z PASSED tests/lottery/test_dataset.py::test_walk_forward_rejects_invalid_sizes
+2026-10-12T17:04:59.0614165Z PASSED tests/lottery/test_dataset.py::test_csv_dataset_loader_rejects_invalid_official_draw_values
+2026-10-12T17:04:59.0614814Z PASSED tests/lottery/test_elite_config_validation.py::test_elite_preserves_base_config_validation
+2026-10-12T17:04:59.0615459Z PASSED tests/lottery/test_elite_config_validation.py::test_elite_requires_positive_ensemble_weight
+2026-10-12T17:04:59.0616072Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_generates_fourteen_diverse_tickets
+2026-10-12T17:04:59.0616759Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_is_reproducible
+2026-10-12T17:04:59.0617348Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_weights_are_normalized_and_use_history_only
+2026-10-12T17:04:59.0617969Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_adaptation_can_be_disabled
+2026-10-12T17:04:59.0618528Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_rejects_invalid_adaptive_settings
+2026-10-12T17:04:59.0619373Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_propagates_number_signal_strength
+2026-10-12T17:04:59.0619971Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_coverage_is_stable_across_seeds
+2026-10-12T17:04:59.0620546Z PASSED tests/lottery/test_elite_pro.py::test_elite_propagates_candidate_generation_settings
+2026-10-12T17:04:59.0621212Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_are_normalized_and_can_be_disabled
+2026-10-12T17:04:59.0621897Z PASSED tests/lottery/test_elite_pro.py::test_elite_rejects_invalid_candidate_adaptation_settings
+2026-10-12T17:04:59.0622508Z PASSED tests/lottery/test_elite_pro.py::test_elite_consensus_scoring_is_opt_in_and_validated
+2026-10-12T17:04:59.0623074Z PASSED tests/lottery/test_elite_pro.py::test_elite_consensus_config_regression
+2026-10-12T17:04:59.0623674Z PASSED tests/lottery/test_elite_pro.py::test_elite_candidate_ensemble_injection_is_normalized_and_opt_in
+2026-10-12T17:04:59.0624352Z PASSED tests/lottery/test_elite_pro.py::test_elite_feature_stack_stability_gate_defaults_and_validation
+2026-10-12T17:04:59.0625570Z PASSED tests/lottery/test_elite_pro.py::test_elite_production_profile_is_locked_to_validated_defaults
+2026-10-12T17:04:59.0626614Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_strong_number_is_opt_in_and_validated
+2026-10-12T17:04:59.0627241Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_strong_number_scores_are_valid
+2026-10-12T17:04:59.0627902Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_are_normalized_and_history_only
+2026-10-12T17:04:59.0628590Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_allocation_can_be_disabled
+2026-10-12T17:04:59.0629371Z PASSED tests/lottery/test_elite_pro.py::test_elite_rejects_invalid_candidate_calibration_settings
+2026-10-12T17:04:59.0630067Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_candidate_weights_are_normalized_and_reproducible
+2026-10-12T17:04:59.0630756Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_candidate_weights_can_be_disabled
+2026-10-12T17:04:59.0631406Z PASSED tests/lottery/test_elite_pro.py::test_elite_pro_rejects_invalid_candidate_adaptation_settings
+2026-10-12T17:04:59.0632041Z PASSED tests/lottery/test_elite_pro.py::test_elite_feature_stack_origin_win_rate_uses_each_origin
+2026-10-12T17:04:59.0632645Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_is_reproducible
+2026-10-12T17:04:59.0633743Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_constant_difference_has_zero_width_ci
+2026-10-12T17:04:59.0634483Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_clamps_block_size_to_sample_size
+2026-10-12T17:04:59.0635180Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs0]
+2026-10-12T17:04:59.0635863Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs1]
+2026-10-12T17:04:59.0636525Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs2]
+2026-10-12T17:04:59.0637191Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs3]
+2026-10-12T17:04:59.0637853Z PASSED tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_empty_or_nonfinite_values
+2026-10-12T17:04:59.0638552Z PASSED tests/lottery/test_evaluation.py::test_multi_origin_bootstrap_preserves_weights_and_never_bridges_gaps
+2026-10-12T17:04:59.0639611Z PASSED tests/lottery/test_evaluation.py::test_multi_origin_bootstrap_is_reproducible_and_rejects_empty_origin
+2026-10-12T17:04:59.0640286Z PASSED tests/lottery/test_generator.py::test_generate_ticket_returns_six_numbers
+2026-10-12T17:04:59.0640798Z PASSED tests/lottery/test_generator.py::test_generate_ticket_is_sorted
+2026-10-12T17:04:59.0641349Z PASSED tests/lottery/test_generator.py::test_generate_ticket_is_reproducible_with_same_rng_seed
+2026-10-12T17:04:59.0641953Z PASSED tests/lottery/test_generator.py::test_generate_tickets_is_reproducible_with_seed
+2026-10-12T17:04:59.0642531Z PASSED tests/lottery/test_generator.py::test_generate_tickets_returns_requested_count
+2026-10-12T17:04:59.0643136Z PASSED tests/lottery/test_generator.py::test_generate_ticket_rejects_insufficient_candidates
+2026-10-12T17:04:59.0643718Z PASSED tests/lottery/test_generator.py::test_generate_ticket_rejects_negative_score
+2026-10-12T17:04:59.0644289Z PASSED tests/lottery/test_generator.py::test_generate_ticket_rejects_number_outside_range
+2026-10-12T17:04:59.0644877Z PASSED tests/lottery/test_generator.py::test_generate_ticket_rejects_duplicate_candidates
+2026-10-12T17:04:59.0645463Z PASSED tests/lottery/test_generator.py::test_generate_tickets_rejects_non_positive_count
+2026-10-12T17:04:59.0645988Z PASSED tests/lottery/test_integration.py::test_full_lottery_pipeline
+2026-10-12T17:04:59.0646477Z PASSED tests/lottery/test_integration.py::test_full_pipeline_is_reproducible
+2026-10-12T17:04:59.0647000Z PASSED tests/lottery/test_multi_seed_evaluation.py::test_multi_seed_evaluation
+2026-10-12T17:04:59.0647634Z PASSED tests/lottery/test_optimizer.py::test_overlap_counts_shared_numbers
+2026-10-12T17:04:59.0648100Z PASSED tests/lottery/test_optimizer.py::test_jaccard_similarity
+2026-10-12T17:04:59.0648606Z PASSED tests/lottery/test_optimizer.py::test_identical_tickets_have_jaccard_similarity_one
+2026-10-12T17:04:59.0649338Z PASSED tests/lottery/test_optimizer.py::test_empty_tickets_have_jaccard_similarity_one
+2026-10-12T17:04:59.0649893Z PASSED tests/lottery/test_optimizer.py::test_is_compatible_accepts_low_overlap
+2026-10-12T17:04:59.0650425Z PASSED tests/lottery/test_optimizer.py::test_is_compatible_rejects_high_overlap
+2026-10-12T17:04:59.0650951Z PASSED tests/lottery/test_optimizer.py::test_optimize_removes_duplicate_tickets
+2026-10-12T17:04:59.0651465Z PASSED tests/lottery/test_optimizer.py::test_optimize_enforces_max_overlap
+2026-10-12T17:04:59.0651955Z PASSED tests/lottery/test_optimizer.py::test_optimize_respects_max_tickets
+2026-10-12T17:04:59.0652425Z PASSED tests/lottery/test_optimizer.py::test_optimize_sorts_tickets
+2026-10-12T17:04:59.0652897Z PASSED tests/lottery/test_optimizer.py::test_optimize_rejects_empty_ticket
+2026-10-12T17:04:59.0653447Z PASSED tests/lottery/test_optimizer.py::test_optimize_rejects_duplicate_numbers_inside_ticket
+2026-10-12T17:04:59.0654037Z PASSED tests/lottery/test_optimizer.py::test_optimizer_config_rejects_negative_overlap
+2026-10-12T17:04:59.0654632Z PASSED tests/lottery/test_optimizer.py::test_optimizer_config_rejects_non_positive_max_tickets
+2026-10-12T17:04:59.0655305Z PASSED tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10-10-26]
+2026-10-12T17:04:59.0656014Z PASSED tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[2026-10-10]
+2026-10-12T17:04:59.0656722Z PASSED tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10/10/2026]
+2026-10-12T17:04:59.0657426Z PASSED tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10-10-2026]
+2026-10-12T17:04:59.0658126Z PASSED tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[2026/10/10]
+2026-10-12T17:04:59.0658781Z PASSED tests/lottery/test_p0_validation.py::test_repository_dates_use_calendar_windows_in_pro
+2026-10-12T17:04:59.0659747Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[-no header]
+2026-10-12T17:04:59.0660583Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\n-no draws]
+2026-10-12T17:04:59.0661467Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\n1,"1,2,3,4,5,6"\n1,"7,8,9,10,11,12"\n-Duplicate draw_id]
+2026-10-12T17:04:59.0662468Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\n1,"1,2,3,4,5,6",31-02-26\n-Invalid draw date]
+2026-10-12T17:04:59.0663499Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\n1,"1,2,3,4,5,6",11-10-26\n2,"7,8,9,10,11,12",10-10-26\n-chronological]
+2026-10-12T17:04:59.0664484Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\n1,"1,2,3,4,5,6",extra\n-header]
+2026-10-12T17:04:59.0665992Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\n1,"1,2,3,4,5,6"\n-header]
+2026-10-12T17:04:59.0667020Z PASSED tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,numbers\n1,"1,2,3,4,5,6","7,8,9,10,11,12"\n-duplicate columns]
+2026-10-12T17:04:59.0667850Z PASSED tests/lottery/test_p0_validation.py::test_tab_delimited_custom_id_column_and_bom
+2026-10-12T17:04:59.0668495Z PASSED tests/lottery/test_p0_validation.py::test_random_baseline_is_unique_and_rejects_impossible_budget
+2026-10-12T17:04:59.0669372Z PASSED tests/lottery/test_p0_validation.py::test_backtester_random_universe_includes_unobserved_main_and_strong_numbers
+2026-10-12T17:04:59.0670349Z PASSED tests/lottery/test_p0_validation.py::test_backtester_keeps_main_and_strong_portfolio_fixed_inside_block
+2026-10-12T17:04:59.0671047Z PASSED tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[True]
+2026-10-12T17:04:59.0671708Z PASSED tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[1.5]
+2026-10-12T17:04:59.0672357Z PASSED tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[1]
+2026-10-12T17:04:59.0673046Z PASSED tests/lottery/test_portfolio_coverage.py::test_exact_single_ticket_coverage_counts_match_combinatorics
+2026-10-12T17:04:59.0673770Z PASSED tests/lottery/test_portfolio_coverage.py::test_duplicate_ticket_does_not_inflate_portfolio_coverage
+2026-10-12T17:04:59.0674466Z PASSED tests/lottery/test_portfolio_coverage.py::test_distinct_ticket_can_only_expand_or_preserve_coverage
+2026-10-12T17:04:59.0675127Z PASSED tests/lottery/test_portfolio_coverage.py::test_invalid_match_threshold_is_rejected[0]
+2026-10-12T17:04:59.0675755Z PASSED tests/lottery/test_portfolio_coverage.py::test_invalid_match_threshold_is_rejected[7]
+2026-10-12T17:04:59.0676365Z PASSED tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket0]
+2026-10-12T17:04:59.0676955Z PASSED tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket1]
+2026-10-12T17:04:59.0677537Z PASSED tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket2]
+2026-10-12T17:04:59.0678073Z PASSED tests/lottery/test_predictor.py::test_score_numbers_returns_scores
+2026-10-12T17:04:59.0678575Z PASSED tests/lottery/test_predictor.py::test_score_numbers_is_deterministic
+2026-10-12T17:04:59.0679198Z PASSED tests/lottery/test_predictor.py::test_rank_numbers_orders_by_score
+2026-10-12T17:04:59.0679717Z PASSED tests/lottery/test_predictor.py::test_rank_numbers_uses_number_as_tiebreaker
+2026-10-12T17:04:59.0680253Z PASSED tests/lottery/test_predictor.py::test_negative_frequency_is_rejected
+2026-10-12T17:04:59.0680793Z PASSED tests/lottery/test_predictor.py::test_empty_frequencies_return_empty_result
+2026-10-12T17:04:59.0681300Z PASSED tests/lottery/test_predictor.py::test_zero_weights_are_rejected
+2026-10-12T17:04:59.0681781Z PASSED tests/lottery/test_predictor.py::test_negative_weights_are_rejected
+2026-10-12T17:04:59.0682255Z PASSED tests/lottery/test_predictor.py::test_number_score_is_immutable
+2026-10-12T17:04:59.0683004Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers0-7-6-1]
+2026-10-12T17:04:59.0683793Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers1-1-6-2]
+2026-10-12T17:04:59.0684566Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers2-7-5-3]
+2026-10-12T17:04:59.0685325Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers3-1-5-4]
+2026-10-12T17:04:59.0686085Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers4-7-4-5]
+2026-10-12T17:04:59.0686844Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers5-1-4-6]
+2026-10-12T17:04:59.0687605Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers6-7-3-7]
+2026-10-12T17:04:59.0688375Z PASSED tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers7-1-3-8]
+2026-10-12T17:04:59.0689274Z PASSED tests/lottery/test_prize_evaluation.py::test_fewer_than_three_main_matches_is_not_a_prize_even_if_strong_matches
+2026-10-12T17:04:59.0690028Z PASSED tests/lottery/test_prize_evaluation.py::test_missing_strong_number_uses_the_non_strong_prize_tier
+2026-10-12T17:04:59.0690706Z PASSED tests/lottery/test_prize_evaluation.py::test_portfolio_prize_summary_counts_winners_and_best_tier
+2026-10-12T17:04:59.0691494Z PASSED tests/lottery/test_prize_evaluation.py::test_portfolio_without_prizes_reports_no_winner
+2026-10-12T17:04:59.0692139Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers0]
+2026-10-12T17:04:59.0692799Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers1]
+2026-10-12T17:04:59.0693457Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers2]
+2026-10-12T17:04:59.0694085Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_strong_number_is_rejected[0]
+2026-10-12T17:04:59.0694665Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_strong_number_is_rejected[8]
+2026-10-12T17:04:59.0695243Z PASSED tests/lottery/test_prize_evaluation.py::test_invalid_draw_main_numbers_are_rejected
+2026-10-12T17:04:59.0695821Z PASSED tests/lottery/test_prize_evaluation.py::test_empty_portfolio_reports_no_prize
+2026-10-12T17:04:59.0696323Z PASSED tests/lottery/test_pro.py::test_pro_returns_14_valid_tickets
+2026-10-12T17:04:59.0696799Z PASSED tests/lottery/test_pro.py::test_pro_respects_overlap_limit
+2026-10-12T17:04:59.0697212Z PASSED tests/lottery/test_pro.py::test_pro_is_reproducible
+2026-10-12T17:04:59.0697641Z PASSED tests/lottery/test_pro.py::test_pro_date_window_uses_calendar_years
+2026-10-12T17:04:59.0698167Z PASSED tests/lottery/test_pro_backtest.py::test_print_regular_vs_pro_historical_backtest
+2026-10-12T17:04:59.0698805Z PASSED tests/lottery/test_pro_portfolio_refinement.py::test_local_swap_never_decreases_portfolio_objective
+2026-10-12T17:04:59.0699817Z PASSED tests/lottery/test_pro_portfolio_refinement.py::test_local_swap_preserves_fourteen_ticket_configuration
+2026-10-12T17:04:59.0700449Z PASSED tests/lottery/test_pro_quality.py::test_pro_portfolio_quality_invariants
+2026-10-12T17:04:59.0700969Z PASSED tests/lottery/test_pro_quality.py::test_pro_is_reproducible_for_same_seed
+2026-10-12T17:04:59.0701498Z PASSED tests/lottery/test_pro_quality.py::test_pro_coverage_is_stable_across_seeds
+2026-10-12T17:04:59.0702047Z PASSED tests/lottery/test_pro_quality.py::test_pro_structural_gate_has_bounded_retries
+2026-10-12T17:04:59.0702595Z PASSED tests/lottery/test_pro_scoring_ablation.py::test_pro_scoring_ablation_smoke
+2026-10-12T17:04:59.0703173Z PASSED tests/lottery/test_pro_scoring_variants.py::test_pro_rank_vs_raw_frequency_walk_forward
+2026-10-12T17:04:59.0703732Z PASSED tests/lottery/test_real_backtest.py::test_real_lottery_backtest_runs
+2026-10-12T17:04:59.0704436Z PASSED tests/lottery/test_real_backtest.py::test_real_lottery_backtest_produces_recommendations
+2026-10-12T17:04:59.0705044Z PASSED tests/lottery/test_real_backtest.py::test_real_lottery_backtest_threshold_metrics
+2026-10-12T17:04:59.0705585Z PASSED tests/lottery/test_real_dataset.py::test_real_lottery_dataset_loads
+2026-10-12T17:04:59.0706098Z PASSED tests/lottery/test_real_dataset.py::test_real_lottery_dataset_has_valid_draws
+2026-10-12T17:04:59.0706708Z PASSED tests/lottery/test_real_dataset.py::test_real_lottery_dataset_is_chronological_contiguous_and_fresh
+2026-10-12T17:04:59.0707342Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_returns_result
+2026-10-12T17:04:59.0708000Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_generates_requested_number_of_candidates
+2026-10-12T17:04:59.0708672Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_tickets_are_valid
+2026-10-12T17:04:59.0709410Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_is_reproducible
+2026-10-12T17:04:59.0710054Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_rejects_non_positive_ticket_count
+2026-10-12T17:04:59.0710777Z PASSED tests/lottery/test_recommendation.py::test_recommendation_engine_returns_no_more_than_optimizer_limit
+2026-10-12T17:04:59.0711440Z PASSED tests/lottery/test_report_builder.py::test_report_builder_uses_real_strong_number_fields
+2026-10-12T17:04:59.0712029Z PASSED tests/lottery/test_report_builder.py::test_report_builder_handles_empty_backtest
+2026-10-12T17:04:59.0712705Z PASSED tests/lottery/test_robustness.py::test_backtest_robustness_across_seeds
+2026-10-12T17:04:59.0713212Z PASSED tests/lottery/test_selection.py::test_select_returns_selection_result
+2026-10-12T17:04:59.0713712Z PASSED tests/lottery/test_selection.py::test_select_removes_duplicate_tickets
+2026-10-12T17:04:59.0714218Z PASSED tests/lottery/test_selection.py::test_select_enforces_ticket_diversity
+2026-10-12T17:04:59.0714715Z PASSED tests/lottery/test_selection.py::test_select_sorts_ticket_numbers
+2026-10-12T17:04:59.0715185Z PASSED tests/lottery/test_selection.py::test_select_rejects_empty_input
+2026-10-12T17:04:59.0715680Z PASSED tests/lottery/test_selection.py::test_select_rejects_when_no_tickets_remain
+2026-10-12T17:04:59.0716200Z PASSED tests/lottery/test_selection.py::test_select_returns_tuple_of_tickets
+2026-10-12T17:04:59.0716709Z PASSED tests/lottery/test_smart.py::test_smart_rejects_invalid_calibration_origins
+2026-10-12T17:04:59.0717258Z PASSED tests/lottery/test_smart.py::test_smart_recency_and_stability_config_validation
+2026-10-12T17:04:59.0717844Z PASSED tests/lottery/test_smart.py::test_smart_selection_prefers_recent_consistent_performance
+2026-10-12T17:04:59.0718415Z PASSED tests/lottery/test_smart.py::test_smart_tail_metric_is_opt_in_and_validated
+2026-10-12T17:04:59.0718970Z PASSED tests/lottery/test_smart.py::test_smart_jackpot_metric_is_opt_in_and_uses_best_ticket
+2026-10-12T17:04:59.0719721Z PASSED tests/lottery/test_smart.py::test_smart_calibration_reuses_one_portfolio_per_model_and_origin
+2026-10-12T17:04:59.0720386Z PASSED tests/lottery/test_smart.py::test_smart_api_keeps_historical_model_selection_as_research_default
+2026-10-12T17:04:59.0721024Z PASSED tests/lottery/test_smart.py::test_smart_coverage_objective_selects_exact_coverage_engine
+2026-10-12T17:04:59.0721570Z PASSED tests/lottery/test_smart.py::test_smart_rejects_invalid_objective
+2026-10-12T17:04:59.0722084Z PASSED tests/lottery/test_smart.py::test_smart_prize_metric_scores_actual_prize_outcome
+2026-10-12T17:04:59.0722680Z PASSED tests/lottery/test_smart.py::test_smart_coverage_candidate_budget_is_separate_and_bounded
+2026-10-12T17:04:59.0723274Z PASSED tests/lottery/test_smart.py::test_smart_any_prize_objective_uses_coverage_engine
+2026-10-12T17:04:59.0723877Z PASSED tests/lottery/test_strong_number_backtest.py::test_real_dataset_has_strong_number_statistics
+2026-10-12T17:04:59.0724675Z PASSED tests/lottery/test_strong_number_backtest.py::test_real_dataset_strong_number_frequencies_are_valid
+2026-10-12T17:04:59.0725375Z PASSED tests/lottery/test_strong_number_backtest.py::test_real_dataset_strong_number_counts_are_positive
+2026-10-12T17:04:59.0726024Z PASSED tests/lottery/test_strong_number_backtest.py::test_real_backtest_runs_with_strong_numbers
+2026-10-12T17:04:59.0726619Z PASSED tests/lottery/test_strong_number_backtest.py::test_real_backtest_is_reproducible
+2026-10-12T17:04:59.0727242Z PASSED tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_backtest_metrics_exist
+2026-10-12T17:04:59.0727928Z PASSED tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_backtest_is_reproducible
+2026-10-12T17:04:59.0728606Z PASSED tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_metrics_are_non_negative
+2026-10-12T17:04:59.0729372Z PASSED tests/lottery/test_strong_number_evaluation.py::test_strong_number_statistics_exist
+2026-10-12T17:04:59.0730011Z PASSED tests/lottery/test_strong_number_evaluation.py::test_strong_number_frequencies_sum_to_one
+2026-10-12T17:04:59.0730645Z PASSED tests/lottery/test_strong_number_evaluation.py::test_strong_number_frequency_data_is_valid
+2026-10-12T17:04:59.0731316Z PASSED tests/lottery/test_strong_number_evaluation.py::test_most_frequent_strong_numbers_returns_valid_data
+2026-10-12T17:04:59.0732025Z PASSED tests/lottery/test_strong_number_evaluation.py::test_least_frequent_strong_numbers_returns_valid_data
+2026-10-12T17:04:59.0732658Z PASSED tests/lottery/test_strong_number_evaluation.py::test_strong_frequency_lookup
+2026-10-12T17:04:59.0733378Z PASSED tests/lottery/test_strong_number_pipeline.py::test_real_dataset_contains_strong_numbers
+2026-10-12T17:04:59.0733988Z PASSED tests/lottery/test_strong_number_pipeline.py::test_strong_number_statistics_are_valid
+2026-10-12T17:04:59.0734598Z PASSED tests/lottery/test_strong_number_pipeline.py::test_strong_number_frequencies_sum_to_one
+2026-10-12T17:04:59.0735185Z PASSED tests/lottery/test_strong_number_pipeline.py::test_strong_number_lookup_works
+2026-10-12T17:04:59.0735714Z PASSED tests/lottery/test_strong_number_report.py::test_strong_number_report
+2026-10-12T17:04:59.0736205Z PASSED tests/lottery/test_ticket_count_details.py::test_ticket_count_details
+2026-10-12T17:04:59.0736724Z PASSED tests/lottery/test_ticket_count_evaluation.py::test_ticket_count_evaluation
+2026-10-12T17:04:59.0737190Z PASSED tests/test_cli.py::test_cli_can_add_and_list_entries
+2026-10-12T17:04:59.0737599Z PASSED tests/test_cli.py::test_cli_displays_resolved_configuration
+2026-10-12T17:04:59.0738064Z PASSED tests/test_cli_recommend.py::test_recommend_command_runs_successfully
+2026-10-12T17:04:59.0738570Z PASSED tests/test_cli_recommend.py::test_recommend_command_produces_ticket_output
+2026-10-12T17:04:59.0739321Z PASSED tests/test_cli_recommend.py::test_recommend_command_is_reproducible
+2026-10-12T17:04:59.0739858Z PASSED tests/test_cli_recommend.py::test_recommend_command_rejects_zero_tickets
+2026-10-12T17:04:59.0740388Z PASSED tests/test_cli_recommend.py::test_recommend_command_rejects_negative_tickets
+2026-10-12T17:04:59.0740929Z PASSED tests/test_cli_recommend.py::test_recommend_command_accepts_short_options
+2026-10-12T17:04:59.0741442Z PASSED tests/test_cli_recommend.py::test_recommend_command_uses_default_values
+2026-10-12T17:04:59.0741946Z PASSED tests/test_cli_recommend.py::test_recommend_command_shows_number_scores
+2026-10-12T17:04:59.0742463Z PASSED tests/test_cli_recommend.py::test_recommend_command_finishes_with_separator
+2026-10-12T17:04:59.0743069Z PASSED tests/test_cli_recommend.py::test_smart_mode_reports_portfolio_objective_without_fake_number_ranks
+2026-10-12T17:04:59.0743639Z PASSED tests/test_config.py::test_settings_honor_environment_values
+2026-10-12T17:04:59.0744072Z PASSED tests/test_config.py::test_settings_reject_invalid_log_level
+2026-10-12T17:04:59.0744522Z PASSED tests/test_database.py::test_database_persists_and_lists_entries
+2026-10-12T17:04:59.0744968Z PASSED tests/test_database.py::test_database_rejects_empty_messages
+2026-10-12T17:04:59.0745644Z PASSED tests/test_logging.py::test_logging_rebinds_closed_stderr_without_duplicate_records
+2026-10-12T17:04:59.0746133Z PASSED tests/test_package.py::test_version_is_exposed
+2026-10-12T17:04:59.0746517Z =============== 250 passed, 95 deselected in 1878.91s (0:31:18) ================
+2026-10-12T17:04:59.1052671Z ##[group]Run actions/upload-artifact@v4
+2026-10-12T17:04:59.1052983Z with:
+2026-10-12T17:04:59.1053179Z   name: fast-tests
+2026-10-12T17:04:59.1053389Z   path: fast-tests.xml
+2026-10-12T17:04:59.1053633Z   if-no-files-found: warn
+2026-10-12T17:04:59.1053861Z   compression-level: 6
+2026-10-12T17:04:59.1054067Z   overwrite: false
+2026-10-12T17:04:59.1054274Z   include-hidden-files: false
+2026-10-12T17:04:59.1054501Z env:
+2026-10-12T17:04:59.1054750Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T17:04:59.1055181Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib/pkgconfig
+2026-10-12T17:04:59.1055607Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T17:04:59.1055985Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T17:04:59.1056375Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.22/x64
+2026-10-12T17:04:59.1056754Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.22/x64/lib
+2026-10-12T17:04:59.1057099Z ##[endgroup]
+2026-10-12T17:04:59.2729679Z (node:2786) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T17:04:59.2730903Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T17:04:59.2775479Z With the provided path, there will be 1 file uploaded
+2026-10-12T17:04:59.2787841Z Artifact name is valid!
+2026-10-12T17:04:59.2797888Z Root directory input is valid!
+2026-10-12T17:04:59.5723734Z Beginning upload of artifact content to blob storage
+2026-10-12T17:04:59.5953186Z (node:2786) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-12T17:04:59.7201650Z Uploaded bytes 8256
+2026-10-12T17:04:59.7614161Z Finished uploading artifact content to blob storage!
+2026-10-12T17:04:59.7615520Z SHA256 digest of uploaded artifact zip is 672c9510bc3664b8503c239ad6277c9cac8052d075797e35706257fe9404a01a
+2026-10-12T17:04:59.7617518Z Finalizing artifact upload
+2026-10-12T17:05:00.0060551Z Artifact fast-tests.zip successfully finalized. Artifact ID 11761393917
+2026-10-12T17:05:00.0061713Z Artifact fast-tests has been successfully uploaded! Final size is 8256 bytes. Artifact ID is 11761393917
+2026-10-12T17:05:00.0069879Z Artifact download URL: https://github.com/igalshih-prog/LREI/actions/runs/38278217251/artifacts/11761393917
+2026-10-12T17:05:00.0247826Z Post job cleanup.
+2026-10-12T17:05:00.1482855Z (node:2798) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T17:05:00.1484220Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T17:05:00.1649890Z Post job cleanup.
+2026-10-12T17:05:00.2516377Z [command]/usr/bin/git version
+2026-10-12T17:05:00.2562076Z git version 2.55.0
+2026-10-12T17:05:00.2606571Z Temporarily overriding HOME='/home/runner/work/_temp/8382e1bf-8ebf-4e40-8479-1157d2488f82' before making global git config changes
+2026-10-12T17:05:00.2607878Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T17:05:00.2612617Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LREI/LREI
+2026-10-12T17:05:00.2651826Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T17:05:00.2688615Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T17:05:00.2949633Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T17:05:00.2979904Z http.https://github.com/.extraheader
+2026-10-12T17:05:00.2991540Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-12T17:05:00.3029422Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T17:05:00.3351167Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T17:05:00.3388967Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T17:05:00.3929744Z Cleaning up orphan processes
+2026-10-12T17:05:00.4225252Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

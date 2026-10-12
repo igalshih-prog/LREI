@@ -1,0 +1,103 @@
+{
+  "numerical_source_commit": "9d3579624a8a164a5c869a200116022d444109ea",
+  "dataset_sha256": "f686c55e07a288b6084604e0d60742e7b78379c6b7d2193c8cb7815da49ff440",
+  "draw_count": 1141,
+  "first": {
+    "id": "2833",
+    "date": "2016-10-10"
+  },
+  "latest": {
+    "id": "3973",
+    "date": "2026-10-10"
+  },
+  "calendar_window_draws": {
+    "one_year": 118,
+    "three_years": 345
+  },
+  "matched_comparison": {
+    "test": "test_elite_diversified_random_multi_origin_paired_diagnostic",
+    "model_config": "EliteProConfig(candidate_count=200, max_tickets=14), with all other defaults at the source commit",
+    "targets_per_origin": 20,
+    "random_portfolios_per_target": 5,
+    "baseline_seed": 20261012,
+    "model_seed_formula": "20261012 + origin_index * 100 + offset",
+    "ci_seed": 20261013,
+    "block_size": 5,
+    "origin_target_ids": [
+      [
+        "3874",
+        "3875",
+        "3876",
+        "3877",
+        "3878",
+        "3879",
+        "3880",
+        "3881",
+        "3882",
+        "3883",
+        "3884",
+        "3885",
+        "3886",
+        "3887",
+        "3888",
+        "3889",
+        "3890",
+        "3891",
+        "3892",
+        "3893"
+      ],
+      [
+        "3914",
+        "3915",
+        "3916",
+        "3917",
+        "3918",
+        "3919",
+        "3920",
+        "3921",
+        "3922",
+        "3923",
+        "3924",
+        "3925",
+        "3926",
+        "3927",
+        "3928",
+        "3929",
+        "3930",
+        "3931",
+        "3932",
+        "3933"
+      ],
+      [
+        "3954",
+        "3955",
+        "3956",
+        "3957",
+        "3958",
+        "3959",
+        "3960",
+        "3961",
+        "3962",
+        "3963",
+        "3964",
+        "3965",
+        "3966",
+        "3967",
+        "3968",
+        "3969",
+        "3970",
+        "3971",
+        "3972",
+        "3973"
+      ]
+    ]
+  },
+  "local_environment": {
+    "python": "3.12.14",
+    "pytest": "9.1.1",
+    "pytest_xdist": "3.8.0",
+    "typer": "0.27.3",
+    "platformdirs": "4.13.0"
+  },
+  "logging_followup": "See logging-followup.json; final handler was checked separately."
+}

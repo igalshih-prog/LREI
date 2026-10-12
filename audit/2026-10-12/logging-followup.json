@@ -1,0 +1,14 @@
+{
+  "command": "PYTHONPATH=src python -m pytest -q tests/test_logging.py tests/test_cli.py tests/test_database.py",
+  "result": "6 passed in 0.13s",
+  "exit_code": 0,
+  "cases": [
+    "tests/test_cli.py::test_cli_can_add_and_list_entries",
+    "tests/test_cli.py::test_cli_displays_resolved_configuration",
+    "tests/test_database.py::test_database_persists_and_lists_entries",
+    "tests/test_database.py::test_database_rejects_empty_messages",
+    "tests/test_logging.py::test_logging_rebinds_closed_stderr_without_duplicate_records",
+    "tests/test_logging.py::test_direct_library_logging_after_cli_capture_closes"
+  ],
+  "note": "Verified after changing the handler to resolve current stderr on each emission; numerical modules and data were unchanged."
+}

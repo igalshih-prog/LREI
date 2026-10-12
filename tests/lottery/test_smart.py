@@ -1034,8 +1034,8 @@ def test_smart_vs_fixed_models_equal_budget_walk_forward_diagnostic():
 
     for offset, target in enumerate(draws[start:]):
         history = LotteryDataset(draws=draws[:start + offset])
-        smart = smart_engine.recommend(history, seed=220000 + offset)
         selected, _ = smart_engine.select_model(history, seed=220000 + offset)
+        smart = smart_engine._recommend_selected(selected, history, seed=220000 + offset)
         selected_models[selected] += 1
         results["smart"].append(
             mean(len(set(ticket) & set(target.numbers)) for ticket in smart.recommended_tickets)

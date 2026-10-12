@@ -1008,3 +1008,57 @@ def test_smart_any_prize_objective_uses_coverage_engine():
     assert scores == {"coverage_any_prize": 1.0}
     assert len(result.recommended_tickets) == 14
     assert len(set(result.recommended_tickets)) == 14
+
+
+@pytest.mark.slow
+def test_smart_vs_fixed_models_equal_budget_walk_forward_diagnostic():
+    """Check whether model switching helps against fixed models with the same 14-line budget."""
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = min(48, max(36, len(draws) // 24))
+    start = len(draws) - holdout
+    config = SmartConfig(
+        calibration_draws=6,
+        calibration_candidate_count=40,
+        recommendation_candidate_count=100,
+        min_history_draws=60,
+        calibration_origins=2,
+        recency_decay=0.85,
+        stability_penalty=0.10,
+        selection_metric="mean",
+    )
+    smart_engine = SmartRecommendationEngine(config)
+    model_names = ("smart", "regular", "pro", "elite")
+    results = {name: [] for name in model_names}
+    selected_models = {name: 0 for name in ("regular", "pro", "elite")}
+
+    for offset, target in enumerate(draws[start:]):
+        history = LotteryDataset(draws=draws[:start + offset])
+        smart = smart_engine.recommend(history, seed=220000 + offset)
+        selected, _ = smart_engine.select_model(history, seed=220000 + offset)
+        selected_models[selected] += 1
+        results["smart"].append(
+            mean(len(set(ticket) & set(target.numbers)) for ticket in smart.recommended_tickets)
+        )
+        for name in ("regular", "pro", "elite"):
+            fixed = smart_engine._recommend_selected(name, history, seed=220000 + offset)
+            results[name].append(
+                mean(len(set(ticket) & set(target.numbers)) for ticket in fixed.recommended_tickets)
+            )
+
+    print("Smart vs fixed-model equal-budget diagnostic:")
+    print(f"  holdout={holdout}; tickets per method=14")
+    for name in model_names:
+        print(f"  {name}: mean hits/ticket={mean(results[name]):.4f}")
+    print(f"  model selections={selected_models}")
+    for name in ("regular", "pro", "elite"):
+        delta = [smart - fixed for smart, fixed in zip(results["smart"], results[name])]
+        ci = paired_block_bootstrap_ci(delta, seed=20261020 + len(name), samples=3000, block_size=5)
+        print(
+            f"  Smart - {name}={mean(delta):+.4f}, "
+            f"95% block-bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]"
+        )
+
+    assert all(len(values) == holdout for values in results.values())
+    assert all(0.0 <= value <= 6.0 for values in results.values() for value in values)
+    assert sum(selected_models.values()) == holdout

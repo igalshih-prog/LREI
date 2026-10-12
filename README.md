@@ -60,7 +60,7 @@ The purpose of these additional layers is to test whether more sophisticated his
 
 ### Smart mode
 
-Smart mode now defaults to **Any-prize coverage** because current walk-forward diagnostics do not support a predictive advantage for Regular/Pro/Elite number scores. Choose another Smart objective with `--objective`.
+The command-line entry point `lrei recommend --mode smart` defaults to **Any-prize coverage** because current walk-forward diagnostics do not support a predictive advantage for Regular/Pro/Elite number scores. Choose another CLI objective with `--objective`. The Python `SmartConfig()` default remains `historical` for research and model-selection diagnostics; set its objective explicitly when selecting a production goal.
 
 Smart CLI objectives:
 

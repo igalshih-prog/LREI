@@ -842,6 +842,15 @@ def test_smart_model_selection_is_independent_of_final_ticket_seed():
     assert len(set(selections)) == 1
 
 
+def test_smart_defaults_to_any_prize_coverage():
+    config = SmartConfig()
+    assert config.objective == "coverage_any_prize"
+    engine = SmartRecommendationEngine(config)
+    selected, scores = engine.select_model(LotteryDataset(draws=[]))
+    assert selected == "coverage_any_prize"
+    assert scores == {"coverage_any_prize": 1.0}
+
+
 def test_smart_coverage_objective_selects_exact_coverage_engine():
     engine = SmartRecommendationEngine(SmartConfig(objective="coverage_4plus"))
     selected, scores = engine.select_model(LotteryDataset(draws=[]))

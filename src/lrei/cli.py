@@ -16,6 +16,8 @@ from lrei.lottery.pro import ProRecommendationEngine
 from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
+from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
+from lrei.lottery.portfolio_coverage import portfolio_coverage
 
 app = typer.Typer(
     help="Manage local LREI data and lottery recommendations.",
@@ -190,6 +192,24 @@ def recommend(
         f"Recommended tickets: "
         f"{len(result.recommended_tickets)}"
     )
+
+    if mode == "smart" and smart_objective == "coverage_any_prize":
+        probability = AnyPrizeCoverageRecommendationEngine.coverage_probability(
+            result.recommended_tickets
+        )
+        typer.echo(f"Exact 3+ main-number coverage: {probability:.2%}")
+        typer.echo(
+            "This is the exact probability under a uniform 6-of-37 draw model; "
+            "it is not a prediction of winning numbers."
+        )
+    elif mode == "smart" and smart_objective == "coverage_4plus":
+        coverage = portfolio_coverage(result.recommended_tickets, threshold=4)
+        probability = float(coverage["probability"])
+        typer.echo(f"Exact 4+ main-number coverage: {probability:.2%}")
+        typer.echo(
+            "This is the exact probability under a uniform 6-of-37 draw model; "
+            "it is not a prediction of winning numbers."
+        )
 
     typer.echo()
     typer.echo("RECOMMENDED LOTTERY TICKETS")

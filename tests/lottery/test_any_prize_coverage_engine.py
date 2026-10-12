@@ -282,3 +282,63 @@ def test_any_prize_candidate_pool_size_multi_seed_diagnostic():
     assert all(len(values) == len(seeds) for values in greedy_by_size.values())
     assert all(0.0 < value <= 1.0 for values in greedy_by_size.values() for value in values)
     assert all(0.0 < value <= 1.0 for values in random_by_size.values() for value in values)
+
+
+@pytest.mark.slow
+def test_any_prize_local_swap_passes_multi_seed_ablation():
+    """Measure exact coverage gains from 0, 1, and 2 local-swap passes."""
+    pool_size = 100
+    seeds = tuple(20261300 + offset for offset in range(10))
+    coverage_by_passes = {passes: [] for passes in (0, 1, 2)}
+
+    for pool_seed in seeds:
+        rng = random.Random(pool_seed)
+        candidates = []
+        seen = set()
+        while len(candidates) < pool_size:
+            ticket = tuple(sorted(rng.sample(range(1, 38), 6)))
+            if ticket not in seen:
+                seen.add(ticket)
+                candidates.append(ticket)
+
+        reference = AnyPrizeCoverageRecommendationEngine(
+            AnyPrizeCoverageConfig(candidate_count=pool_size, local_swap_passes=0)
+        )
+        masks = tuple(reference._coverage_mask(ticket, reference._choose) for ticket in candidates)
+        for passes in coverage_by_passes:
+            engine = AnyPrizeCoverageRecommendationEngine(
+                AnyPrizeCoverageConfig(candidate_count=pool_size, local_swap_passes=passes)
+            )
+            _, covered_count, _ = engine._select_candidate_pool(candidates, masks)
+            coverage_by_passes[passes].append(covered_count / TOTAL_DRAWS)
+
+    def seed_bootstrap_ci(values, bootstrap_seed):
+        rng = random.Random(bootstrap_seed)
+        estimates = [
+            mean(values[rng.randrange(len(values))] for _ in values)
+            for _ in range(5000)
+        ]
+        estimates.sort()
+        return estimates[int(0.025 * (len(estimates) - 1))], estimates[int(0.975 * (len(estimates) - 1))]
+
+    print("Any-prize local-swap pass ablation (10 independent pools):")
+    for passes, values in coverage_by_passes.items():
+        print(f"  passes={passes}: mean exact coverage={mean(values):.6%}")
+    for passes in (1, 2):
+        deltas = [
+            refined - baseline
+            for refined, baseline in zip(coverage_by_passes[passes], coverage_by_passes[0])
+        ]
+        ci = seed_bootstrap_ci(deltas, 20261400 + passes)
+        print(
+            f"  passes={passes} - 0: delta={mean(deltas):+.6%}, "
+            f"improved={sum(value > 0 for value in deltas)}/{len(deltas)}, "
+            f"seed-bootstrap 95% CI=[{ci[0]:+.6%}, {ci[1]:+.6%}]"
+        )
+        assert all(value >= -1e-15 for value in deltas)
+
+    two_minus_one = [
+        two - one
+        for two, one in zip(coverage_by_passes[2], coverage_by_passes[1])
+    ]
+    assert all(value >= -1e-15 for value in two_minus_one)

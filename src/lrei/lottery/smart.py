@@ -36,7 +36,7 @@ class SmartConfig:
     tail_weight_5: float = 1.00
     tail_weight_6: float = 2.00
     calibration_seed: int = 314159
-    objective: str = "historical"
+    objective: str = "coverage_any_prize"
 
     def __post_init__(self) -> None:
         if self.calibration_draws < 1:

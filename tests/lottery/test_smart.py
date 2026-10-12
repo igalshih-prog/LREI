@@ -842,13 +842,12 @@ def test_smart_model_selection_is_independent_of_final_ticket_seed():
     assert len(set(selections)) == 1
 
 
-def test_smart_defaults_to_any_prize_coverage():
+def test_smart_api_keeps_historical_model_selection_as_research_default():
     config = SmartConfig()
-    assert config.objective == "coverage_any_prize"
-    engine = SmartRecommendationEngine(config)
-    selected, scores = engine.select_model(LotteryDataset(draws=[]))
-    assert selected == "coverage_any_prize"
-    assert scores == {"coverage_any_prize": 1.0}
+    assert config.objective == "historical"
+    selected, scores = SmartRecommendationEngine(config).select_model(LotteryDataset(draws=[]))
+    assert selected == "elite"
+    assert scores == {}
 
 
 def test_smart_coverage_objective_selects_exact_coverage_engine():

@@ -163,3 +163,24 @@ def test_recommend_command_finishes_with_separator():
     assert (
         result.output.rstrip().endswith("=" * 70)
     )
+
+
+def test_smart_mode_reports_portfolio_objective_without_fake_number_ranks():
+    result = runner.invoke(
+        app,
+        [
+            "recommend",
+            "--mode",
+            "smart",
+            "--objective",
+            "coverage_4plus",
+            "--seed",
+            "42",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Recommended tickets: 14" in result.output
+    assert "Smart objective: coverage_4plus" in result.output
+    assert "maximize the probability of at least one" in result.output
+    assert "TOP NUMBER SCORES" not in result.output

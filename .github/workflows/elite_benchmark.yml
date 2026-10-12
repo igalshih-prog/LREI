@@ -207,3 +207,14 @@ jobs:
         run: pip install -e . pytest
       - name: Run exact any-prize coverage tests and benchmark
         run: python -m pytest tests/lottery/test_any_prize_coverage_engine.py -q -s
+
+  matched_random_multi_origin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/lottery/test_elite_vs_pro_random.py -q -s -k "elite_diversified_random_multi_origin_paired_diagnostic"

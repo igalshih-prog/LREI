@@ -31,6 +31,7 @@ class AnyPrizeCoverageConfig:
 
     candidate_count: int = 100
     max_tickets: int = 14
+    local_swap_passes: int = 1
 
     def __post_init__(self) -> None:
         if self.candidate_count < self.max_tickets:
@@ -39,6 +40,8 @@ class AnyPrizeCoverageConfig:
             raise ValueError("candidate_count must not exceed 500")
         if self.max_tickets != 14:
             raise ValueError("any-prize coverage is defined for exactly 14 tickets")
+        if not 0 <= self.local_swap_passes <= 10:
+            raise ValueError("local_swap_passes must be between 0 and 10")
 
 
 class AnyPrizeCoverageRecommendationEngine:
@@ -124,19 +127,52 @@ class AnyPrizeCoverageRecommendationEngine:
         else:
             masks = tuple(masks)
         remaining = list(range(len(candidates)))
-        selected: list[tuple[int, ...]] = []
+        selected_indices: list[int] = []
         covered = 0
 
-        while len(selected) < self.config.max_tickets:
+        while len(selected_indices) < self.config.max_tickets:
             best_index = max(
                 remaining,
                 key=lambda index: ((masks[index] & ~covered).bit_count(), -index),
             )
-            selected.append(candidates[best_index])
+            selected_indices.append(best_index)
             covered |= masks[best_index]
             remaining.remove(best_index)
 
-        return tuple(selected), covered.bit_count(), masks
+        # Greedy selection is fast but not globally optimal. Improve it by
+        # replacing one selected ticket at a time only when the exact union of
+        # covered outcomes increases. Every accepted swap is non-regressive.
+        for _ in range(self.config.local_swap_passes):
+            improved = False
+            for slot in range(len(selected_indices)):
+                current_index = selected_indices[slot]
+                covered_by_others = 0
+                for other_slot, other_index in enumerate(selected_indices):
+                    if other_slot != slot:
+                        covered_by_others |= masks[other_index]
+
+                best_index = current_index
+                best_coverage = (covered_by_others | masks[current_index]).bit_count()
+                selected_set = set(selected_indices)
+                for candidate_index, candidate_mask in enumerate(masks):
+                    if candidate_index in selected_set and candidate_index != current_index:
+                        continue
+                    candidate_coverage = (covered_by_others | candidate_mask).bit_count()
+                    if candidate_coverage > best_coverage:
+                        best_index = candidate_index
+                        best_coverage = candidate_coverage
+
+                if best_index != current_index:
+                    selected_indices[slot] = best_index
+                    improved = True
+            if not improved:
+                break
+
+        selected = tuple(candidates[index] for index in selected_indices)
+        covered = 0
+        for index in selected_indices:
+            covered |= masks[index]
+        return selected, covered.bit_count(), masks
 
     def recommend(
         self, dataset: LotteryDataset, seed: int | None = None

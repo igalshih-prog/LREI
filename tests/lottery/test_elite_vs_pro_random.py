@@ -2320,3 +2320,48 @@ def test_elite_adaptive_candidate_allocation_multi_origin_diagnostic():
 
     assert len(difference) == holdout * len(origins)
     assert all(value == value for value in difference)
+
+
+def test_elite_diversified_random_multi_origin_paired_diagnostic():
+    """Compare Elite against matched diversified random portfolios at distinct origins.
+
+    Same 14-ticket count and overlap constraint; each origin is evaluated
+    chronologically using only prior draws for Elite's recommendations.
+    """
+    dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
+    draws = list(dataset.draws)
+    holdout = 20
+    origins = [len(draws) - 100, len(draws) - 60, len(draws) - 20]
+    elite_by_origin, random_by_origin = [], []
+    paired = []
+    rng = random.Random(20261012)
+    engine = EliteProRecommendationEngine(
+        __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
+            candidate_count=200, max_tickets=14
+        )
+    )
+    for origin_index, start in enumerate(origins):
+        elite_hits, random_hits = [], []
+        for offset, target in enumerate(draws[start:start + holdout]):
+            history = LotteryDataset(draws=draws[:start + offset])
+            result = engine.recommend(history, seed=20261012 + origin_index * 100 + offset)
+            assert len(result.recommended_tickets) == 14
+            elite_mean = mean(_hits(result.recommended_tickets, target.numbers))
+            random_portfolios = [_random_diversified_portfolio(rng) for _ in range(5)]
+            assert all(len(portfolio) == 14 for portfolio in random_portfolios)
+            random_mean = mean(
+                hit for portfolio in random_portfolios
+                for hit in _hits(portfolio, target.numbers)
+            )
+            elite_hits.append(elite_mean)
+            random_hits.append(random_mean)
+            paired.append(elite_mean - random_mean)
+        elite_by_origin.append(mean(elite_hits))
+        random_by_origin.append(mean(random_hits))
+    ci = _bootstrap_ci(paired, seed=20261013)
+    print("Elite vs matched diversified random (multi-origin):")
+    for index, (elite, baseline) in enumerate(zip(elite_by_origin, random_by_origin)):
+        print(f"  origin={index + 1}: elite={elite:.4f}, random={baseline:.4f}, diff={elite-baseline:+.4f}")
+    print(f"  paired delta={mean(paired):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+    assert len(paired) == holdout * len(origins)
+    assert all(value == value for value in paired)

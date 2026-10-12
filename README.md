@@ -60,14 +60,17 @@ The purpose of these additional layers is to test whether more sophisticated his
 
 ### Smart mode
 
-Smart offers four explicit objectives:
+Smart mode now defaults to **Any-prize coverage** because current walk-forward diagnostics do not support a predictive advantage for Regular/Pro/Elite number scores. Choose another Smart objective with `--objective`.
+
+Smart CLI objectives:
 
 - **4+ main-number coverage:** uses the exact Coverage portfolio construction. Its 14 unique tickets share at most one main number per pair, making the events of hitting at least 4 of 6 main numbers disjoint. Under a uniform 6-of-37 draw model, this maximizes the probability of at least one 4+ main-number hit among 14 tickets.
 - **Any-prize coverage (3+ main hits):** samples a bounded pool of valid random tickets and greedily chooses 14 lines that add the most previously uncovered 6/37 draw outcomes where at least one line hits 3+ main numbers. Each ticket's outcome set and the final portfolio coverage are exact; the greedy search is an approximation over the candidate pool, not a global-optimum proof. This objective does not use historical frequencies to predict numbers. Its validated default uses a 250-ticket candidate pool and two exact local-swap passes. In a 10-pool diagnostic, the 250-candidate greedy portfolio covered about 50.52% of all possible 6/37 outcomes with at least one 3+ match, versus about 44.94% for random 14-ticket subsets from the same pools. A separate 10-pool ablation found two local-swap passes improved exact coverage versus no swaps in all 10 pools. These are portfolio-coverage results, not evidence that the winning numbers can be predicted.
-- **Historical mean-match selection:** uses only earlier draws to compare Regular, Pro, and Elite by average main-number matches on a chronological validation window, then runs the selected model on the full available history.
-- **Experimental actual-prize selection:** compares the models by a normalized score for the best prize tier in each historical validation draw: 1.0 for tier 1, decreasing to 0.125 for tier 8, and zero when no ticket wins. The strong number changes the tier score when relevant. This is a heuristic score, not a monetary expected-value calculation, and it is not established as a better predictor.
+- **Historical mean-match selection** (`--objective historical`): uses only earlier draws to compare Regular, Pro, and Elite by average main-number matches on a chronological validation window, then runs the selected model on the full available history.
 
-The prize evaluator maps all eight official prize tiers and measures the outcome of each ticket against a draw. The historical objectives use walk-forward tests, not guarantees. All objectives return exactly **14 recommended tickets**. The two coverage objectives optimize portfolio structure, not the prediction of winning numbers. Neither changes the theoretical jackpot probability compared with any other set of 14 distinct valid lines.
+The experimental actual-prize validation metric remains available in the Python configuration for research, but the latest 30-draw diagnostic performed worse than mean-match selection. It is not the Smart CLI default.
+
+The prize evaluator maps all eight official prize tiers and measures the outcome of each ticket against a draw. Use, for example, `lrei recommend --mode smart` for the default any-prize portfolio, `lrei recommend --mode smart --objective coverage_4plus` to maximize 4+ main-number coverage, or `lrei recommend --mode smart --objective historical` to run historical model selection. All objectives return exactly **14 recommended tickets**. Coverage objectives optimize portfolio structure, not the prediction of winning numbers. Neither changes the theoretical jackpot probability compared with any other set of 14 distinct valid lines.
 
 
 The latest clean walk-forward model-selection diagnostic found:

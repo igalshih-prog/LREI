@@ -46,8 +46,10 @@ def test_regular_vs_pro_10_year_dataset():
         )
         pro = ProRecommendationEngine().recommend(history, seed=2000 + index)
 
-        r = _hit_summary(regular.recommended_tickets[:14], target.numbers)
-        p = _hit_summary(pro.recommended_tickets[:14], target.numbers)
+        assert len(regular.recommended_tickets) == len(pro.recommended_tickets) == 14
+        assert len(set(regular.recommended_tickets)) == len(set(pro.recommended_tickets)) == 14
+        r = _hit_summary(regular.recommended_tickets, target.numbers)
+        p = _hit_summary(pro.recommended_tickets, target.numbers)
 
         regular_total += r[0]
         regular_best += r[1]

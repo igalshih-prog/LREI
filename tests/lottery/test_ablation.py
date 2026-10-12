@@ -1,6 +1,8 @@
 from pathlib import Path
 import random
 
+from lrei.lottery.baseline import RandomBaseline
+
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.generator import TicketGenerator
 from lrei.lottery.optimizer import LotteryOptimizer, OptimizerConfig
@@ -64,18 +66,17 @@ def test_ablation_report():
     optimizer = LotteryOptimizer(
         OptimizerConfig(
             max_overlap=4,
-            max_tickets=10,
+            max_tickets=14,
         )
     )
 
-    ticket_count = 10
+    ticket_count = 14
     seed_count = 10
     evaluation_window = 500
 
-    start = max(
-        1000,
-        len(dataset) - evaluation_window,
-    )
+    start = max(1000, len(dataset) - evaluation_window)
+    actual_cases = len(dataset) - start
+    assert actual_cases > 0
 
     results = {
         "random": [],
@@ -163,33 +164,20 @@ def test_ablation_report():
                 for _ in range(ticket_count)
             ]
 
-            random_scores = tuple(
-                type(frequency_scores[0])(
-                    number=item.number,
-                    score=1.0,
-                )
-                for item in frequency_scores
+            random_tickets = RandomBaseline().generate_tickets(
+                count=ticket_count, seed=random_rng.getrandbits(64)
             )
 
-            random_tickets = [
-                generator.generate_ticket(
-                    scores=random_scores,
-                    rng=random_rng,
-                )
-                for _ in range(ticket_count)
-            ]
-
+            # Equal evaluated budget: let the optimizer select 14 from a
+            # disclosed larger pool, rather than score however many survive.
             generated_tickets = [
-                generator.generate_ticket(
-                    scores=frequency_scores,
-                    rng=generated_rng,
-                )
-                for _ in range(ticket_count)
+                generator.generate_ticket(scores=frequency_scores, rng=generated_rng)
+                for _ in range(140)
             ]
-
-            optimized_tickets = optimizer.optimize(
-                generated_tickets
-            )
+            optimized_tickets = optimizer.optimize(generated_tickets)
+            for portfolio in (frequency_tickets, recency_tickets, random_tickets, optimized_tickets):
+                assert len(portfolio) == 14
+                assert len(set(portfolio)) == 14
 
             actual_numbers = test_draw.numbers
 
@@ -225,6 +213,8 @@ def test_ablation_report():
                 totals[name] / cases
             )
 
+    assert cases == actual_cases
+
     means = {
         name: sum(values) / len(values)
         for name, values in results.items()
@@ -235,7 +225,7 @@ def test_ablation_report():
     print("LREI ABLATION TEST — FAIR COMPARISON")
     print("=" * 65)
     print(
-        f"Evaluation cases per seed: {evaluation_window}"
+        f"Evaluation cases per seed: {actual_cases}"
     )
     print(
         f"Tickets per model: {ticket_count}"

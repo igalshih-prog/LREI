@@ -76,7 +76,10 @@ class AnyPrizeCoverageRecommendationEngine:
         choose: tuple[tuple[int, ...], ...] | None = None,
     ) -> int:
         """Encode all 6/37 draws with 3+ matches as a compact integer bit mask."""
-        numbers = tuple(sorted(ticket))
+        numbers = tuple(ticket)
+        if any(type(number) is not int for number in numbers):
+            raise ValueError("ticket numbers must be integers between 1 and 37")
+        numbers = tuple(sorted(numbers))
         if len(numbers) != DRAW_SIZE or len(set(numbers)) != DRAW_SIZE:
             raise ValueError("each ticket must contain exactly six unique numbers")
         if any(not isinstance(number, int) or not 1 <= number <= MAX_NUMBER for number in numbers):

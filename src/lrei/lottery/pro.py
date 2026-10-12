@@ -6,10 +6,10 @@ import math
 import random
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from itertools import combinations
 
-from .dataset import LotteryDataset
+from .dataset import LotteryDataset, parse_draw_date
 from .generator import TicketGenerator
 from .optimizer import LotteryOptimizer, OptimizerConfig
 from .predictor import NumberScore
@@ -386,12 +386,7 @@ class ProRecommendationEngine:
 
     @staticmethod
     def _parse_date(value):
-        if not value: return None
-        text = value.strip()[:10]
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
-            try: return datetime.strptime(text, fmt).date()
-            except ValueError: pass
-        return None
+        return parse_draw_date(value)
 
     def _generate_candidate(self, scores, pair_counts, triple_counts, structure, rng, attempts=0):
         selected = []

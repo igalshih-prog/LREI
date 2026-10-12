@@ -86,17 +86,17 @@ class LotteryReportBuilder:
             ),
 
             strong_total_matches=(
-                result.strong_total_matches
+                result.strong_match_count
             ),
             strong_average_matches=(
-                result.strong_average_matches
+                result.strong_match_count / result.case_count if result.case_count else 0.0
             ),
 
             baseline_strong_total_matches=(
-                result.baseline_strong_total_matches
+                result.baseline_strong_match_count
             ),
             baseline_strong_average_matches=(
-                result.baseline_strong_average_matches
+                result.baseline_strong_match_count / result.case_count if result.case_count else 0.0
             ),
         )
 

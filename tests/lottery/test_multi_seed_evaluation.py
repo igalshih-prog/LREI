@@ -55,7 +55,8 @@ def test_multi_seed_evaluation():
     print("=" * 65)
     print(f"Dataset draws: {len(dataset)}")
     print(f"Seeds tested: {len(seeds)}")
-    print(f"Tickets per model: 50")
+    print("Generated candidates per model: 50")
+    print("Evaluated tickets per model: 14")
     print()
 
     print("LREI")

@@ -26,7 +26,10 @@ def portfolio_coverage(
 
     normalized: list[tuple[int, ...]] = []
     for ticket in tickets:
-        values = tuple(sorted(ticket))
+        values = tuple(ticket)
+        if any(type(number) is not int for number in values):
+            raise ValueError("ticket numbers must be integers")
+        values = tuple(sorted(values))
         if len(values) != draw_size or len(set(values)) != draw_size:
             raise ValueError(f"each ticket must contain {draw_size} unique numbers")
         if any(number < 1 or number > max_number for number in values):

@@ -26,7 +26,7 @@ MAX_FIVE_PLUS_OUTCOMES = FIXED_PORTFOLIO_SIZE * OUTCOMES_PER_LINE_5PLUS
 MAX_FIVE_PLUS_PROBABILITY = MAX_FIVE_PLUS_OUTCOMES / TOTAL_MAIN_DRAWS
 
 
-def five_plus_metrics(tickets: Iterable[Sequence[int]]) -> dict[str, int | float | bool]:
+def five_plus_metrics(tickets: Iterable[Sequence[int]]) -> dict[str, int | float | bool | None]:
     """Exact chance of >=5 main matches on ANY ticket; verify optimality.
 
     The upper bound assumes 14 distinct six-number tickets. Computation uses
@@ -67,6 +67,9 @@ def five_plus_metrics(tickets: Iterable[Sequence[int]]) -> dict[str, int | float
         "probability": covered / TOTAL_MAIN_DRAWS,
         "max_probability": MAX_FIVE_PLUS_PROBABILITY,
         "is_optimal": covered == MAX_FIVE_PLUS_OUTCOMES,
-        "with_matching_strong_probability": covered / (7 * TOTAL_MAIN_DRAWS)
-        if optimal else float("nan"),
+        # A 1/7 strong-number factor applies directly when the 5+ events
+        # are disjoint; for overlapping portfolios it depends on the actual
+        # strong-number assignments, which are not supplied to this function.
+        "with_matching_strong_probability":
+        MAX_FIVE_PLUS_PROBABILITY / 7 if optimal else None,
     }

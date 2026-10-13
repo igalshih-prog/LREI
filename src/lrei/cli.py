@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import subprocess
 from datetime import datetime, timezone
 from typing import Annotated, Literal
@@ -21,6 +22,8 @@ from lrei.lottery.statistics import LotteryStatistics
 from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
 from lrei.lottery.prospective_ledger import build_snapshot, parse_target_datetime, write_snapshot
+from lrei.lottery.prospective_scoring import score_snapshot, write_score
+from lrei.lottery.dataset import LotteryDrawRecord
 
 app = typer.Typer(
     help="Manage local LREI data and lottery recommendations.",
@@ -159,7 +162,8 @@ def recommend(
     target_time = None
     if target_draw_at is not None:
         try:
-            target_time = parse_target_datetime(target_draw_at)
+            parse_target_datetime(target_draw_at)
+            target_time = datetime.fromisoformat(target_draw_at.replace("Z", "+00:00"))
         except ValueError as exc:
             raise typer.BadParameter(str(exc), param_hint="--target-draw-at") from exc
         if target_time <= datetime.now(timezone.utc):
@@ -360,6 +364,37 @@ def recommend(
 
     typer.echo()
     typer.echo("=" * 70)
+
+
+
+@app.command("score-snapshot")
+def score_snapshot_command(
+    snapshot_file: Annotated[Path, typer.Argument(help="Frozen pre-draw JSON record.")],
+    draw_id: Annotated[str, typer.Option("--draw-id", help="Official result draw ID.")],
+    draw_date: Annotated[str, typer.Option("--draw-date", help="Official date, e.g. 13-10-26.")],
+    main: Annotated[str, typer.Option("--main", help="Six official main numbers, comma-separated.")],
+    strong: Annotated[int, typer.Option("--strong", help="Official strong number (1–7).")],
+    source_url: Annotated[str, typer.Option("--source-url", help="HTTPS source for independently checked official result.")],
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="Destination for separate, no-overwrite scored JSON.")],
+) -> None:
+    """Score a frozen record after the target draw; never edit the prediction."""
+    try:
+        frozen = json.loads(snapshot_file.read_text(encoding="utf-8"))
+        numbers = tuple(int(piece.strip()) for piece in main.split(","))
+        draw = LotteryDrawRecord(
+            draw_id=draw_id, numbers=numbers, date=draw_date, strong_number=strong,
+        )
+        scored = score_snapshot(frozen, draw, source_url=source_url)
+        result_path = write_score(scored, output_dir)
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"cannot score snapshot: {exc}") from exc
+    typer.echo(f"Scored result: {result_path}")
+    typer.echo(f"Record SHA-256: {scored['result_sha256']}")
+    typer.echo(f"Any prize: {scored['any_prize']}")
+    typer.echo(f"Best main matches: {scored['best_main_matches']}")
+    typer.echo(f"Best prize tier: {scored['best_prize_tier']}")
+    typer.echo("Result source URL is user-supplied and has not been independently verified.")
+
 
 
 def main() -> None:

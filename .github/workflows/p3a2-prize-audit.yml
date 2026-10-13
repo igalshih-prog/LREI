@@ -1,0 +1,51 @@
+name: P3-A.2 Prize Series Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/lrei/lottery/prize_series_audit.py
+      - src/lrei/lottery/prize_data.py
+      - tests/lottery/test_prize_series_audit.py
+      - tests/lottery/test_prize_data.py
+      - data/prize_observations/**
+      - data/prize_audit/**
+      - .github/workflows/p3a2-prize-audit.yml
+  push:
+    branches: [main]
+    paths:
+      - src/lrei/lottery/prize_series_audit.py
+      - src/lrei/lottery/prize_data.py
+      - tests/lottery/test_prize_series_audit.py
+      - tests/lottery/test_prize_data.py
+      - data/prize_observations/**
+      - data/prize_audit/**
+      - .github/workflows/p3a2-prize-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install application and pytest
+        run: python -m pip install -e . pytest
+      - name: Compile audit code
+        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py
+      - name: Test individual prize records and audit
+        run: >-
+          python -m pytest -q
+          tests/lottery/test_prize_data.py
+          tests/lottery/test_prize_series_audit.py
+      - name: Validate live repository observations without web fetching
+        run: >-
+          python -m lrei.lottery.prize_series_audit
+          --observations-dir data/prize_observations
+          --manifest data/prize_audit/3949-3968.manifest.json
+          --historical-csv data/lottery.csv

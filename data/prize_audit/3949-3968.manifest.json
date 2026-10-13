@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "window_start_draw_id": 3949,
+  "window_end_draw_id": 3968,
+  "purpose": "retrospective_financial_data_research_not_prospective_holdout",
+  "sources": [
+    {
+      "draw_id": 3949,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3949",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:15",
+      "review_method": "manual_operator_page_comparison",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "Both 8-tier normal/double payout tables and published total manually compared with operator page; legally approved protocol not available."
+    },
+    {
+      "draw_id": 3950,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3950",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:17",
+      "review_method": "manual_operator_page_comparison",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "Existing original prize observation rechecked against operator page; raw HTML capture not retained."
+    },
+    {
+      "draw_id": 3951,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3951",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:10",
+      "review_method": "manual_operator_page_comparison",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "Normal and Double tier count and payout transcribed from operator page; no official sales or tax amount."
+    }
+  ]
+}

@@ -56,7 +56,11 @@ def score_snapshot(
         raise ValueError("snapshot must contain a local target draw date")
     if draw_date.isoformat() != expected_date:
         raise ValueError("actual draw date does not match pre-registered target date")
+    if type(draw.strong_number) is not int or not 1 <= draw.strong_number <= 7:
+        raise ValueError("official result must include a strong number between 1 and 7")
     latest_id = str(snapshot["latest_draw"]["id"])
+    if latest_id.isdecimal() and not draw.draw_id.isdecimal():
+        raise ValueError("actual draw ID must be numeric for this dataset")
     if draw.draw_id == latest_id:
         raise ValueError("cannot evaluate an already-included historical draw")
     if latest_id.isdecimal() and draw.draw_id.isdecimal() and int(draw.draw_id) <= int(latest_id):

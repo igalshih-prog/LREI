@@ -322,7 +322,7 @@ def recommend(
             )
         elif smart_objective in {"coverage_4plus", "coverage_5plus"}:
             typer.echo(
-                "Portfolio goal: maximal 4+ AND 5+ main-number coverage using "
+                "Portfolio goal: maximize the probability of at least one ticket hitting 4+ or 5+ main numbers; this is already optimal for both. "
                 "the same mathematically optimal 14-line portfolio."
             )
             typer.echo(

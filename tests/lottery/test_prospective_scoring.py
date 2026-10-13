@@ -113,13 +113,13 @@ def test_timezone_boundary_preserves_local_date(tmp_path):
 
 
 def test_cli_rejects_not_yet_occurred_draw(tmp_path):
-    frozen = record(tmp_path)
+    frozen = record(tmp_path, target=datetime(2099, 10, 15, 21, tzinfo=timezone(timedelta(hours=3))))
     snapshot = write_snapshot(frozen, tmp_path / "snapshots")
     response = CliRunner().invoke(app, [
         "score-snapshot", str(snapshot), "--draw-id", "3974",
-        "--draw-date", "15-10-26", "--main", "1,2,3,4,5,6", "--strong", "1",
+        "--draw-date", "2099-10-15", "--main", "1,2,3,4,5,6", "--strong", "1",
         "--source-url", SOURCE, "--output-dir", str(tmp_path / "scores"),
     ])
-    # No official target result from October 15 can be evaluated on October 13.
+    # A far-future registered draw cannot be scored yet.
     assert response.exit_code != 0
     assert "future" in response.output

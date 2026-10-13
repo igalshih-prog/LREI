@@ -9,6 +9,8 @@ on:
       - src/lrei/cli.py
       - tests/lottery/test_prospective_ledger.py
       - tests/test_cli_snapshot.py
+      - src/lrei/lottery/prospective_scoring.py
+      - tests/lottery/test_prospective_scoring.py
       - .github/workflows/p1-ledger-checks.yml
 
 permissions:
@@ -26,6 +28,6 @@ jobs:
       - name: Install test dependencies
         run: python -m pip install -e . pytest
       - name: Compile changed application components
-        run: python -m compileall -q src/lrei/lottery/prospective_ledger.py src/lrei/cli.py
+        run: python -m compileall -q src/lrei/lottery/prospective_ledger.py src/lrei/lottery/prospective_scoring.py src/lrei/cli.py
       - name: Run only focused prospective-ledger tests
-        run: python -m pytest -q tests/lottery/test_prospective_ledger.py tests/test_cli_snapshot.py
+        run: python -m pytest -q tests/lottery/test_prospective_ledger.py tests/lottery/test_prospective_scoring.py tests/test_cli_snapshot.py

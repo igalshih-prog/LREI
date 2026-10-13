@@ -3,6 +3,7 @@ name: P1 Prospective Ledger Checks
 on:
   push:
     branches:
+      - main
       - feature/p1-prospective-ledger-20261013
     paths:
       - src/lrei/lottery/prospective_ledger.py

@@ -54,6 +54,7 @@ def build_snapshot(
     if target_draw_at.tzinfo is None or target_draw_at.utcoffset() is None:
         raise ValueError("target_draw_at must have a timezone")
     target = target_draw_at.astimezone(timezone.utc)
+    local_target_date = target_draw_at.date().isoformat()
     if target <= now:
         raise ValueError("target draw must be strictly in the future")
     if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
@@ -104,6 +105,7 @@ def build_snapshot(
         "schema_version": 1,
         "created_at_utc": now.isoformat().replace("+00:00", "Z"),
         "target_draw_at_utc": target.isoformat().replace("+00:00", "Z"),
+        "target_draw_date_local": local_target_date,
         "source_commit": source_commit,
         "dataset_sha256": data_hash,
         "latest_draw": {"id": str(latest.draw_id), "date": latest_date.isoformat()},

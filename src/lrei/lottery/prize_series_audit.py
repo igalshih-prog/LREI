@@ -171,3 +171,31 @@ def audit_prize_series(
         "accounting": accounting,
         "purpose": PURPOSE,
     }
+
+
+def main() -> None:
+    """Run an offline, no-network audit, with intentionally visible gaps."""
+    import argparse
+    from .dataset import CsvDatasetLoader
+
+    parser = argparse.ArgumentParser(
+        description="Audit historical lottery prize tables and report gaps without imputing data."
+    )
+    parser.add_argument("--observations-dir", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--historical-csv", type=Path, required=True)
+    parser.add_argument("--require-complete", action="store_true",
+                        help="Exit nonzero if at least one draw is missing.")
+    options = parser.parse_args()
+    try:
+        archive = CsvDatasetLoader().load(options.historical_csv)
+        report = audit_prize_series(options.observations_dir, options.manifest, archive)
+    except (PrizeDataError, OSError, ValueError) as exc:
+        parser.exit(2, f"Prize audit failed: {exc}\n")
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2))
+    if options.require_complete and not report["series_complete"]:
+        parser.exit(1, "Prize series is incomplete; see missing_draw_ids above.\n")
+
+
+if __name__ == "__main__":
+    main()

@@ -176,7 +176,7 @@ def verify_frozen_model(model: Any) -> bool:
         p = 6 / 37
         mu = n * p
         sigma = math.sqrt(n * p * (1 - p))
-        expected = [math.exp(FROZEN_BETA * (x - mu) / sigma) for x in counts]
+        expected = [math.exp(FROZEN_BETA * ((x - mu) / sigma)) for x in counts]
         if any(type(x) is not float or x != y for x, y in zip(weights, expected)):
             return False
         elementary_symmetric(weights)
@@ -229,6 +229,7 @@ def score_future_draw(
     expected_id = int(model["cutoff_draw_id"]) + 1
     prior_log = 0.0
     prior_hash = None
+    prior_peak_log = 0.0
     sequence = 1
     if previous is not None:
         if not verify_evidence_record(previous):
@@ -238,6 +239,7 @@ def score_future_draw(
         expected_id = int(previous["draw"]["id"]) + 1
         prior_log = float(previous["cumulative_log_e"])
         prior_hash = previous["record_sha256"]
+        prior_peak_log = float(previous["peak_log_e"])
         sequence = int(previous["draw_number"]) + 1
         prior_time = datetime.fromisoformat(previous["draw_occurred_at_utc"].replace("Z", "+00:00"))
         if target <= prior_time:
@@ -255,6 +257,7 @@ def score_future_draw(
     cumulative_log = prior_log + log_increment
     if not math.isfinite(cumulative_log):
         raise ValueError("cumulative log evidence is not finite")
+    peak_log = max(prior_peak_log, cumulative_log)
     payload = {
         "kind": "lrei_preregistered_main_bias_evidence",
         "schema_version": 1,
@@ -274,7 +277,8 @@ def score_future_draw(
         },
         "log_likelihood_ratio_increment": log_increment,
         "cumulative_log_e": cumulative_log,
-        "anytime_valid_evidence_threshold_reached": cumulative_log >= EVIDENCE_LOG_THRESHOLD,
+        "peak_log_e": peak_log,
+        "anytime_valid_evidence_threshold_ever_reached": peak_log >= EVIDENCE_LOG_THRESHOLD,
         "interpretation": "bias_evidence_not_5plus_winning_advantage",
     }
     return _seal(payload)

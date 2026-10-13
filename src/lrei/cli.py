@@ -255,6 +255,11 @@ def recommend(
         typer.echo(f"Exact 5+ main-number coverage: {five['probability']:.4%}")
         typer.echo(f"Maximum possible with 14 lines: {five['max_probability']:.4%}")
         typer.echo(f"Proven 5+ maximum attained: {five['is_optimal']}")
+        if five["with_matching_strong_probability"] is not None:
+            typer.echo(
+                "Exact 5+ main AND strong-number coverage: "
+                f"{five['with_matching_strong_probability']:.4%} (1 in 6,216)"
+            )
         typer.echo(
             "The 5+ maximum is just 1 chance in 888 per fair draw, not a guarantee. "
             "Smart 4+ already reaches it. No combination selection can raise "

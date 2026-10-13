@@ -79,3 +79,37 @@ python -m pytest -q tests/lottery/test_prospective_ledger.py tests/test_cli_snap
 ```
 
 These tests are isolated from the already validated P0 historical benchmarks.
+
+
+## After a future draw: score the frozen record
+
+Only after the recorded draw occurs, independently obtain and verify its
+**official** draw ID, date, six main numbers and strong number. Then run:
+
+```bash
+python -m lrei score-snapshot audit/prospective/predraw-YOUR-RECORD.json \
+  --draw-id OFFICIAL_ID \
+  --draw-date DD-MM-YY \
+  --main "N1,N2,N3,N4,N5,N6" \
+  --strong OFFICIAL_STRONG \
+  --source-url "https://www.pais.co.il/YOUR-VERIFIED-RESULT-URL" \
+  --output-dir audit/prospective-results
+```
+
+The placeholders are not actual winning numbers, IDs or dates. The command
+checks the original snapshot hash, registered local target date, chronological
+draw ID, complete official-result shape and whether the scheduled draw time
+has passed. It then uses the existing official prize-tier evaluator to compute
+the number of winning tickets, best tier, best main matches and 3+/4+/5+/6
+main-number indicators. Results are saved as **separate**, SHA-256-hashed
+JSON using exclusive-write creation. The original prediction stays unchanged.
+
+**Important:** the URL is supplied by the operator; the tool does not fetch or
+authenticate it. The scored record marks
+`source_independently_verified=false`. A self-hashed local prediction also
+does not prove advance publication. For reliable external verification, archive
+the predraw file on GitHub (or a trusted timestamping service) *before* the draw
+and cross-check the official result from its source afterwards.
+
+This creates an auditable workflow without making any predictive claim, or
+retroactively treating development/history tests as prospective evidence.

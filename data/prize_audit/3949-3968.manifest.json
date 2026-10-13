@@ -39,6 +39,30 @@
       "approved_protocol_verified": false,
       "rule_version": null,
       "review_notes": "Normal and Double tier count and payout transcribed from operator page; no official sales or tax amount."
+    },
+    {
+      "draw_id": 3952,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3952",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:15",
+      "review_method": "manual_operator_page_comparison",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "Manual check of original operator page for 8 regular + 8 double tier entries, advertised first/second awards and total prize payout; underlying approved protocol and raw HTML not saved."
+    },
+    {
+      "draw_id": 3953,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3953",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:17",
+      "review_method": "manual_operator_page_comparison",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "Manually crosschecked original operator page including 40 million regular jackpot winner and double table; 2026 special promotion rule version still unverified and not imputed."
     }
   ]
 }

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -63,7 +64,12 @@ def _valid_source(url: Any, draw_id: int) -> bool:
     if not isinstance(url, str):
         return False
     parsed = urlsplit(url)
-    if parsed.scheme != "https" or parsed.username or parsed.password or parsed.port:
+    if parsed.scheme != "https" or parsed.username or parsed.password or parsed.fragment:
+        return False
+    try:
+        if parsed.port is not None:
+            return False
+    except ValueError:
         return False
     if parsed.hostname not in {"pais.co.il", "www.pais.co.il"}:
         return False
@@ -88,6 +94,8 @@ def validate_prize_observation(record: Any, historical: LotteryDataset | None = 
     draw_id = record["draw_id"]
     if type(draw_id) is not int or draw_id <= 0:
         raise PrizeDataError("draw_id must be a positive integer")
+    if not isinstance(record["draw_date"], str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", record["draw_date"]):
+        raise PrizeDataError("draw_date must use YYYY-MM-DD")
     try:
         parsed_date = date.fromisoformat(record["draw_date"])
     except (TypeError, ValueError) as exc:

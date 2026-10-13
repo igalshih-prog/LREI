@@ -18,8 +18,9 @@ python -m lrei recommend \
 ```
 
 Substitute an actual future date/time. Do not reuse this example verbatim.
-Other Smart objectives remain independent (`coverage_4plus` and
-`historical`), and `regular`, `pro`, and `elite` can also be recorded.
+Smart objectives include `coverage_any_prize`, `coverage_4plus`,
+`coverage_5plus`, and `historical`. Both 4+ and 5+ use the same already optimal
+14-line constructor; `regular`, `pro`, and `elite` can also be recorded.
 The default recommendation behavior is unchanged when snapshot flags are absent.
 
 Both snapshot options are required together. A snapshot **fails closed** when

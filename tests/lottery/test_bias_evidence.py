@@ -67,7 +67,7 @@ def test_elementary_symmetric_is_exact_partition_function():
     # Enumerate a genuinely distinct smaller game to independently check DP.
     weights = (1.0, 1.1, 2.2, 3.3, 0.7)
     norm = elementary_symmetric(weights, degree=2)
-    brute = sum(w[i] * w[j] for i, j in combinations(range(5), 2))
+    brute = sum(weights[i] * weights[j] for i, j in combinations(range(5), 2))
     assert norm == pytest.approx(brute)
     increments = [comb(5, 2) * weights[i] * weights[j] / norm for i, j in combinations(range(5), 2)]
     assert sum(increments) / comb(5, 2) == pytest.approx(1.0)
@@ -125,7 +125,7 @@ def test_cannot_start_at_second_draw_or_repeat_first(tmp_path):
     with pytest.raises(ValueError, match="exactly 3120"):
         score(model, which=1)
     first = score(model)
-    with pytest.raises(ValueError, match="exactly 3121"):
+    with pytest.raises(ValueError, match="follow previous evaluated draw"):
         score(model, which=0, previous=first)
 
 

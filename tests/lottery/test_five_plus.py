@@ -159,3 +159,5 @@ def test_cli_reports_five_hit_limit_and_strong_separately(monkeypatch):
     assert "Proven 5+ maximum attained: True" in result.output
     assert "5+ main AND strong-number coverage: 0.0161%" in result.output
     assert "1 in 6,216" in result.output
+    assert "uniform 6-of-37 draw model" in result.output
+    assert "not predictions of winning numbers" in result.output

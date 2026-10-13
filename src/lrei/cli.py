@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import subprocess
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 import typer
@@ -18,6 +21,9 @@ from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
+from lrei.lottery.prospective_ledger import build_snapshot, parse_target_datetime, write_snapshot
+from lrei.lottery.prospective_scoring import score_snapshot, write_score
+from lrei.lottery.dataset import LotteryDrawRecord
 
 app = typer.Typer(
     help="Manage local LREI data and lottery recommendations.",
@@ -110,7 +116,7 @@ def recommend(
         typer.Option(
             "--tickets",
             "-t",
-            help="Number of lottery tickets to generate.",
+            help="Regular-mode generated candidate count. All modes recommend exactly 14 lines; other modes ignore this option.",
         ),
     ] = 14,
     seed: Annotated[
@@ -134,6 +140,14 @@ def recommend(
             help="Smart-only objective: coverage_any_prize (default), coverage_4plus, or historical model selection.",
         ),
     ] = "coverage_any_prize",
+    snapshot_dir: Annotated[
+        Path | None,
+        typer.Option("--snapshot-dir", help="Write a hashed pre-draw JSON snapshot, never overwriting existing records."),
+    ] = None,
+    target_draw_at: Annotated[
+        str | None,
+        typer.Option("--target-draw-at", help="Future target draw time, ISO-8601 with timezone (requires --snapshot-dir)."),
+    ] = None,
 ) -> None:
     """Generate lottery recommendations from historical data."""
 
@@ -141,6 +155,22 @@ def recommend(
         raise typer.BadParameter(
             "Number of tickets must be greater than zero."
         )
+
+    if mode != "regular" and tickets != 14:
+        typer.echo("Note: --tickets changes candidate generation only in Regular mode; this engine outputs 14 recommended lines.")
+
+    if (snapshot_dir is None) != (target_draw_at is None):
+        raise typer.BadParameter("--snapshot-dir and --target-draw-at must be provided together")
+
+    target_time = None
+    if target_draw_at is not None:
+        try:
+            parse_target_datetime(target_draw_at)
+            target_time = datetime.fromisoformat(target_draw_at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc), param_hint="--target-draw-at") from exc
+        if target_time <= datetime.now(timezone.utc):
+            raise typer.BadParameter("target draw must be in the future", param_hint="--target-draw-at")
 
     root = Path(__file__).resolve().parents[2]
 
@@ -150,6 +180,19 @@ def recommend(
         raise typer.BadParameter(
             f"Lottery data file not found: {data_file}"
         )
+
+    source_commit = None
+    if snapshot_dir is not None:
+        try:
+            source_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root, check=True, capture_output=True, text=True,
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise typer.BadParameter(
+                "cannot record source Git commit; run from a Git checkout",
+                param_hint="--snapshot-dir",
+            ) from exc
 
     dataset = CsvDatasetLoader().load(data_file)
 
@@ -299,8 +342,62 @@ def recommend(
                     f"Score: {score.score:.6f}"
                 )
 
+    if snapshot_dir is not None:
+        try:
+            record = build_snapshot(
+                dataset_file=data_file,
+                dataset=dataset,
+                tickets=result.recommended_tickets_with_strong,
+                mode=mode,
+                objective=smart_objective,
+                seed=seed,
+                source_commit=source_commit,
+                target_draw_at=target_time,
+                generated_count=len(result.generated_tickets),
+            )
+            snapshot_path = write_snapshot(record, snapshot_dir)
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(
+                f"could not save pre-draw record: {exc}",
+                param_hint="--snapshot-dir",
+            ) from exc
+        typer.echo()
+        typer.echo(f"Pre-draw snapshot: {snapshot_path}")
+        typer.echo(f"Record SHA-256: {record['record_sha256']}")
+
     typer.echo()
     typer.echo("=" * 70)
+
+
+
+@app.command("score-snapshot")
+def score_snapshot_command(
+    snapshot_file: Annotated[Path, typer.Argument(help="Frozen pre-draw JSON record.")],
+    draw_id: Annotated[str, typer.Option("--draw-id", help="Official result draw ID.")],
+    draw_date: Annotated[str, typer.Option("--draw-date", help="Official date, e.g. 13-10-26.")],
+    main: Annotated[str, typer.Option("--main", help="Six official main numbers, comma-separated.")],
+    strong: Annotated[int, typer.Option("--strong", help="Official strong number (1–7).")],
+    source_url: Annotated[str, typer.Option("--source-url", help="HTTPS source for independently checked official result.")],
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="Destination for separate, no-overwrite scored JSON.")],
+) -> None:
+    """Score a frozen record after the target draw; never edit the prediction."""
+    try:
+        frozen = json.loads(snapshot_file.read_text(encoding="utf-8"))
+        numbers = tuple(int(piece.strip()) for piece in main.split(","))
+        draw = LotteryDrawRecord(
+            draw_id=draw_id, numbers=numbers, date=draw_date, strong_number=strong,
+        )
+        scored = score_snapshot(frozen, draw, source_url=source_url)
+        result_path = write_score(scored, output_dir)
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"cannot score snapshot: {exc}") from exc
+    typer.echo(f"Scored result: {result_path}")
+    typer.echo(f"Record SHA-256: {scored['result_sha256']}")
+    typer.echo(f"Any prize: {scored['any_prize']}")
+    typer.echo(f"Best main matches: {scored['best_main_matches']}")
+    typer.echo(f"Best prize tier: {scored['best_prize_tier']}")
+    typer.echo("Result source URL is user-supplied and has not been independently verified.")
+
 
 
 def main() -> None:

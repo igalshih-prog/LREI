@@ -139,3 +139,7 @@ The repository contains separate benchmarks for:
 Benchmarks report metrics such as average hits per ticket, best-ticket hits, coverage-related behavior, paired differences, and bootstrap confidence intervals where applicable.
 
 All benchmark conclusions should be interpreted as historical empirical measurements, not guarantees about future draws.
+
+## P1 prospective evidence ledger (opt-in)
+
+Use `lrei recommend --snapshot-dir DIR --target-draw-at ISO_8601_WITH_OFFSET` to create a checksum-verified, no-overwrite record of 14 lines *before* their target draw. See [P1 pre-draw protocol](P1_PROSPECTIVE_LEDGER.md) for freshness checks, timestamps, independent publication, and limitations. This does not change model weights, historical evidence, or jackpot odds.

@@ -337,6 +337,11 @@ if st.button(
         coverage_columns[2].metric("לפחות 5/6 ראשיים", f"{coverage_5:.4%}")
         coverage_columns[3].metric("6/6 ראשיים", f"{coverage_6:.5%}")
         if five_metrics["is_optimal"]:
+            st.metric(
+                "לפחות 5 מספרים ראשיים + מספר חזק",
+                f"{five_metrics['with_matching_strong_probability']:.4%}",
+                help="כ־1 ל־6,216. מדובר במספר החזק הנכון בנוסף ל־5 או 6 מספרים ראשיים.",
+            )
             st.success(
                 "כיסוי 5+ הגיע למקסימום המתמטי של 14 טורים: "
                 f"{five_metrics['probability']:.4%} (1 ל־888). "

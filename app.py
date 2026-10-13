@@ -8,6 +8,7 @@ from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
+from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.coverage_engine import CoverageRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
@@ -310,7 +311,8 @@ if st.button(
 
     with st.expander("📐 כיסוי מתמטי של 14 הטורים", expanded=False):
         main_tickets = [ticket.numbers for ticket in tickets]
-        coverage_3 = portfolio_coverage(main_tickets, threshold=3)["probability"]
+        # Use the exact bitmap path instead of materializing large Python sets.
+        coverage_3 = AnyPrizeCoverageRecommendationEngine.coverage_probability(main_tickets)
         coverage_4 = portfolio_coverage(main_tickets, threshold=4)["probability"]
         coverage_5 = portfolio_coverage(main_tickets, threshold=5)["probability"]
         coverage_6 = portfolio_coverage(main_tickets, threshold=6)["probability"]

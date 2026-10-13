@@ -11,6 +11,10 @@ on:
       - tests/lottery/test_prospective_ledger.py
       - tests/test_cli_snapshot.py
       - src/lrei/lottery/prospective_scoring.py
+      - src/lrei/lottery/five_plus.py
+      - src/lrei/lottery/smart.py
+      - src/lrei/lottery/coverage_engine.py
+      - tests/lottery/test_five_plus.py
       - app.py
       - pyproject.toml
       - tests/test_streamlit_smoke.py
@@ -34,7 +38,7 @@ jobs:
       - name: Compile changed application components
         run: python -m compileall -q src/lrei/lottery/prospective_ledger.py src/lrei/lottery/prospective_scoring.py src/lrei/cli.py
       - name: Run only focused prospective-ledger tests
-        run: python -m pytest -q tests/lottery/test_prospective_ledger.py tests/lottery/test_prospective_scoring.py tests/test_cli_snapshot.py
+        run: python -m pytest -q tests/lottery/test_prospective_ledger.py tests/lottery/test_prospective_scoring.py tests/test_cli_snapshot.py tests/lottery/test_five_plus.py
 
   ui-smoke:
     runs-on: ubuntu-latest

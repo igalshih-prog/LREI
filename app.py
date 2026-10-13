@@ -148,7 +148,7 @@ st.metric(
 mode = st.radio(
     "בחר מנוע",
     options=["Regular", "Pro", "Smart", "Coverage"],
-    index=1,
+    index=2,
     horizontal=True,
 )
 
@@ -167,7 +167,7 @@ elif mode == "Smart":
             "בחירה לפי ממוצע התאמות היסטורי",
             "ניסוי: בחירה לפי מדרגת הפרס ההיסטורית",
         ],
-        index=0,
+        index=1,
     )
     if objective_label == "מקסום כיסוי ל־4+ במספרים הראשיים":
         smart_objective = "coverage_4plus"

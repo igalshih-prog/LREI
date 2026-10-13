@@ -59,8 +59,8 @@ class SmartConfig:
             raise ValueError("stability_penalty must be non-negative")
         if self.selection_metric not in {"mean", "tail", "jackpot", "prize"}:
             raise ValueError("selection_metric must be 'mean', 'tail', 'jackpot', or 'prize'")
-        if self.objective not in {"historical", "coverage_4plus", "coverage_any_prize"}:
-            raise ValueError("objective must be 'historical', 'coverage_4plus', or 'coverage_any_prize'")
+        if self.objective not in {"historical", "coverage_4plus", "coverage_5plus", "coverage_any_prize"}:
+            raise ValueError("objective must be 'historical', 'coverage_4plus', 'coverage_5plus', or 'coverage_any_prize'")
         if self.tail_weight_4 < 0 or self.tail_weight_5 < 0 or self.tail_weight_6 < 0:
             raise ValueError("tail weights must be non-negative")
 
@@ -129,8 +129,9 @@ class SmartRecommendationEngine:
         )
 
     def select_model(self, dataset: LotteryDataset, seed: int | None = None) -> tuple[str, dict[str, float]]:
-        if self.config.objective == "coverage_4plus":
-            # This objective is solved analytically by the Coverage engine;
+        if self.config.objective in {"coverage_4plus", "coverage_5plus"}:
+            # The same overlap<=1 construction maximizes BOTH 4+ and 5+;
+            # this objective is solved analytically by the Coverage engine;
             # historical model selection would only add noise to a known optimum.
             return "coverage", {"coverage": 1.0}
         if self.config.objective == "coverage_any_prize":

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "draw_id": 3950,
+  "draw_date": "2026-07-28",
+  "main_numbers": [
+    1,
+    8,
+    9,
+    19,
+    21,
+    23
+  ],
+  "strong_number": 7,
+  "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3950",
+  "source_status": "operator_site_display_only_not_binding",
+  "games": {
+    "regular": [
+      {
+        "tier": "6+strong",
+        "winning_entries": 0,
+        "payout_per_winning_entry_ils": 0
+      },
+      {
+        "tier": "6",
+        "winning_entries": 3,
+        "payout_per_winning_entry_ils": 300000
+      },
+      {
+        "tier": "5+strong",
+        "winning_entries": 35,
+        "payout_per_winning_entry_ils": 5577
+      },
+      {
+        "tier": "5",
+        "winning_entries": 242,
+        "payout_per_winning_entry_ils": 601
+      },
+      {
+        "tier": "4+strong",
+        "winning_entries": 1674,
+        "payout_per_winning_entry_ils": 134
+      },
+      {
+        "tier": "4",
+        "winning_entries": 10096,
+        "payout_per_winning_entry_ils": 45
+      },
+      {
+        "tier": "3+strong",
+        "winning_entries": 20744,
+        "payout_per_winning_entry_ils": 36
+      },
+      {
+        "tier": "3",
+        "winning_entries": 126570,
+        "payout_per_winning_entry_ils": 10
+      }
+    ],
+    "double": [
+      {
+        "tier": "6+strong",
+        "winning_entries": 0,
+        "payout_per_winning_entry_ils": 0
+      },
+      {
+        "tier": "6",
+        "winning_entries": 2,
+        "payout_per_winning_entry_ils": 600000
+      },
+      {
+        "tier": "5+strong",
+        "winning_entries": 26,
+        "payout_per_winning_entry_ils": 11154
+      },
+      {
+        "tier": "5",
+        "winning_entries": 238,
+        "payout_per_winning_entry_ils": 1202
+      },
+      {
+        "tier": "4+strong",
+        "winning_entries": 1308,
+        "payout_per_winning_entry_ils": 268
+      },
+      {
+        "tier": "4",
+        "winning_entries": 7951,
+        "payout_per_winning_entry_ils": 90
+      },
+      {
+        "tier": "3+strong",
+        "winning_entries": 16031,
+        "payout_per_winning_entry_ils": 72
+      },
+      {
+        "tier": "3",
+        "winning_entries": 98188,
+        "payout_per_winning_entry_ils": 20
+      }
+    ]
+  },
+  "advertised_prizes_ils": {
+    "regular_first": 32000000,
+    "double_first": 64000000,
+    "regular_second": 1500000,
+    "double_second": 3000000
+  },
+  "total_prizes_paid_ils": 10876268,
+  "ticket_sales_ils": null,
+  "tax_paid_ils": null,
+  "special_rules_note": null
+}

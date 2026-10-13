@@ -25,6 +25,9 @@ from lrei.lottery.five_plus import five_plus_metrics
 from lrei.lottery.prospective_ledger import build_snapshot, parse_target_datetime, write_snapshot
 from lrei.lottery.prospective_scoring import score_snapshot, write_score
 from lrei.lottery.dataset import LotteryDrawRecord
+from lrei.lottery.bias_evidence import (
+    freeze_bias_model, score_future_draw, write_immutable,
+)
 
 app = typer.Typer(
     help="Manage local LREI data and lottery recommendations.",
@@ -414,6 +417,68 @@ def score_snapshot_command(
     typer.echo(f"Best main matches: {scored['best_main_matches']}")
     typer.echo(f"Best prize tier: {scored['best_prize_tier']}")
     typer.echo("Result source URL is user-supplied and has not been independently verified.")
+
+
+
+
+@app.command("bias-freeze")
+def bias_freeze(
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="Directory for a single frozen, hashed model JSON.")],
+) -> None:
+    """Freeze ONE frequency-bias hypothesis for future draws; not a predictor."""
+    root = Path(__file__).resolve().parents[2]
+    data_file = root / "data" / "lottery.csv"
+    try:
+        git_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root, check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        dataset = CsvDatasetLoader().load(data_file)
+        model = freeze_bias_model(dataset, data_file, git_commit)
+        saved = write_immutable(model, output_dir)
+    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+        raise typer.BadParameter(f"could not freeze hypothesis: {exc}") from exc
+    typer.echo(f"Frozen audit model: {saved}")
+    typer.echo(f"Record SHA-256: {model['record_sha256']}")
+    typer.echo("CRITICAL: Publish this JSON with an independently verifiable timestamp before using any future result.")
+    typer.echo("The old 1,141 historical draws are training data, NOT evidence of a predictive advantage.")
+
+
+@app.command("bias-score")
+def bias_score(
+    frozen_file: Annotated[Path, typer.Option("--frozen", help="Pre-published frozen model JSON.")],
+    draw_id: Annotated[str, typer.Option("--draw-id", help="Next consecutive official draw ID.")],
+    draw_date: Annotated[str, typer.Option("--draw-date", help="Draw's official local date.")],
+    draw_at: Annotated[str, typer.Option("--draw-at", help="Actual draw time, with timezone offset.")],
+    main: Annotated[str, typer.Option("--main", help="Six official main numbers separated by commas.")],
+    strong: Annotated[int, typer.Option("--strong", help="Official strong number.")],
+    source_url: Annotated[str, typer.Option("--source-url", help="Externally verified official HTTPS results page.")],
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="Directory for immutable evidence JSON.")],
+    previous_score: Annotated[Path | None, typer.Option("--previous-score", help="Previous consecutive result record, required from draw 2 onwards.")] = None,
+) -> None:
+    """Append one post-draw result to the fixed anytime-valid hypothesis test."""
+    try:
+        frozen = json.loads(frozen_file.read_text(encoding="utf-8"))
+        previous = (
+            json.loads(previous_score.read_text(encoding="utf-8"))
+            if previous_score is not None else None
+        )
+        numbers = tuple(int(value.strip()) for value in main.split(","))
+        draw = LotteryDrawRecord(draw_id=draw_id, date=draw_date, numbers=numbers, strong_number=strong)
+        actual_time = datetime.fromisoformat(draw_at.replace("Z", "+00:00"))
+        evidence = score_future_draw(
+            frozen, draw, draw_occurred_at=actual_time,
+            source_url=source_url, previous=previous,
+        )
+        path = write_immutable(evidence, output_dir)
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"could not score future bias evidence: {exc}") from exc
+    typer.echo(f"Immutable evidence: {path}")
+    typer.echo(f"Draws scored prospectively: {evidence['draw_number']}")
+    typer.echo(f"Cumulative log e-value: {evidence['cumulative_log_e']:+.6f}")
+    typer.echo(f"Evidence threshold ever reached: {evidence['anytime_valid_evidence_threshold_ever_reached']}")
+    typer.echo("This tests a frozen possible bias; it does NOT demonstrate greater 5+ win odds.")
+    typer.echo("The supplied official-source URL is metadata, not independently authenticated.")
 
 
 

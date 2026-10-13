@@ -116,7 +116,7 @@ def recommend(
         typer.Option(
             "--tickets",
             "-t",
-            help="Number of lottery tickets to generate.",
+            help="Regular-mode generated candidate count. All modes recommend exactly 14 lines; other modes ignore this option.",
         ),
     ] = 14,
     seed: Annotated[
@@ -155,6 +155,9 @@ def recommend(
         raise typer.BadParameter(
             "Number of tickets must be greater than zero."
         )
+
+    if mode != "regular" and tickets != 14:
+        typer.echo("Note: --tickets changes candidate generation only in Regular mode; this engine outputs 14 recommended lines.")
 
     if (snapshot_dir is None) != (target_draw_at is None):
         raise typer.BadParameter("--snapshot-dir and --target-draw-at must be provided together")

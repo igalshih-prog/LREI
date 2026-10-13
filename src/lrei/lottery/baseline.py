@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from math import comb
 
 
 class BaselineError(Exception):
@@ -57,10 +58,16 @@ class RandomBaseline:
 
         if count <= 0:
             raise ValueError("count must be positive")
+        if count > comb(self.max_number - self.min_number + 1, self.main_number_count):
+            raise ValueError("count exceeds the number of distinct valid tickets")
 
         rng = random.Random(seed)
 
-        return tuple(
-            self.generate_ticket(rng)
-            for _ in range(count)
-        )
+        tickets: list[tuple[int, ...]] = []
+        seen: set[tuple[int, ...]] = set()
+        while len(tickets) < count:
+            ticket = self.generate_ticket(rng)
+            if ticket not in seen:
+                seen.add(ticket)
+                tickets.append(ticket)
+        return tuple(tickets)

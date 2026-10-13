@@ -24,30 +24,52 @@ def paired_block_bootstrap_ci(
     independently. For non-contiguous validation origins, call this separately
     per origin or combine origin-level summaries instead.
     """
-    values = tuple(float(value) for value in paired_differences)
-    if not values:
-        raise ValueError("paired_differences must not be empty")
+    return paired_origin_block_bootstrap_ci(
+        [paired_differences], block_size=block_size, samples=samples,
+        confidence=confidence, seed=seed,
+    )
+
+
+def paired_origin_block_bootstrap_ci(
+    differences_by_origin: Sequence[Sequence[float]],
+    *,
+    block_size: int = 5,
+    samples: int = 5000,
+    confidence: float = 0.95,
+    seed: int = 20261011,
+) -> tuple[float, float]:
+    """Bootstrap within each chronological origin without bridging time gaps.
+
+    Preserve each origin's observed draw count and report the draw-weighted
+    pooled mean interval. This is conditional on these development origins;
+    it does not quantify generalization to new origins or future draws.
+    """
+    origins = tuple(tuple(float(value) for value in origin) for origin in differences_by_origin)
+    if not origins or any(not origin for origin in origins):
+        raise ValueError("paired_differences must not be empty in any origin")
     if block_size < 1:
         raise ValueError("block_size must be positive")
     if samples < 1:
         raise ValueError("samples must be positive")
     if not 0.0 < confidence < 1.0:
         raise ValueError("confidence must be between 0 and 1")
-    if any(not math.isfinite(value) for value in values):
+    if any(not math.isfinite(value) for origin in origins for value in origin):
         raise ValueError("paired_differences must contain only finite values")
 
-    size = len(values)
-    block = min(block_size, size)
-    last_start = size - block
     rng = random.Random(seed)
     estimates: list[float] = []
 
     for _ in range(samples):
         resampled: list[float] = []
-        while len(resampled) < size:
-            start = rng.randint(0, last_start)
-            resampled.extend(values[start : start + block])
-        estimates.append(mean(resampled[:size]))
+        for values in origins:
+            size = len(values)
+            block = min(block_size, size)
+            origin_sample: list[float] = []
+            while len(origin_sample) < size:
+                start = rng.randint(0, size - block)
+                origin_sample.extend(values[start : start + block])
+            resampled.extend(origin_sample[:size])
+        estimates.append(mean(resampled))
 
     estimates.sort()
     tail = (1.0 - confidence) / 2.0

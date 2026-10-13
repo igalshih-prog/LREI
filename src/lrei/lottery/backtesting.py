@@ -7,6 +7,7 @@ import random
 from dataclasses import dataclass
 
 from .dataset import LotteryDataset
+from .baseline import RandomBaseline
 from .recommendation import RecommendationEngine
 from .statistics import LotteryStatistics
 
@@ -243,6 +244,21 @@ class LotteryBacktester:
                 recommended_tickets
             )
 
+            # Both competitors keep one fixed portfolio throughout a validation
+            # block. Use the official universe, including numbers absent from
+            # the training sample, and assign strong numbers before scoring.
+            baseline_rng = random.Random(
+                self._baseline_seed(case_seed, test_records[0].draw_id)
+            )
+            baseline_tickets = self._generate_random_tickets(
+                statistics=statistics,
+                ticket_count=recommended_count,
+                rng=baseline_rng,
+            )
+            baseline_strong_numbers = tuple(
+                baseline_rng.randint(1, 7) for _ in range(recommended_count)
+            )
+
             for test_draw in test_records:
                 actual_numbers = set(
                     test_draw.numbers
@@ -264,18 +280,6 @@ class LotteryBacktester:
 
                 total_matches = sum(
                     ticket_matches
-                )
-
-                baseline_rng = random.Random(
-                    self._baseline_seed(case_seed, test_draw.draw_id)
-                )
-
-                baseline_tickets = (
-                    self._generate_random_tickets(
-                        statistics=statistics,
-                        ticket_count=recommended_count,
-                        rng=baseline_rng,
-                    )
                 )
 
                 baseline_matches = [
@@ -322,13 +326,8 @@ class LotteryBacktester:
                         )
                     )
 
-                    baseline_strong_match = (
-                        self._random_strong_matches(
-                            statistics=statistics,
-                            actual_strong=actual_strong,
-                            ticket_count=recommended_count,
-                            rng=baseline_rng,
-                        )
+                    baseline_strong_match = sum(
+                        number == actual_strong for number in baseline_strong_numbers
                     )
 
                 cases.append(
@@ -372,53 +371,9 @@ class LotteryBacktester:
     ) -> tuple[tuple[int, ...], ...]:
         """Generate random baseline tickets."""
 
-        minimum = (
-            statistics.minimum_number
+        return RandomBaseline().generate_tickets(
+            count=ticket_count, seed=rng.getrandbits(64)
         )
-
-        maximum = (
-            statistics.maximum_number
-        )
-
-        if minimum is None or maximum is None:
-            return ()
-
-        numbers_per_ticket = (
-            self._numbers_per_ticket(
-                statistics
-            )
-        )
-
-        population = list(
-            range(
-                minimum,
-                maximum + 1,
-            )
-        )
-
-        if (
-            len(population)
-            < numbers_per_ticket
-        ):
-            return ()
-
-        tickets: list[
-            tuple[int, ...]
-        ] = []
-
-        for _ in range(ticket_count):
-            ticket = tuple(
-                sorted(
-                    rng.sample(
-                        population,
-                        numbers_per_ticket,
-                    )
-                )
-            )
-
-            tickets.append(ticket)
-
-        return tuple(tickets)
 
     def _numbers_per_ticket(
         self,
@@ -448,24 +403,10 @@ class LotteryBacktester:
     ) -> int:
         """Evaluate random strong-number selections."""
 
-        strong_numbers = [
-            item.number
-            for item in getattr(
-                statistics,
-                "strong_number_frequency",
-                (),
-            )
-        ]
-
-        if not strong_numbers:
-            return 0
-
         matches = 0
 
         for _ in range(ticket_count):
-            selected = rng.choice(
-                strong_numbers
-            )
+            selected = rng.randint(1, 7)
 
             if selected == actual_strong:
                 matches += 1

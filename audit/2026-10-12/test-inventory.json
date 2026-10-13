@@ -1,0 +1,1386 @@
+[
+  {
+    "id": "tests/lottery/test_ablation.py::test_ablation_report",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_candidate_pool_size_ablation",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_candidate_pool_size_multi_seed_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_config_bounds_candidate_pool_and_ticket_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_config_uses_validated_coverage_defaults",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_engine_returns_fourteen_valid_unique_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_any_prize_local_swap_passes_multi_seed_ablation",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_bitmask_union_matches_exact_two_ticket_coverage",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_local_swap_refinement_never_reduces_exact_coverage",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_any_prize_coverage_engine.py::test_ticket_mask_count_matches_exact_single_ticket_combinatorics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtest_report.py::test_backtest_report",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_baseline_uses_same_ticket_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_evaluates_chronologically",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_exposes_baseline_aggregate_metrics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_includes_random_baseline_results",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_match_metrics_are_non_negative",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_records_ticket_counts",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_rejects_dataset_that_is_too_small",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_test_size",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_ticket_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_rejects_invalid_train_size",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_backtester_returns_result",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_backtesting.py::test_baseline_seed_is_stable_across_python_processes",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_different_seeds_can_differ",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_generates_valid_ticket",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_rejects_invalid_configuration",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_rejects_invalid_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_baseline.py::test_random_baseline_supports_custom_range",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_coverage_engine.py::test_coverage_config_rejects_settings_that_break_exact_4plus_coverage",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_coverage_engine.py::test_coverage_engine_builds_fourteen_tickets_at_exact_4plus_bound",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_csv_dataset_loader",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_csv_dataset_loader_invalid_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_csv_dataset_loader_missing_file",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_csv_dataset_loader_rejects_invalid_official_draw_values",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_csv_dataset_loader_supports_semicolon_separator",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_dataset_statistics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_empty_dataset_latest_raises",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_empty_dataset_statistics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_dataset_basic_operations",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_duplicate_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_empty_id",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_empty_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_draw_record_rejects_non_positive_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_lottery_draw_record_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_walk_forward_dataset",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_dataset.py::test_walk_forward_rejects_invalid_sizes",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_config_validation.py::test_elite_preserves_base_config_validation",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_config_validation.py::test_elite_requires_positive_ensemble_weight",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_portfolio_coverage.py::test_elite_any_prize_coverage_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_portfolio_coverage.py::test_elite_exact_portfolio_coverage_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_allocation_can_be_disabled",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_are_normalized_and_can_be_disabled",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_are_normalized_and_history_only",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_multi_origin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_consensus_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_feature_stack_multi_origin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_strong_number_is_opt_in_and_validated",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_strong_number_scores_are_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_adaptive_strong_number_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_candidate_allocation_ablation_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_candidate_calibration_origin_ablation_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_candidate_ensemble_injection_is_normalized_and_opt_in",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_candidate_pool_diversity_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_consensus_config_regression",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_consensus_scoring_is_opt_in_and_validated",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_feature_stack_multi_origin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_feature_stack_origin_win_rate_uses_each_origin",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_feature_stack_stability_gate_defaults_and_validation",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_gap_signal_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_model_selection_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_momentum_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_number_signal_strength_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_adaptation_can_be_disabled",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_candidate_weights_are_normalized_and_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_candidate_weights_can_be_disabled",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_adaptive_weights_are_normalized_and_use_history_only",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_coverage_is_stable_across_seeds",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_generates_fourteen_diverse_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_propagates_number_signal_strength",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_rejects_invalid_adaptive_settings",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_pro_rejects_invalid_candidate_adaptation_settings",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_production_profile_is_locked_to_validated_defaults",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_propagates_candidate_generation_settings",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_recent_affinity_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_rejects_invalid_candidate_adaptation_settings",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_rejects_invalid_candidate_calibration_settings",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_score_calibration_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_signal_calibration_origin_ablation_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_signal_enhancement_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_top_model_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_pro.py::test_elite_weighting_ablation_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_clean_model_selection_regular_pro_elite_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_adaptive_candidate_allocation_long_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_adaptive_candidate_allocation_multi_origin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_adaptive_candidate_allocation_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_adaptive_momentum_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_against_constrained_random_jackpot_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_against_diversified_random_baseline_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_against_pro_and_multiple_random_baselines_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_candidate_allocation_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_consensus_light_multi_origin_stability_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_consensus_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_consensus_scoring_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_conservative_meta_selector_margin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_diversified_random_multi_origin_paired_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_ensemble_candidate_injection_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_feature_ablation_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_gap_recency_robust_long_holdout_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_hit_tail_distribution_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_jackpot_oriented_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_learned_signal_model_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_learned_signal_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_meta_model_margin_multi_origin_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_meta_model_multi_origin_stability_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_meta_model_selection_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_meta_portfolio_multi_model_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_momentum_ablation_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_momentum_robust_baseline_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_momentum_signal_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_multi_origin_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_number_signal_strength_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_overlap_limit_tail_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_portfolio_objective_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_prize_tier_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_robust_baseline_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_score_calibration_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_signal_enhancement_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_focused_portfolio_selection_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_hit_rate_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_hit_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_weight_jackpot_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_weight_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_final_engine_comparison_robust_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_learned_logistic_signal_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_elite_vs_pro_random.py::test_portfolio_hit_threshold_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_multi_origin_bootstrap_is_reproducible_and_rejects_empty_origin",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_multi_origin_bootstrap_preserves_weights_and_never_bridges_gaps",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_clamps_block_size_to_sample_size",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_constant_difference_has_zero_width_ci",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_empty_or_nonfinite_values",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs0]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs1]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs2]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_evaluation.py::test_paired_block_bootstrap_rejects_invalid_settings[kwargs3]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_is_reproducible_with_same_rng_seed",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_is_sorted",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_rejects_duplicate_candidates",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_rejects_insufficient_candidates",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_rejects_negative_score",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_rejects_number_outside_range",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_ticket_returns_six_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_tickets_is_reproducible_with_seed",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_tickets_rejects_non_positive_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_generator.py::test_generate_tickets_returns_requested_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_integration.py::test_full_lottery_pipeline",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_integration.py::test_full_pipeline_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_multi_seed_evaluation.py::test_multi_seed_evaluation",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_empty_tickets_have_jaccard_similarity_one",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_identical_tickets_have_jaccard_similarity_one",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_is_compatible_accepts_low_overlap",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_is_compatible_rejects_high_overlap",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_jaccard_similarity",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_enforces_max_overlap",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_rejects_duplicate_numbers_inside_ticket",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_rejects_empty_ticket",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_removes_duplicate_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_respects_max_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimize_sorts_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimizer_config_rejects_negative_overlap",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_optimizer_config_rejects_non_positive_max_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_optimizer.py::test_overlap_counts_shared_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_backtester_keeps_main_and_strong_portfolio_fixed_inside_block",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_backtester_random_universe_includes_unobserved_main_and_strong_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[1.5]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[1]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_exact_coverage_rejects_noninteger_main_numbers[True]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[-no header]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\\n1,\"1,2,3,4,5,6\",11-10-26\\n2,\"7,8,9,10,11,12\",10-10-26\\n-chronological]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\\n1,\"1,2,3,4,5,6\",31-02-26\\n-Invalid draw date]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,date\\n1,\"1,2,3,4,5,6\"\\n-header]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers,numbers\\n1,\"1,2,3,4,5,6\",\"7,8,9,10,11,12\"\\n-duplicate columns]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\\n-no draws]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\\n1,\"1,2,3,4,5,6\",extra\\n-header]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_invalid_csv_fails_with_dataset_error[draw_id,numbers\\n1,\"1,2,3,4,5,6\"\\n1,\"7,8,9,10,11,12\"\\n-Duplicate draw_id]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_random_baseline_is_unique_and_rejects_impossible_budget",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_repository_dates_use_calendar_windows_in_pro",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10-10-2026]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10-10-26]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[10/10/2026]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[2026-10-10]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_supported_dates_represent_the_same_calendar_day[2026/10/10]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_p0_validation.py::test_tab_delimited_custom_id_column_and_bom",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_distinct_ticket_can_only_expand_or_preserve_coverage",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_duplicate_ticket_does_not_inflate_portfolio_coverage",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_exact_single_ticket_coverage_counts_match_combinatorics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_invalid_match_threshold_is_rejected[0]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_invalid_match_threshold_is_rejected[7]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket0]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket1]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_portfolio_coverage.py::test_invalid_ticket_is_rejected[ticket2]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_empty_frequencies_return_empty_result",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_negative_frequency_is_rejected",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_negative_weights_are_rejected",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_number_score_is_immutable",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_rank_numbers_orders_by_score",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_rank_numbers_uses_number_as_tiebreaker",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_score_numbers_is_deterministic",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_score_numbers_returns_scores",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_predictor.py::test_zero_weights_are_rejected",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_empty_portfolio_reports_no_prize",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_fewer_than_three_main_matches_is_not_a_prize_even_if_strong_matches",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_draw_main_numbers_are_rejected",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_strong_number_is_rejected[0]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_strong_number_is_rejected[8]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers0]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers1]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_invalid_ticket_main_numbers_are_rejected[numbers2]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_missing_strong_number_uses_the_non_strong_prize_tier",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_portfolio_prize_summary_counts_winners_and_best_tier",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_portfolio_without_prizes_reports_no_winner",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers0-7-6-1]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers1-1-6-2]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers2-7-5-3]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers3-1-5-4]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers4-7-4-5]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers5-1-4-6]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers6-7-3-7]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_prize_evaluation.py::test_ticket_prize_evaluation_maps_all_eight_tiers[draw_numbers7-1-3-8]",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_backtest.py::test_print_regular_vs_pro_historical_backtest",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_portfolio_refinement.py::test_local_swap_never_decreases_portfolio_objective",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_portfolio_refinement.py::test_local_swap_preserves_fourteen_ticket_configuration",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_affinity_prior_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_candidate_generation_ablation",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_candidate_pool_diversity_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_candidate_score_weight_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_coverage_is_stable_across_seeds",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_is_reproducible_for_same_seed",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_number_signal_calibration_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_portfolio_quality_invariants",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_portfolio_selector_ablation",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_quality.py::test_pro_structural_gate_has_bounded_retries",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_random_baseline_robust.py::test_pro_against_multiple_random_baselines_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_random_baseline.py::test_pro_against_random_baseline_walk_forward",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_pro_scoring_ablation.py::test_pro_scoring_ablation_smoke",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro_scoring_variants.py::test_pro_rank_vs_raw_frequency_walk_forward",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro.py::test_pro_date_window_uses_calendar_years",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro.py::test_pro_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro.py::test_pro_respects_overlap_limit",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_pro.py::test_pro_returns_14_valid_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_backtest.py::test_real_lottery_backtest_produces_recommendations",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_backtest.py::test_real_lottery_backtest_runs",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_backtest.py::test_real_lottery_backtest_threshold_metrics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_dataset.py::test_real_lottery_dataset_has_valid_draws",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_dataset.py::test_real_lottery_dataset_is_chronological_contiguous_and_fresh",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_real_dataset.py::test_real_lottery_dataset_loads",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_generates_requested_number_of_candidates",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_rejects_non_positive_ticket_count",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_returns_no_more_than_optimizer_limit",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_returns_result",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_recommendation.py::test_recommendation_engine_tickets_are_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_regular_vs_pro.py::test_regular_vs_pro_10_year_dataset",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_report_builder.py::test_report_builder_handles_empty_backtest",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_report_builder.py::test_report_builder_uses_real_strong_number_fields",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_robustness.py::test_backtest_robustness_across_seeds",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_enforces_ticket_diversity",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_rejects_empty_input",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_rejects_when_no_tickets_remain",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_removes_duplicate_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_returns_selection_result",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_returns_tuple_of_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_selection.py::test_select_sorts_ticket_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_any_prize_objective_uses_coverage_engine",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_api_keeps_historical_model_selection_as_research_default",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_calibration_multi_origin_robust_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_calibration_recency_margin_ablation",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_calibration_reuses_one_portfolio_per_model_and_origin",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_coverage_candidate_budget_is_separate_and_bounded",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_coverage_objective_preserves_exact_portfolio_guarantees",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_coverage_objective_selects_exact_coverage_engine",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_jackpot_metric_is_opt_in_and_uses_best_ticket",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_jackpot_metric_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_model_selection_is_independent_of_final_ticket_seed",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_multi_origin_robust_random_baseline_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_prize_metric_scores_actual_prize_outcome",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_prize_metric_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_recency_and_stability_config_validation",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_rejects_invalid_calibration_origins",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_rejects_invalid_objective",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_returns_exactly_14_tickets",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_robust_walk_forward_against_models_and_random",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_selection_is_reproducible",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_selection_prefers_recent_consistent_performance",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_selection_seed_stability_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_tail_metric_is_opt_in_and_validated",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_tail_metric_robust_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_tail_metric_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_validation_weighted_portfolio_ensemble_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_vs_fixed_models_equal_budget_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_smart.py::test_smart_walk_forward_diagnostic",
+    "slow": true
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_backtest_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_backtest_metrics_exist",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest_metrics.py::test_strong_number_metrics_are_non_negative",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest.py::test_real_backtest_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest.py::test_real_backtest_runs_with_strong_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest.py::test_real_dataset_has_strong_number_statistics",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest.py::test_real_dataset_strong_number_counts_are_positive",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_backtest.py::test_real_dataset_strong_number_frequencies_are_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_least_frequent_strong_numbers_returns_valid_data",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_most_frequent_strong_numbers_returns_valid_data",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_strong_frequency_lookup",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_strong_number_frequencies_sum_to_one",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_strong_number_frequency_data_is_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_evaluation.py::test_strong_number_statistics_exist",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_pipeline.py::test_real_dataset_contains_strong_numbers",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_pipeline.py::test_strong_number_frequencies_sum_to_one",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_pipeline.py::test_strong_number_lookup_works",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_pipeline.py::test_strong_number_statistics_are_valid",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_strong_number_report.py::test_strong_number_report",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_ticket_count_details.py::test_ticket_count_details",
+    "slow": false
+  },
+  {
+    "id": "tests/lottery/test_ticket_count_evaluation.py::test_ticket_count_evaluation",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_accepts_short_options",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_finishes_with_separator",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_is_reproducible",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_produces_ticket_output",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_rejects_negative_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_rejects_zero_tickets",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_runs_successfully",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_shows_number_scores",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_recommend_command_uses_default_values",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli_recommend.py::test_smart_mode_reports_portfolio_objective_without_fake_number_ranks",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli.py::test_cli_can_add_and_list_entries",
+    "slow": false
+  },
+  {
+    "id": "tests/test_cli.py::test_cli_displays_resolved_configuration",
+    "slow": false
+  },
+  {
+    "id": "tests/test_config.py::test_settings_honor_environment_values",
+    "slow": false
+  },
+  {
+    "id": "tests/test_config.py::test_settings_reject_invalid_log_level",
+    "slow": false
+  },
+  {
+    "id": "tests/test_database.py::test_database_persists_and_lists_entries",
+    "slow": false
+  },
+  {
+    "id": "tests/test_database.py::test_database_rejects_empty_messages",
+    "slow": false
+  },
+  {
+    "id": "tests/test_logging.py::test_direct_library_logging_after_cli_capture_closes",
+    "slow": false
+  },
+  {
+    "id": "tests/test_logging.py::test_logging_rebinds_closed_stderr_without_duplicate_records",
+    "slow": false
+  },
+  {
+    "id": "tests/test_package.py::test_version_is_exposed",
+    "slow": false
+  }
+]

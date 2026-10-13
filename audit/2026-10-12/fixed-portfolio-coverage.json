@@ -1,0 +1,51 @@
+{
+  "seed": 42,
+  "draw_count": 1141,
+  "total_main_outcomes": 2324784,
+  "evaluated_tickets_per_mode": 14,
+  "note": "Exact fixed-portfolio coverage. One seed per existing configuration; construction budgets differ. This is not a multi-seed procedure comparison or predictive evidence. Values are the six-decimal percentages printed by the completed diagnostic.",
+  "rows": [
+    {
+      "mode": "uniform_random",
+      "coverage_3plus_percent": 42.887081,
+      "coverage_4plus_percent": 4.171699,
+      "mean_pair_overlap": 1.1319,
+      "exact_6_main_event_count": 14
+    },
+    {
+      "mode": "regular",
+      "coverage_3plus_percent": 49.191065,
+      "coverage_4plus_percent": 4.286291,
+      "mean_pair_overlap": 0.6484,
+      "exact_6_main_event_count": 14
+    },
+    {
+      "mode": "pro",
+      "coverage_3plus_percent": 37.107318,
+      "coverage_4plus_percent": 3.924623,
+      "mean_pair_overlap": 1.8242,
+      "exact_6_main_event_count": 14
+    },
+    {
+      "mode": "elite",
+      "coverage_3plus_percent": 40.16528,
+      "coverage_4plus_percent": 4.083046,
+      "mean_pair_overlap": 1.4396,
+      "exact_6_main_event_count": 14
+    },
+    {
+      "mode": "smart_any_prize",
+      "coverage_3plus_percent": 50.530544,
+      "coverage_4plus_percent": 4.311454,
+      "mean_pair_overlap": 0.6593,
+      "exact_6_main_event_count": 14
+    },
+    {
+      "mode": "smart_4plus",
+      "coverage_3plus_percent": 50.373454,
+      "coverage_4plus_percent": 4.313003,
+      "mean_pair_overlap": 0.6923,
+      "exact_6_main_event_count": 14
+    }
+  ]
+}

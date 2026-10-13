@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Iterator
 
@@ -14,6 +15,18 @@ class DatasetError(Exception):
 
 class InvalidDrawError(DatasetError):
     """Raised when a lottery draw is invalid."""
+
+
+def parse_draw_date(value: str | None) -> date | None:
+    """Parse supported draw dates, including the repository's DD-MM-YY format."""
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d-%m-%y"):
+        try:
+            return datetime.strptime(value.strip(), fmt).date()
+        except ValueError:
+            pass
+    return None
 
 
 @dataclass(frozen=True)
@@ -30,14 +43,14 @@ class LotteryDrawRecord:
             raise InvalidDrawError("draw_id cannot be empty")
         if not self.numbers:
             raise InvalidDrawError("A draw must contain at least one number")
-        if any(not isinstance(number, int) for number in self.numbers):
+        if any(type(number) is not int for number in self.numbers):
             raise InvalidDrawError("All lottery numbers must be integers")
         if any(number <= 0 for number in self.numbers):
             raise InvalidDrawError("Lottery numbers must be positive")
         if len(set(self.numbers)) != len(self.numbers):
             raise InvalidDrawError("Lottery numbers must be unique")
         if self.strong_number is not None:
-            if not isinstance(self.strong_number, int):
+            if type(self.strong_number) is not int:
                 raise InvalidDrawError("Strong number must be an integer")
             if self.strong_number <= 0:
                 raise InvalidDrawError("Strong number must be positive")
@@ -118,18 +131,24 @@ class CsvDatasetLoader:
             raise DatasetError(f"Dataset file not found: {file_path}")
 
         draws: list[LotteryDrawRecord] = []
+        seen_ids: set[str] = set()
+        previous_date: date | None = None
 
         try:
-            with file_path.open("r", encoding="utf-8", newline="") as file:
+            with file_path.open("r", encoding="utf-8-sig", newline="") as file:
                 sample = file.read(4096)
                 file.seek(0)
                 separator = self.separator
-                if separator == "," and "draw_id\t" in sample.splitlines()[0]:
+                if not sample.strip():
+                    raise DatasetError("CSV file has no header")
+                if separator == "," and self.draw_id_column + "\t" in sample.splitlines()[0]:
                     separator = "\t"
 
                 reader = csv.DictReader(file, delimiter=separator)
                 if reader.fieldnames is None:
                     raise DatasetError("CSV file has no header")
+                if len(set(reader.fieldnames)) != len(reader.fieldnames):
+                    raise DatasetError("CSV header contains duplicate columns")
 
                 required = {self.draw_id_column, self.numbers_column}
                 missing = required - set(reader.fieldnames)
@@ -140,9 +159,18 @@ class CsvDatasetLoader:
 
                 for row_number, row in enumerate(reader, start=2):
                     try:
+                        if None in row or any(value is None for value in row.values()):
+                            raise InvalidDrawError("CSV row does not match the header")
                         draw_id = (row[self.draw_id_column] or "").strip()
+                        if draw_id in seen_ids:
+                            raise InvalidDrawError(f"Duplicate draw_id: {draw_id}")
                         raw_numbers = (row[self.numbers_column] or "").strip()
                         date = ((row.get(self.date_column) or "").strip() or None)
+                        parsed_date = parse_draw_date(date)
+                        if date is not None and parsed_date is None:
+                            raise InvalidDrawError(f"Invalid draw date: {date}")
+                        if parsed_date is not None and previous_date is not None and parsed_date < previous_date:
+                            raise InvalidDrawError("Draw dates must be chronological")
                         strong_number = self._parse_strong_number(
                             row.get(self.strong_number_column)
                         )
@@ -167,11 +195,16 @@ class CsvDatasetLoader:
                                 strong_number=strong_number,
                             )
                         )
+                        seen_ids.add(draw_id)
+                        if parsed_date is not None:
+                            previous_date = parsed_date
                     except (KeyError, ValueError, InvalidDrawError) as exc:
                         raise DatasetError(f"Invalid row {row_number}: {exc}") from exc
         except OSError as exc:
             raise DatasetError(f"Could not read dataset file: {file_path}") from exc
 
+        if not draws:
+            raise DatasetError("Dataset contains no draws")
         return LotteryDataset(draws)
 
     @staticmethod

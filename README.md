@@ -27,6 +27,8 @@ The project analyzes historical lottery draws, scores numbers using multiple his
 - Reproducible evaluation using seeds
 - Automated testing with GitHub Actions
 - [Model validation protocol and promotion criteria](MODEL_VALIDATION_PLAN.md)
+- [P0 audit and complete test evidence — 2026-10-12](P0_AUDIT_2026-10-12.md)
+- [סיכום הביקורת והמשך העבודה בעברית](P0_SUMMARY_HE_2026-10-12.md)
 - Streamlit application
 
 ## Recommendation Modes

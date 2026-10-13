@@ -53,7 +53,7 @@ class PortfolioPrizeResult:
 def _validate_main_numbers(numbers: tuple[int, ...], label: str) -> None:
     if len(numbers) != 6:
         raise ValueError(f"{label} must contain exactly six main numbers")
-    if any(not isinstance(number, int) for number in numbers):
+    if any(type(number) is not int for number in numbers):
         raise ValueError(f"{label} main numbers must be integers")
     if len(set(numbers)) != 6:
         raise ValueError(f"{label} main numbers must be unique")
@@ -62,7 +62,7 @@ def _validate_main_numbers(numbers: tuple[int, ...], label: str) -> None:
 
 
 def _validate_strong_number(number: int | None, label: str) -> None:
-    if number is not None and (not isinstance(number, int) or not 1 <= number <= 7):
+    if number is not None and (type(number) is not int or not 1 <= number <= 7):
         raise ValueError(f"{label} strong number must be between 1 and 7")
 
 

@@ -7,7 +7,7 @@ pytestmark = pytest.mark.slow
 
 from lrei.lottery.dataset import CsvDatasetLoader, LotteryDataset
 from lrei.lottery.elite import EliteProConfig, EliteProRecommendationEngine
-from lrei.lottery.evaluation import paired_block_bootstrap_ci
+from lrei.lottery.evaluation import paired_block_bootstrap_ci, paired_origin_block_bootstrap_ci
 from lrei.lottery.pro import ProRecommendationEngine
 
 
@@ -2334,6 +2334,7 @@ def test_elite_diversified_random_multi_origin_paired_diagnostic():
     origins = [len(draws) - 100, len(draws) - 60, len(draws) - 20]
     elite_by_origin, random_by_origin = [], []
     paired = []
+    paired_by_origin = []
     rng = random.Random(20261012)
     engine = EliteProRecommendationEngine(
         __import__("lrei.lottery.elite", fromlist=["EliteProConfig"]).EliteProConfig(
@@ -2342,6 +2343,7 @@ def test_elite_diversified_random_multi_origin_paired_diagnostic():
     )
     for origin_index, start in enumerate(origins):
         elite_hits, random_hits = [], []
+        origin_paired = []
         for offset, target in enumerate(draws[start:start + holdout]):
             history = LotteryDataset(draws=draws[:start + offset])
             result = engine.recommend(history, seed=20261012 + origin_index * 100 + offset)
@@ -2356,12 +2358,14 @@ def test_elite_diversified_random_multi_origin_paired_diagnostic():
             elite_hits.append(elite_mean)
             random_hits.append(random_mean)
             paired.append(elite_mean - random_mean)
+            origin_paired.append(elite_mean - random_mean)
         elite_by_origin.append(mean(elite_hits))
         random_by_origin.append(mean(random_hits))
-    ci = _bootstrap_ci(paired, seed=20261013)
+        paired_by_origin.append(origin_paired)
+    ci = paired_origin_block_bootstrap_ci(paired_by_origin, seed=20261013, block_size=5)
     print("Elite vs matched diversified random (multi-origin):")
     for index, (elite, baseline) in enumerate(zip(elite_by_origin, random_by_origin)):
         print(f"  origin={index + 1}: elite={elite:.4f}, random={baseline:.4f}, diff={elite-baseline:+.4f}")
-    print(f"  paired delta={mean(paired):+.4f}, 95% bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
+    print(f"  paired delta={mean(paired):+.4f}, 95% within-origin 5-draw block-bootstrap CI=[{ci[0]:+.4f}, {ci[1]:+.4f}]")
     assert len(paired) == holdout * len(origins)
     assert all(value == value for value in paired)

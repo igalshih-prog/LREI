@@ -1,0 +1,513 @@
+﻿2026-10-12T16:33:29.3928588Z Current runner version: '2.337.0'
+2026-10-12T16:33:29.3956438Z ##[group]Runner Image Provisioner
+2026-10-12T16:33:29.3957428Z Hosted Compute Agent
+2026-10-12T16:33:29.3958155Z Version: 20261002.596
+2026-10-12T16:33:29.3958819Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-12T16:33:29.3959643Z Build Date: 2026-10-02T22:28:27Z
+2026-10-12T16:33:29.3960395Z Worker ID: {bef25c1d-149c-4397-b24a-3f212e2be4d9}
+2026-10-12T16:33:29.3961241Z Region: westus
+2026-10-12T16:33:29.3961825Z Cloud: Azure
+2026-10-12T16:33:29.3962381Z ##[endgroup]
+2026-10-12T16:33:29.3964224Z ##[group]Operating System
+2026-10-12T16:33:29.3964941Z Ubuntu
+2026-10-12T16:33:29.3965470Z 24.04.5
+2026-10-12T16:33:29.3966074Z LTS
+2026-10-12T16:33:29.3966610Z ##[endgroup]
+2026-10-12T16:33:29.3967209Z ##[group]Runner Image
+2026-10-12T16:33:29.3967886Z Image: ubuntu-24.04
+2026-10-12T16:33:29.3968488Z Version: 20261004.327.1
+2026-10-12T16:33:29.3969813Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-12T16:33:29.3971479Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-12T16:33:29.3972563Z ##[endgroup]
+2026-10-12T16:33:29.3973966Z ##[group]GITHUB_TOKEN Permissions
+2026-10-12T16:33:29.3976024Z Contents: read
+2026-10-12T16:33:29.3976637Z Metadata: read
+2026-10-12T16:33:29.3977351Z ##[endgroup]
+2026-10-12T16:33:29.3979552Z Secret source: Actions
+2026-10-12T16:33:29.3980629Z Cache mode: write
+2026-10-12T16:33:29.3981359Z Prepare workflow directory
+2026-10-12T16:33:29.4377034Z Prepare all required actions
+2026-10-12T16:33:29.4439012Z Getting action download info
+2026-10-12T16:33:29.8486592Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-12T16:33:30.8170789Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-12T16:33:30.8929304Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-12T16:33:31.1136412Z Complete job name: slow-tests (3)
+2026-10-12T16:33:31.1993055Z ##[group]Run actions/checkout@v4
+2026-10-12T16:33:31.1994367Z with:
+2026-10-12T16:33:31.1994892Z   repository: igalshih-prog/LREI
+2026-10-12T16:33:31.1999241Z   token: ***
+2026-10-12T16:33:31.1999723Z   ssh-strict: true
+2026-10-12T16:33:31.2000218Z   ssh-user: git
+2026-10-12T16:33:31.2000717Z   persist-credentials: true
+2026-10-12T16:33:31.2001261Z   clean: true
+2026-10-12T16:33:31.2001760Z   sparse-checkout-cone-mode: true
+2026-10-12T16:33:31.2002327Z   fetch-depth: 1
+2026-10-12T16:33:31.2002813Z   fetch-tags: false
+2026-10-12T16:33:31.2003307Z   show-progress: true
+2026-10-12T16:33:31.2004036Z   lfs: false
+2026-10-12T16:33:31.2004497Z   submodules: false
+2026-10-12T16:33:31.2005004Z   set-safe-directory: true
+2026-10-12T16:33:31.2005566Z   allow-unsafe-pr-checkout: false
+2026-10-12T16:33:31.2006450Z ##[endgroup]
+2026-10-12T16:33:31.3040819Z Syncing repository: igalshih-prog/LREI
+2026-10-12T16:33:31.3043268Z ##[group]Getting Git version info
+2026-10-12T16:33:31.3044806Z Working directory is '/home/runner/work/LREI/LREI'
+2026-10-12T16:33:31.3047061Z [command]/usr/bin/git version
+2026-10-12T16:33:31.3123331Z git version 2.55.0
+2026-10-12T16:33:31.3156243Z ##[endgroup]
+2026-10-12T16:33:31.3183425Z Temporarily overriding HOME='/home/runner/work/_temp/a3986cc0-edaf-49ef-8b79-ac41f21d157e' before making global git config changes
+2026-10-12T16:33:31.3185261Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T16:33:31.3186906Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LREI/LREI
+2026-10-12T16:33:31.3235674Z Deleting the contents of '/home/runner/work/LREI/LREI'
+2026-10-12T16:33:31.3240845Z ##[group]Initializing the repository
+2026-10-12T16:33:31.3245804Z [command]/usr/bin/git init /home/runner/work/LREI/LREI
+2026-10-12T16:33:31.3360378Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-12T16:33:31.3364067Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-12T16:33:31.3365751Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-12T16:33:31.3366584Z hint: call:
+2026-10-12T16:33:31.3367039Z hint:
+2026-10-12T16:33:31.3367849Z hint: 	git config --global init.defaultBranch <name>
+2026-10-12T16:33:31.3368567Z hint:
+2026-10-12T16:33:31.3369206Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-12T16:33:31.3370206Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-12T16:33:31.3371027Z hint:
+2026-10-12T16:33:31.3371480Z hint: 	git branch -m <name>
+2026-10-12T16:33:31.3371994Z hint:
+2026-10-12T16:33:31.3372697Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-12T16:33:31.3374518Z Initialized empty Git repository in /home/runner/work/LREI/LREI/.git/
+2026-10-12T16:33:31.3377051Z [command]/usr/bin/git remote add origin https://github.com/igalshih-prog/LREI
+2026-10-12T16:33:31.3447636Z ##[endgroup]
+2026-10-12T16:33:31.3448589Z ##[group]Disabling automatic garbage collection
+2026-10-12T16:33:31.3452430Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-12T16:33:31.3487186Z ##[endgroup]
+2026-10-12T16:33:31.3488093Z ##[group]Setting up auth
+2026-10-12T16:33:31.3495786Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T16:33:31.3541847Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T16:33:31.3934299Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T16:33:31.3980140Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T16:33:31.4219485Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T16:33:31.4259929Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T16:33:31.4486812Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-12T16:33:31.4535072Z ##[endgroup]
+2026-10-12T16:33:31.4536597Z ##[group]Fetching the repository
+2026-10-12T16:33:31.4545706Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5ec8a96c690689828b8321b87d706c92ce1b70a7:refs/remotes/pull/1/merge
+2026-10-12T16:33:31.9165690Z From https://github.com/igalshih-prog/LREI
+2026-10-12T16:33:31.9167395Z  * [new ref]         5ec8a96c690689828b8321b87d706c92ce1b70a7 -> pull/1/merge
+2026-10-12T16:33:31.9170852Z ##[endgroup]
+2026-10-12T16:33:31.9172289Z ##[group]Determining the checkout info
+2026-10-12T16:33:31.9174515Z ##[endgroup]
+2026-10-12T16:33:31.9181221Z [command]/usr/bin/git sparse-checkout disable
+2026-10-12T16:33:31.9243239Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-12T16:33:31.9275987Z ##[group]Checking out the ref
+2026-10-12T16:33:31.9281571Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1/merge
+2026-10-12T16:33:31.9386646Z Note: switching to 'refs/remotes/pull/1/merge'.
+2026-10-12T16:33:31.9387330Z 
+2026-10-12T16:33:31.9387792Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-12T16:33:31.9388733Z changes and commit them, and you can discard any commits you make in this
+2026-10-12T16:33:31.9389650Z state without impacting any branches by switching back to a branch.
+2026-10-12T16:33:31.9390172Z 
+2026-10-12T16:33:31.9390531Z If you want to create a new branch to retain commits you create, you may
+2026-10-12T16:33:31.9391387Z do so (now or later) by using -c with the switch command. Example:
+2026-10-12T16:33:31.9391876Z 
+2026-10-12T16:33:31.9392683Z   git switch -c <new-branch-name>
+2026-10-12T16:33:31.9393347Z 
+2026-10-12T16:33:31.9393969Z Or undo this operation with:
+2026-10-12T16:33:31.9394618Z 
+2026-10-12T16:33:31.9394968Z   git switch -
+2026-10-12T16:33:31.9395472Z 
+2026-10-12T16:33:31.9396165Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-12T16:33:31.9397116Z 
+2026-10-12T16:33:31.9398187Z HEAD is now at 5ec8a96 Merge 9d3579624a8a164a5c869a200116022d444109ea into a2bee20868c02a13e2b08dabc57cd397b1fdcf8d
+2026-10-12T16:33:31.9401567Z ##[endgroup]
+2026-10-12T16:33:31.9452787Z [command]/usr/bin/git log -1 --format=%H
+2026-10-12T16:33:31.9481585Z 5ec8a96c690689828b8321b87d706c92ce1b70a7
+2026-10-12T16:33:31.9860625Z ##[group]Run actions/setup-python@v5
+2026-10-12T16:33:31.9861281Z with:
+2026-10-12T16:33:31.9861711Z   python-version: 3.11
+2026-10-12T16:33:31.9862210Z   check-latest: false
+2026-10-12T16:33:31.9866993Z   token: ***
+2026-10-12T16:33:31.9867458Z   update-environment: true
+2026-10-12T16:33:31.9868024Z   allow-prereleases: false
+2026-10-12T16:33:31.9868537Z   freethreaded: false
+2026-10-12T16:33:31.9869002Z ##[endgroup]
+2026-10-12T16:33:32.1237946Z ##[group]Installed versions
+2026-10-12T16:33:32.1346083Z (node:2292) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T16:33:32.1349274Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T16:33:32.1351142Z Successfully set up CPython (3.11.17)
+2026-10-12T16:33:32.1353287Z ##[endgroup]
+2026-10-12T16:33:32.1595665Z ##[group]Run python -m pip install -e . pytest pytest-xdist
+2026-10-12T16:33:32.1597508Z [36;1mpython -m pip install -e . pytest pytest-xdist[0m
+2026-10-12T16:33:32.1900289Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:32.1901415Z env:
+2026-10-12T16:33:32.1902489Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:32.1904619Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-12T16:33:32.1906590Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:32.1908251Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:32.1909989Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:32.1911692Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-12T16:33:32.1913129Z ##[endgroup]
+2026-10-12T16:33:32.9329104Z Obtaining file:///home/runner/work/LREI/LREI
+2026-10-12T16:33:32.9348890Z   Installing build dependencies: started
+2026-10-12T16:33:33.7957683Z   Installing build dependencies: finished with status 'done'
+2026-10-12T16:33:33.7964128Z   Checking if build backend supports build_editable: started
+2026-10-12T16:33:33.8329830Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-12T16:33:33.8337122Z   Getting requirements to build editable: started
+2026-10-12T16:33:33.9742641Z   Getting requirements to build editable: finished with status 'done'
+2026-10-12T16:33:33.9754688Z   Installing backend dependencies: started
+2026-10-12T16:33:34.4549098Z   Installing backend dependencies: finished with status 'done'
+2026-10-12T16:33:34.4555663Z   Preparing editable metadata (pyproject.toml): started
+2026-10-12T16:33:34.6321198Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-12T16:33:34.7191538Z Collecting pytest
+2026-10-12T16:33:34.7704884Z   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+2026-10-12T16:33:34.7894964Z Collecting pytest-xdist
+2026-10-12T16:33:34.7933877Z   Downloading pytest_xdist-3.8.0-py3-none-any.whl.metadata (3.0 kB)
+2026-10-12T16:33:34.8118044Z Collecting platformdirs>=4.3.0 (from lrei==0.1.0)
+2026-10-12T16:33:34.8155536Z   Downloading platformdirs-4.13.0-py3-none-any.whl.metadata (5.5 kB)
+2026-10-12T16:33:34.8471322Z Collecting typer>=0.15.0 (from lrei==0.1.0)
+2026-10-12T16:33:34.8502798Z   Downloading typer-0.27.3-py3-none-any.whl.metadata (16 kB)
+2026-10-12T16:33:34.8618909Z Collecting iniconfig>=1.0.1 (from pytest)
+2026-10-12T16:33:34.8654067Z   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+2026-10-12T16:33:34.8756533Z Collecting packaging>=22 (from pytest)
+2026-10-12T16:33:34.8773081Z   Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-10-12T16:33:34.8830376Z Collecting pluggy<2,>=1.5 (from pytest)
+2026-10-12T16:33:34.8845360Z   Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-10-12T16:33:34.8998237Z Collecting pygments>=2.7.2 (from pytest)
+2026-10-12T16:33:34.9031006Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-10-12T16:33:34.9157476Z Collecting execnet>=2.1 (from pytest-xdist)
+2026-10-12T16:33:34.9188225Z   Downloading execnet-2.1.2-py3-none-any.whl.metadata (2.9 kB)
+2026-10-12T16:33:34.9342472Z Collecting shellingham>=1.3.0 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:34.9373936Z   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+2026-10-12T16:33:34.9657638Z Collecting rich>=13.8.0 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:34.9703251Z   Downloading rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+2026-10-12T16:33:34.9846726Z Collecting annotated-doc>=0.0.2 (from typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:34.9878343Z   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+2026-10-12T16:33:35.0019242Z Collecting markdown-it-py>=2.2.0 (from rich>=13.8.0->typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:35.0051612Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+2026-10-12T16:33:35.0220295Z Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.8.0->typer>=0.15.0->lrei==0.1.0)
+2026-10-12T16:33:35.0262768Z   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2026-10-12T16:33:35.0357410Z Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-12T16:33:35.0476597Z Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-12T16:33:35.0508794Z Downloading pytest_xdist-3.8.0-py3-none-any.whl (46 kB)
+2026-10-12T16:33:35.0560020Z Downloading execnet-2.1.2-py3-none-any.whl (40 kB)
+2026-10-12T16:33:35.0619410Z Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+2026-10-12T16:33:35.0652508Z Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-12T16:33:35.0683329Z Downloading platformdirs-4.13.0-py3-none-any.whl (32 kB)
+2026-10-12T16:33:35.0735009Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-10-12T16:33:35.0826121Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 177.8 MB/s  0:00:00
+2026-10-12T16:33:35.0857924Z Downloading typer-0.27.3-py3-none-any.whl (123 kB)
+2026-10-12T16:33:35.0910069Z Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+2026-10-12T16:33:35.0959754Z Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-12T16:33:35.1019184Z Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-12T16:33:35.1069025Z Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-12T16:33:35.1115993Z Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+2026-10-12T16:33:35.1431905Z Building wheels for collected packages: lrei
+2026-10-12T16:33:35.1440932Z   Building editable for lrei (pyproject.toml): started
+2026-10-12T16:33:35.1818478Z   Building editable for lrei (pyproject.toml): finished with status 'done'
+2026-10-12T16:33:35.1824172Z   Created wheel for lrei: filename=lrei-0.1.0-py3-none-any.whl size=5693 sha256=c1546a2935dd023dfd5ae21fc6a63dda953e0d1d10cc832c7fc0c941ca50cfef
+2026-10-12T16:33:35.1826328Z   Stored in directory: /tmp/pip-ephem-wheel-cache-h944o6au/wheels/d8/4a/f9/3f8b8ad3199f4d9845ed1ca065af43a1dbeb2ade95c5e805d3
+2026-10-12T16:33:35.1845251Z Successfully built lrei
+2026-10-12T16:33:35.2217571Z Installing collected packages: shellingham, pygments, pluggy, platformdirs, packaging, mdurl, iniconfig, execnet, annotated-doc, pytest, markdown-it-py, rich, pytest-xdist, typer, lrei
+2026-10-12T16:33:36.7071742Z 
+2026-10-12T16:33:36.7085670Z Successfully installed annotated-doc-0.0.5 execnet-2.1.2 iniconfig-2.3.1 lrei-0.1.0 markdown-it-py-4.2.0 mdurl-0.1.2 packaging-26.3 platformdirs-4.13.0 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1 pytest-xdist-3.8.0 rich-15.0.0 shellingham-1.5.4 typer-0.27.3
+2026-10-12T16:33:36.7932681Z ##[group]Run python -m pytest -n 2 -rA -m slow --shard-count=4 --shard-index=3 --junitxml=slow-tests-3.xml -o junit_logging=all
+2026-10-12T16:33:36.7933879Z [36;1mpython -m pytest -n 2 -rA -m slow --shard-count=4 --shard-index=3 --junitxml=slow-tests-3.xml -o junit_logging=all[0m
+2026-10-12T16:33:36.7998266Z shell: /usr/bin/bash -e {0}
+2026-10-12T16:33:36.7998538Z env:
+2026-10-12T16:33:36.7998822Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:36.7999271Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-12T16:33:36.7999703Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:36.8000108Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:36.8000493Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T16:33:36.8000882Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-12T16:33:36.8001216Z ##[endgroup]
+2026-10-12T16:33:52.4405118Z ============================= test session starts ==============================
+2026-10-12T16:33:52.4406060Z platform linux -- Python 3.11.17, pytest-9.1.1, pluggy-1.6.0
+2026-10-12T16:33:52.4406709Z rootdir: /home/runner/work/LREI/LREI
+2026-10-12T16:33:52.4407192Z configfile: pyproject.toml
+2026-10-12T16:33:52.4407599Z testpaths: tests
+2026-10-12T16:33:52.4407996Z plugins: platformdirs-4.13.0, xdist-3.8.0
+2026-10-12T16:33:52.4408477Z created: 2/2 workers
+2026-10-12T16:33:52.4408829Z 2 workers [23 items]
+2026-10-12T16:33:52.4409048Z 
+2026-10-12T17:32:30.3679763Z .......................                                                  [100%]
+2026-10-12T17:32:30.3680458Z ==================================== PASSES ====================================
+2026-10-12T17:32:30.3681366Z _____ test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool _____
+2026-10-12T17:32:30.3682416Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3683754Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3684615Z Exact any-prize coverage comparison:
+2026-10-12T17:32:30.3685054Z   candidate pool=100; recommended tickets=14
+2026-10-12T17:32:30.3685470Z   greedy+local-swap exact 3+ coverage=50.3585%
+2026-10-12T17:32:30.3685868Z   random 14-of-same-pool mean=45.0613%
+2026-10-12T17:32:30.3686201Z   delta=+5.2972%
+2026-10-12T17:32:30.3686612Z _____________ test_elite_candidate_allocation_ablation_diagnostic ______________
+2026-10-12T17:32:30.3687282Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3687922Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3688428Z Elite candidate-source allocation ablation:
+2026-10-12T17:32:30.3688793Z   equal: hits=0.9241
+2026-10-12T17:32:30.3689067Z   rank_heavy: hits=0.9107
+2026-10-12T17:32:30.3689360Z   raw_heavy: hits=0.9196
+2026-10-12T17:32:30.3689651Z   ewma_heavy: hits=0.9420
+2026-10-12T17:32:30.3689936Z   rank_ewma: hits=0.9196
+2026-10-12T17:32:30.3690382Z ________ test_elite_adaptive_candidate_weights_multi_origin_diagnostic _________
+2026-10-12T17:32:30.3691043Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3691654Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3692173Z Elite adaptive candidate multi-origin diagnostic:
+2026-10-12T17:32:30.3692562Z   one_origin: hits=0.9333
+2026-10-12T17:32:30.3692855Z   three_origins: hits=0.9310
+2026-10-12T17:32:30.3693179Z   three-origins - one-origin=-0.0024
+2026-10-12T17:32:30.3694002Z ______ test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic _______
+2026-10-12T17:32:30.3694676Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3695285Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3696271Z Elite pair/triple portfolio coverage diagnostic:
+2026-10-12T17:32:30.3696959Z   current: hits=0.9536, pairs=173.12, triples=271.30
+2026-10-12T17:32:30.3697593Z   pair_triple: hits=0.9571, pairs=177.85, triples=273.80
+2026-10-12T17:32:30.3698180Z   pair_triple - current=+0.0036
+2026-10-12T17:32:30.3698819Z _____________ test_elite_gap_signal_multi_origin_robust_diagnostic _____________
+2026-10-12T17:32:30.3699903Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3700720Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3701387Z Elite gap-signal multi-origin diagnostic:
+2026-10-12T17:32:30.3701860Z   current: hits=0.9206
+2026-10-12T17:32:30.3702138Z   gap_recency: hits=0.9143
+2026-10-12T17:32:30.3702361Z   gap_overdue: hits=0.9317
+2026-10-12T17:32:30.3702593Z   gap_adaptive_recency: hits=0.9206
+2026-10-12T17:32:30.3702856Z   gap_adaptive_overdue: hits=0.9206
+2026-10-12T17:32:30.3703243Z ____________ test_elite_signal_enhancement_walk_forward_diagnostic _____________
+2026-10-12T17:32:30.3704330Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3704816Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3705203Z Elite signal-enhancement diagnostic:
+2026-10-12T17:32:30.3705468Z   current: hits=0.9171
+2026-10-12T17:32:30.3705693Z   momentum_adaptive: hits=0.9171
+2026-10-12T17:32:30.3705936Z   consensus: hits=0.9271
+2026-10-12T17:32:30.3706160Z   score_calibration: hits=0.9514
+2026-10-12T17:32:30.3706403Z   momentum_consensus: hits=0.9271
+2026-10-12T17:32:30.3706774Z _______ test_elite_adaptive_candidate_allocation_long_robust_diagnostic ________
+2026-10-12T17:32:30.3707277Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3707751Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3708189Z Elite adaptive candidate-allocation long robust diagnostic:
+2026-10-12T17:32:30.3708533Z   equal: hits=0.9571
+2026-10-12T17:32:30.3708738Z   adaptive: hits=0.9632
+2026-10-12T17:32:30.3708959Z   adaptive - equal=+0.0060
+2026-10-12T17:32:30.3709201Z   95% bootstrap CI=[-0.0030, +0.0158]
+2026-10-12T17:32:30.3709565Z __________ test_elite_against_constrained_random_jackpot_walk_forward __________
+2026-10-12T17:32:30.3710058Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3710510Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3710897Z Elite vs constrained-random jackpot diagnostic:
+2026-10-12T17:32:30.3711226Z   holdout=180, random_portfolios_per_draw=5
+2026-10-12T17:32:30.3711552Z   mean hits: Elite=0.9341, random=0.9735, diff=-0.0394
+2026-10-12T17:32:30.3711968Z   best ticket: Elite=2.3111, random=2.4533, diff=-0.1422
+2026-10-12T17:32:30.3712345Z   4+: diff=-0.0189, 95% bootstrap CI=[-0.0344, +0.0022]
+2026-10-12T17:32:30.3712675Z   5+: diff=-0.0011, 95% bootstrap CI=[-0.0033, +0.0000]
+2026-10-12T17:32:30.3712987Z   6: diff=+0.0000, 95% bootstrap CI=[+0.0000, +0.0000]
+2026-10-12T17:32:30.3713382Z ______________ test_elite_hit_tail_distribution_robust_diagnostic ______________
+2026-10-12T17:32:30.3714253Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3714791Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3715167Z Elite hit-tail robust diagnostic:
+2026-10-12T17:32:30.3715505Z   3+: Elite=0.0383, Random=0.0406, diff=-0.0023, 95% CI=[-0.0146, +0.0110]
+2026-10-12T17:32:30.3715927Z   4+: Elite=0.0030, Random=0.0039, diff=-0.0009, 95% CI=[-0.0038, +0.0027]
+2026-10-12T17:32:30.3716340Z   5+: Elite=0.0000, Random=0.0002, diff=-0.0002, 95% CI=[-0.0005, +0.0000]
+2026-10-12T17:32:30.3716739Z   6+: Elite=0.0000, Random=0.0000, diff=+0.0000, 95% CI=[+0.0000, +0.0000]
+2026-10-12T17:32:30.3717197Z _________ test_elite_consensus_light_multi_origin_stability_diagnostic _________
+2026-10-12T17:32:30.3718054Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3718520Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3718915Z Elite Consensus light multi-origin stability:
+2026-10-12T17:32:30.3719207Z   origins=3, draws_per_origin=30
+2026-10-12T17:32:30.3719440Z   off=0.9468
+2026-10-12T17:32:30.3719623Z   light=0.9437
+2026-10-12T17:32:30.3719813Z   light-off=-0.0032
+2026-10-12T17:32:30.3720025Z   95% bootstrap CI=[-0.0143, +0.0071]
+2026-10-12T17:32:30.3720307Z   origin_differences=[-0.0071, 0.0048, -0.0071]
+2026-10-12T17:32:30.3720696Z _____________ test_elite_meta_model_margin_multi_origin_diagnostic _____________
+2026-10-12T17:32:30.3721183Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3721638Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3722012Z Elite meta-model margin diagnostic:
+2026-10-12T17:32:30.3722545Z   threshold=0.00: meta=0.9397, delta=-0.0000, CI=[-0.0508, +0.0500], origins=[0.06666666666666665, -0.08333333333333337, 0.016666666666666607]
+2026-10-12T17:32:30.3723344Z   threshold=0.02: meta=0.9405, delta=+0.0008, CI=[-0.0484, +0.0516], origins=[0.061904761904761796, -0.07619047619047614, 0.016666666666666607]
+2026-10-12T17:32:30.3724478Z   threshold=0.04: meta=0.9310, delta=-0.0087, CI=[-0.0532, +0.0357], origins=[0.033333333333333326, -0.080952380952381, 0.021428571428571352]
+2026-10-12T17:32:30.3725124Z _________ test_elite_diversified_random_multi_origin_paired_diagnostic _________
+2026-10-12T17:32:30.3725623Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3726096Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3726494Z Elite vs matched diversified random (multi-origin):
+2026-10-12T17:32:30.3726840Z   origin=1: elite=0.9000, random=0.9693, diff=-0.0693
+2026-10-12T17:32:30.3727169Z   origin=2: elite=0.9429, random=0.9529, diff=-0.0100
+2026-10-12T17:32:30.3727481Z   origin=3: elite=1.0643, random=0.9893, diff=+0.0750
+2026-10-12T17:32:30.3727896Z   paired delta=-0.0014, 95% within-origin 5-draw block-bootstrap CI=[-0.0598, +0.0610]
+2026-10-12T17:32:30.3728412Z _________ test_elite_momentum_ablation_robust_walk_forward_diagnostic __________
+2026-10-12T17:32:30.3728913Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3729364Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3729718Z Elite momentum robust ablation:
+2026-10-12T17:32:30.3729953Z   off: hits=0.9406
+2026-10-12T17:32:30.3730150Z   light: hits=0.9226
+2026-10-12T17:32:30.3730352Z   medium: hits=0.9481
+2026-10-12T17:32:30.3730550Z   strong: hits=0.9594
+2026-10-12T17:32:30.3730747Z   light - off=-0.0180
+2026-10-12T17:32:30.3730964Z   light 95% bootstrap CI=[-0.0368, +0.0015]
+2026-10-12T17:32:30.3731243Z   medium - off=+0.0075
+2026-10-12T17:32:30.3731475Z   medium 95% bootstrap CI=[-0.0188, +0.0338]
+2026-10-12T17:32:30.3731737Z   strong - off=+0.0188
+2026-10-12T17:32:30.3731952Z   strong 95% bootstrap CI=[-0.0173, +0.0556]
+2026-10-12T17:32:30.3732332Z _______ test_elite_number_signal_strength_robust_walk_forward_diagnostic _______
+2026-10-12T17:32:30.3732821Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3733290Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3733938Z Elite number-signal strength 0.00: hits=0.9345
+2026-10-12T17:32:30.3734260Z Elite number-signal strength 0.25: hits=0.9976
+2026-10-12T17:32:30.3734571Z   vs 0.00=+0.0631, 95% bootstrap CI=[+0.0036, +0.1250]
+2026-10-12T17:32:30.3734890Z Elite number-signal strength 0.40: hits=0.9440
+2026-10-12T17:32:30.3735190Z   vs 0.00=+0.0095, 95% bootstrap CI=[-0.0512, +0.0726]
+2026-10-12T17:32:30.3735645Z Elite number-signal strength 0.50: hits=0.9250
+2026-10-12T17:32:30.3736063Z   vs 0.00=-0.0095, 95% bootstrap CI=[-0.0750, +0.0548]
+2026-10-12T17:32:30.3736376Z Elite number-signal strength 0.60: hits=0.9238
+2026-10-12T17:32:30.3736678Z   vs 0.00=-0.0107, 95% bootstrap CI=[-0.0774, +0.0595]
+2026-10-12T17:32:30.3736979Z Elite number-signal strength 0.75: hits=0.9524
+2026-10-12T17:32:30.3737280Z   vs 0.00=+0.0179, 95% bootstrap CI=[-0.0488, +0.0857]
+2026-10-12T17:32:30.3737653Z _____________________ test_elite_tail_hit_rate_diagnostic ______________________
+2026-10-12T17:32:30.3738128Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3738583Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3738938Z Elite tail-hit diagnostic:
+2026-10-12T17:32:30.3739207Z   current: >=3=0.3368, >=4=0.0316, >=5=0.0000, =6=0.0000
+2026-10-12T17:32:30.3739562Z   consensus_light: >=3=0.3263, >=4=0.0211, >=5=0.0000, =6=0.0000
+2026-10-12T17:32:30.3739952Z   consensus_medium: >=3=0.3368, >=4=0.0211, >=5=0.0000, =6=0.0000
+2026-10-12T17:32:30.3740349Z   adaptive_candidates: >=3=0.3474, >=4=0.0316, >=5=0.0000, =6=0.0000
+2026-10-12T17:32:30.3740790Z ______________ test_elite_robust_baseline_walk_forward_diagnostic ______________
+2026-10-12T17:32:30.3741273Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3741724Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3742083Z Elite robust baseline diagnostic:
+2026-10-12T17:32:30.3742319Z   holdout=95
+2026-10-12T17:32:30.3742515Z   Elite mean hits/ticket=0.9398
+2026-10-12T17:32:30.3742759Z   Random mean hits/ticket=0.9738
+2026-10-12T17:32:30.3742996Z   Elite-Random=-0.0340
+2026-10-12T17:32:30.3798950Z   95% bootstrap CI=[-0.1029, +0.0358]
+2026-10-12T17:32:30.3799635Z ____________________ test_pro_candidate_generation_ablation ____________________
+2026-10-12T17:32:30.3800524Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3801372Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3802034Z Pro candidate-generation ablation:
+2026-10-12T17:32:30.3802717Z   current: hits=1.0373 unique_ratio=0.9998 coverage=37.00 mean_pool_overlap=1.0743
+2026-10-12T17:32:30.3803413Z   pair_light: hits=1.0155 unique_ratio=0.9998 coverage=37.00 mean_pool_overlap=1.0725
+2026-10-12T17:32:30.3804292Z   pair_strong: hits=0.9969 unique_ratio=1.0000 coverage=37.00 mean_pool_overlap=1.0759
+2026-10-12T17:32:30.3804821Z   gate_light: hits=1.0435 unique_ratio=1.0000 coverage=37.00 mean_pool_overlap=1.0751
+2026-10-12T17:32:30.3805336Z   gate_strong: hits=0.9876 unique_ratio=0.9998 coverage=37.00 mean_pool_overlap=1.0730
+2026-10-12T17:32:30.3805865Z   no_gate: hits=1.0311 unique_ratio=1.0000 coverage=37.00 mean_pool_overlap=1.0728
+2026-10-12T17:32:30.3806356Z _____________________ test_pro_portfolio_selector_ablation _____________________
+2026-10-12T17:32:30.3806846Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3807330Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3807704Z Pro portfolio selector ablation:
+2026-10-12T17:32:30.3807951Z   current: 1.0464
+2026-10-12T17:32:30.3808155Z   coverage_light: 1.0214
+2026-10-12T17:32:30.3808377Z   coverage_strong: 1.0643
+2026-10-12T17:32:30.3808626Z   overlap_strong: 1.0536
+2026-10-12T17:32:30.3808838Z   balanced: 1.0571
+2026-10-12T17:32:30.3809150Z ___________ test_smart_robust_walk_forward_against_models_and_random ___________
+2026-10-12T17:32:30.3809650Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3810109Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3810474Z Smart robust walk-forward diagnostic:
+2026-10-12T17:32:30.3810730Z   holdout=30
+2026-10-12T17:32:30.3811093Z   Smart=0.9643
+2026-10-12T17:32:30.3811277Z   Elite=0.9310
+2026-10-12T17:32:30.3811567Z   Pro=0.9405
+2026-10-12T17:32:30.3811755Z   Random=0.9690
+2026-10-12T17:32:30.3811952Z   Smart-Elite=+0.0333
+2026-10-12T17:32:30.3812165Z   Smart-Random=-0.0048
+2026-10-12T17:32:30.3812426Z   Smart-Elite 95% block-bootstrap CI=[-0.0429, +0.1429]
+2026-10-12T17:32:30.3812779Z   Smart-Random 95% block-bootstrap CI=[-0.0619, +0.1143]
+2026-10-12T17:32:30.3813117Z   selections={'regular': 19, 'pro': 6, 'elite': 5}
+2026-10-12T17:32:30.3813828Z ________________ test_smart_tail_metric_walk_forward_diagnostic ________________
+2026-10-12T17:32:30.3814401Z [gw0] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3814874Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3815241Z Smart selection metric diagnostic:
+2026-10-12T17:32:30.3815521Z   mean: mean=0.9774, 4+=0.0024, 5+=0.0000, 6+=0.0000
+2026-10-12T17:32:30.3815825Z   tail: mean=0.9774, 4+=0.0024, 5+=0.0000, 6+=0.0000
+2026-10-12T17:32:30.3816224Z _______________ test_final_engine_comparison_robust_walk_forward _______________
+2026-10-12T17:32:30.3816694Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3817154Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3817509Z FINAL engine comparison:
+2026-10-12T17:32:30.3817758Z   regular: mean_hits=0.9782, best_ticket=2.4947
+2026-10-12T17:32:30.3818051Z   pro: mean_hits=0.9045, best_ticket=2.3053
+2026-10-12T17:32:30.3818336Z   elite: mean_hits=0.9301, best_ticket=2.3158
+2026-10-12T17:32:30.3818676Z   elite_adaptive: mean_hits=0.9323, best_ticket=2.3368
+2026-10-12T17:32:30.3818995Z   random: mean_hits=0.9647, best_ticket=2.4211
+2026-10-12T17:32:30.3819334Z   regular - random=+0.0135, 95% bootstrap CI=[-0.0316, +0.0586]
+2026-10-12T17:32:30.3819708Z   pro - random=-0.0602, 95% bootstrap CI=[-0.1316, +0.0098]
+2026-10-12T17:32:30.3820073Z   elite - random=-0.0346, 95% bootstrap CI=[-0.1030, +0.0353]
+2026-10-12T17:32:30.3820470Z   elite_adaptive - random=-0.0323, 95% bootstrap CI=[-0.1023, +0.0361]
+2026-10-12T17:32:30.3820932Z ____________ test_smart_calibration_multi_origin_robust_diagnostic _____________
+2026-10-12T17:32:30.3821412Z [gw1] linux -- Python 3.11.17 /opt/hostedtoolcache/Python/3.11.17/x64/bin/python
+2026-10-12T17:32:30.3821867Z ----------------------------- Captured stdout call -----------------------------
+2026-10-12T17:32:30.3822250Z Smart calibration multi-origin robust diagnostic:
+2026-10-12T17:32:30.3822929Z   current: mean=0.9750, delta=+0.0000, 95% block-bootstrap CI=[+0.0000, +0.0000], origins=[0.9536, 0.9429, 1.0286], selections={'regular': 39, 'pro': 5, 'elite': 16}
+2026-10-12T17:32:30.3824104Z   stable: mean=1.0048, delta=+0.0298, 95% block-bootstrap CI=[-0.0107, +0.0738], origins=[0.95, 1.0357, 1.0286], selections={'regular': 33, 'pro': 4, 'elite': 23}
+2026-10-12T17:32:30.3825036Z   recent: mean=0.9738, delta=-0.0012, 95% block-bootstrap CI=[-0.0429, +0.0417], origins=[0.9214, 0.9714, 1.0286], selections={'regular': 29, 'pro': 5, 'elite': 26}
+2026-10-12T17:32:30.3825958Z   longer: mean=0.9286, delta=-0.0464, 95% block-bootstrap CI=[-0.1000, +0.0095], origins=[0.9214, 0.9571, 0.9071], selections={'regular': 24, 'pro': 7, 'elite': 29}
+2026-10-12T17:32:30.3826674Z ------- generated xml file: /home/runner/work/LREI/LREI/slow-tests-3.xml -------
+2026-10-12T17:32:30.3827109Z =========================== short test summary info ============================
+2026-10-12T17:32:30.3827818Z PASSED tests/lottery/test_any_prize_coverage_engine.py::test_exact_any_prize_coverage_beats_random_portfolios_from_same_pool
+2026-10-12T17:32:30.3828544Z PASSED tests/lottery/test_elite_pro.py::test_elite_candidate_allocation_ablation_diagnostic
+2026-10-12T17:32:30.3829180Z PASSED tests/lottery/test_elite_pro.py::test_elite_adaptive_candidate_weights_multi_origin_diagnostic
+2026-10-12T17:32:30.3829868Z PASSED tests/lottery/test_elite_pro.py::test_elite_portfolio_pair_triple_coverage_walk_forward_diagnostic
+2026-10-12T17:32:30.3830890Z PASSED tests/lottery/test_elite_pro.py::test_elite_gap_signal_multi_origin_robust_diagnostic
+2026-10-12T17:32:30.3831513Z PASSED tests/lottery/test_elite_pro.py::test_elite_signal_enhancement_walk_forward_diagnostic
+2026-10-12T17:32:30.3832194Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_adaptive_candidate_allocation_long_robust_diagnostic
+2026-10-12T17:32:30.3832924Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_against_constrained_random_jackpot_walk_forward
+2026-10-12T17:32:30.3833904Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_hit_tail_distribution_robust_diagnostic
+2026-10-12T17:32:30.3834638Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_consensus_light_multi_origin_stability_diagnostic
+2026-10-12T17:32:30.3835334Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_meta_model_margin_multi_origin_diagnostic
+2026-10-12T17:32:30.3836032Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_diversified_random_multi_origin_paired_diagnostic
+2026-10-12T17:32:30.3836755Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_momentum_ablation_robust_walk_forward_diagnostic
+2026-10-12T17:32:30.3837480Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_number_signal_strength_robust_walk_forward_diagnostic
+2026-10-12T17:32:30.3838135Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_tail_hit_rate_diagnostic
+2026-10-12T17:32:30.3838738Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_elite_robust_baseline_walk_forward_diagnostic
+2026-10-12T17:32:30.3839331Z PASSED tests/lottery/test_pro_quality.py::test_pro_candidate_generation_ablation
+2026-10-12T17:32:30.3839853Z PASSED tests/lottery/test_pro_quality.py::test_pro_portfolio_selector_ablation
+2026-10-12T17:32:30.3840429Z PASSED tests/lottery/test_smart.py::test_smart_model_selection_is_independent_of_final_ticket_seed
+2026-10-12T17:32:30.3841052Z PASSED tests/lottery/test_smart.py::test_smart_robust_walk_forward_against_models_and_random
+2026-10-12T17:32:30.3841631Z PASSED tests/lottery/test_smart.py::test_smart_tail_metric_walk_forward_diagnostic
+2026-10-12T17:32:30.3842236Z PASSED tests/lottery/test_elite_vs_pro_random.py::test_final_engine_comparison_robust_walk_forward
+2026-10-12T17:32:30.3842846Z PASSED tests/lottery/test_smart.py::test_smart_calibration_multi_origin_robust_diagnostic
+2026-10-12T17:32:30.3843328Z ======================= 23 passed in 3533.22s (0:58:53) ========================
+2026-10-12T17:32:30.4065412Z ##[group]Run actions/upload-artifact@v4
+2026-10-12T17:32:30.4065731Z with:
+2026-10-12T17:32:30.4065934Z   name: slow-tests-3
+2026-10-12T17:32:30.4066165Z   path: slow-tests-3.xml
+2026-10-12T17:32:30.4066402Z   if-no-files-found: warn
+2026-10-12T17:32:30.4066631Z   compression-level: 6
+2026-10-12T17:32:30.4066848Z   overwrite: false
+2026-10-12T17:32:30.4067064Z   include-hidden-files: false
+2026-10-12T17:32:30.4067311Z env:
+2026-10-12T17:32:30.4067581Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T17:32:30.4068048Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib/pkgconfig
+2026-10-12T17:32:30.4068472Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T17:32:30.4068852Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T17:32:30.4069235Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.17/x64
+2026-10-12T17:32:30.4069630Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.17/x64/lib
+2026-10-12T17:32:30.4069984Z ##[endgroup]
+2026-10-12T17:32:30.5754525Z (node:2920) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T17:32:30.5755866Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T17:32:30.5817061Z With the provided path, there will be 1 file uploaded
+2026-10-12T17:32:30.5818177Z Artifact name is valid!
+2026-10-12T17:32:30.5821058Z Root directory input is valid!
+2026-10-12T17:32:30.9951536Z Beginning upload of artifact content to blob storage
+2026-10-12T17:32:31.0151603Z (node:2920) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-12T17:32:31.3164615Z Uploaded bytes 3044
+2026-10-12T17:32:31.4011708Z Finished uploading artifact content to blob storage!
+2026-10-12T17:32:31.4012930Z SHA256 digest of uploaded artifact zip is 9881fbbff35a8ebeb681bcdb574a31b68da00711ae705af18b8f39f94270bd40
+2026-10-12T17:32:31.4014926Z Finalizing artifact upload
+2026-10-12T17:32:31.6673009Z Artifact slow-tests-3.zip successfully finalized. Artifact ID 11762947037
+2026-10-12T17:32:31.6674794Z Artifact slow-tests-3 has been successfully uploaded! Final size is 3044 bytes. Artifact ID is 11762947037
+2026-10-12T17:32:31.6678929Z Artifact download URL: https://github.com/igalshih-prog/LREI/actions/runs/38278217251/artifacts/11762947037
+2026-10-12T17:32:31.6858830Z Post job cleanup.
+2026-10-12T17:32:31.8079917Z (node:2932) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T17:32:31.8081386Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T17:32:31.8270732Z Post job cleanup.
+2026-10-12T17:32:31.9274461Z [command]/usr/bin/git version
+2026-10-12T17:32:31.9347765Z git version 2.55.0
+2026-10-12T17:32:31.9404285Z Temporarily overriding HOME='/home/runner/work/_temp/9eda4861-bdbe-4606-bb59-19f8970bf714' before making global git config changes
+2026-10-12T17:32:31.9405862Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T17:32:31.9407056Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LREI/LREI
+2026-10-12T17:32:31.9471848Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T17:32:31.9516172Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T17:32:31.9831370Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T17:32:31.9887039Z http.https://github.com/.extraheader
+2026-10-12T17:32:31.9945640Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-12T17:32:31.9967227Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T17:32:32.0337549Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T17:32:32.0387865Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T17:32:32.0848291Z Cleaning up orphan processes
+2026-10-12T17:32:32.1257953Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

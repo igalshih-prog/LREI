@@ -61,6 +61,8 @@ def _check_source(row: Any, observations: dict[int, dict[str, Any]]) -> None:
     if row["source_url"] != record["source_url"]:
         raise PrizeDataError("source audit URL must match the exact observation URL")
     _valid_ymd(row["reviewed_on_utc_date"], "reviewed_on_utc_date")
+    if row["reviewed_on_utc_date"] < record["draw_date"]:
+        raise PrizeDataError("source cannot be reviewed before the draw")
     _valid_hhmm(row["draw_time_local"])
     if row["review_method"] != REVIEW_METHOD:
         raise PrizeDataError("audit must use a documented manual comparison method")
@@ -95,7 +97,7 @@ def audit_prize_series(
         raise PrizeDataError("cannot read series manifest") from exc
     if not isinstance(manifest, dict) or set(manifest) != _MANIFEST_KEYS:
         raise PrizeDataError("series manifest fields missing or unexpected")
-    if manifest["schema_version"] != 1 or manifest["purpose"] != PURPOSE:
+    if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1 or manifest["purpose"] != PURPOSE:
         raise PrizeDataError("invalid audit schema or retrospective-only purpose")
     first, last = manifest["window_start_draw_id"], manifest["window_end_draw_id"]
     if type(first) is not int or type(last) is not int or first < 1 or last < first:

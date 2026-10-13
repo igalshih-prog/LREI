@@ -212,5 +212,5 @@ def test_cli_future_input_cannot_be_counted_before_draw(tmp_path):
         "--output-dir", str(tmp_path / "result"),
     ])
     assert result.exit_code != 0
-    assert "before|local date" not in result.output
-    assert not list((tmp_path / "result").glob("*.json")) if (tmp_path / "result").exists() else True
+    assert "before it takes place" in result.output
+    assert not (tmp_path / "result").exists()

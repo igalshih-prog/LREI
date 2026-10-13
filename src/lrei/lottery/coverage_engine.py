@@ -3,7 +3,7 @@
 This engine does not attempt to predict the next draw. It builds a portfolio
 whose pairwise ticket overlap is at most one main number, which makes the
 portfolio's >=4-main-number hit events disjoint and maximizes exact coverage
-for that prize tier under a uniform 6-of-37 draw model.
+for 4+ AND 5+ main hits under a uniform 6-of-37 draw model.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ class CoverageConfig:
 
 
 class CoverageRecommendationEngine:
-    """Construct 14 tickets with mathematically maximal >=4/6 main coverage."""
+    """Construct 14 tickets with mathematically maximal >=4/6 and >=5/6 main coverage."""
 
     def __init__(self, config: CoverageConfig | None = None) -> None:
         self.config = config or CoverageConfig()

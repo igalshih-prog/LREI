@@ -21,7 +21,10 @@ population-level model comparison.
 For any 14 *distinct* valid main lines with a valid strong number per line,
 the fair-game probability of first prize is **14/(7 × 2,324,784) = 1/1,162,392**.
 Changing which 14 valid main combinations are used cannot improve that
-jackpot probability. Optimize 3+ and 4+ as **separate** objectives.
+jackpot probability. Smart 4+ **already** maximizes 5+ coverage as well:
+**14×187/2,324,784 = 1/888** for any 5+ main hit. See
+[Smart 5+ proof](SMART_5PLUS_PROOF_2026-10-13.md). Prioritize 5+/4+
+coverage when the goal is larger prize tiers; 3+ is a separate objective.
 
 ## Engineering evidence / implementation completed
 
@@ -41,8 +44,8 @@ jackpot probability. Optimize 3+ and 4+ as **separate** objectives.
   never edits the original recommendation. Source URL is *user-supplied*
   provenance and is **not authenticated** by the program.
 * Streamlit's 3+ coverage display uses the existing exact bitset routine
-  instead of huge outcome sets. UI startup selects Smart 3+ while the other
-  Smart objectives, historical modes, and CLI remain available. A Streamlit
+  instead of huge outcome sets. UI startup now selects Smart 5+ (which uses the proven 4+ optimal
+  construction) while 3+ and historical modes remain available. A Streamlit
   \`AppTest\` smoke check covers app loading and selections.
 * P1 validations are fast, target changes only, and do **not** rerun the P0
   research suite. The P1 CI evidence must be consulted for the final PR head.

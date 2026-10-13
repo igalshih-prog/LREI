@@ -11,6 +11,7 @@ from lrei.lottery.portfolio_coverage import portfolio_coverage
 from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.coverage_engine import CoverageRecommendationEngine
+from lrei.lottery.five_plus import five_plus_metrics
 from lrei.lottery.statistics import LotteryStatistics
 
 
@@ -162,14 +163,17 @@ elif mode == "Smart":
     objective_label = st.selectbox(
         "מה מטרת ההמלצה?",
         options=[
+            "מקסום כיסוי ל־5+ (וגם 4+) — 14 טורים",
             "מקסום כיסוי ל־4+ במספרים הראשיים",
             "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)",
             "בחירה לפי ממוצע התאמות היסטורי",
             "ניסוי: בחירה לפי מדרגת הפרס ההיסטורית",
         ],
-        index=1,
+        index=0,
     )
-    if objective_label == "מקסום כיסוי ל־4+ במספרים הראשיים":
+    if objective_label == "מקסום כיסוי ל־5+ (וגם 4+) — 14 טורים":
+        smart_objective = "coverage_5plus"
+    elif objective_label == "מקסום כיסוי ל־4+ במספרים הראשיים":
         smart_objective = "coverage_4plus"
     elif objective_label == "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)":
         smart_objective = "coverage_any_prize"
@@ -180,7 +184,15 @@ elif mode == "Smart":
         if objective_label == "ניסוי: בחירה לפי מדרגת הפרס ההיסטורית"
         else "mean"
     )
-    if smart_objective == "coverage_4plus":
+    if smart_objective == "coverage_5plus":
+        st.info(
+            "Smart 5+ מפעיל את אותו מנוע אופטימלי של Smart 4+: "
+            "14 טורים שונים, עם חפיפה מרבית של מספר ראשי אחד בין כל שני טורים. "
+            "הדבר ממקסם במקביל גם כיסוי 4+ וגם כיסוי 5+. "
+            "הסיכוי המרבי לפגיעה ב־5 או 6 מספרים ראשיים הוא כ־0.1126% "
+            "(1 ל־888 להגרלה). זו תקרה מתמטית, לא הבטחה או חיזוי."
+        )
+    elif smart_objective == "coverage_4plus":
         st.info(
             "Smart משתמש בכיסוי מתמטי: 14 טורים ייחודיים שבהם כל זוג חולק לכל היותר מספר ראשי אחד. "
             "כך ממקסמים את הסיכוי שלפחות טור אחד יפגע ב־4 מתוך 6 מספרים ראשיים. "
@@ -314,15 +326,27 @@ if st.button(
         # Use the exact bitmap path instead of materializing large Python sets.
         coverage_3 = AnyPrizeCoverageRecommendationEngine.coverage_probability(main_tickets)
         coverage_4 = portfolio_coverage(main_tickets, threshold=4)["probability"]
-        coverage_5 = portfolio_coverage(main_tickets, threshold=5)["probability"]
+        five_metrics = five_plus_metrics(main_tickets)
+        coverage_5 = five_metrics["probability"]
         coverage_6 = portfolio_coverage(main_tickets, threshold=6)["probability"]
         full_jackpot_probability = 14 / (comb(37, 6) * 7)
 
         coverage_columns = st.columns(4)
         coverage_columns[0].metric("לפחות 3/6 — כל זכייה", f"{coverage_3:.2%}")
         coverage_columns[1].metric("לפחות 4/6 ראשיים", f"{coverage_4:.3%}")
-        coverage_columns[2].metric("לפחות 5/6 ראשיים", f"{coverage_5:.3%}")
+        coverage_columns[2].metric("לפחות 5/6 ראשיים", f"{coverage_5:.4%}")
         coverage_columns[3].metric("6/6 ראשיים", f"{coverage_6:.5%}")
+        if five_metrics["is_optimal"]:
+            st.metric(
+                "לפחות 5 מספרים ראשיים + מספר חזק",
+                f"{five_metrics['with_matching_strong_probability']:.4%}",
+                help="כ־1 ל־6,216. מדובר במספר החזק הנכון בנוסף ל־5 או 6 מספרים ראשיים.",
+            )
+            st.success(
+                "כיסוי 5+ הגיע למקסימום המתמטי של 14 טורים: "
+                f"{five_metrics['probability']:.4%} (1 ל־888). "
+                "אין אפשרות להבטיח 5 מספרים בהגרלה הבאה."
+            )
         st.caption(
             "הכיסוי מחושב בדיוק מול כל צירופי 6/37 האפשריים. לפחות 3 מספרים ראשיים "
             "מזכים בפרס כלשהו לפי כללי הלוטו; המספר החזק קובע אם זו רמת פרס גבוהה יותר. "
@@ -343,12 +367,14 @@ if st.button(
 
     st.divider()
 
-    if mode == "Smart" and smart_objective == "coverage_any_prize":
+    if mode == "Smart" and smart_objective in {
+        "coverage_any_prize", "coverage_4plus", "coverage_5plus"
+    }:
         st.subheader("📊 ציוני מספרים")
         st.caption(
-            "במצב כיסוי לזכייה כלשהי אין דירוג ניבוי למספרים הראשיים או למספר החזק. "
-            "המספרים נבחרים כדי להרחיב את כיסוי התוצאות שבהן לפחות טור אחד פוגע ב־3+ "
-            "מספרים ראשיים; כל צירוף ראשי יחיד עדיין שווה בהסתברות להגרלה הוגנת."
+            "במצבי הכיסוי 3+/4+/5+ אין דירוג ניבוי אמין למספרים הראשיים "
+            "או למספר החזק. המערכת מפזרת את הטורים כדי למקסם את מדד הכיסוי "
+            "המתמטי הנבחר, ואינה יודעת לחזות את המספרים בהגרלה הבאה."
         )
     else:
         st.subheader("📊 Top Number Scores")

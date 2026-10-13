@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 import typer
@@ -18,6 +20,7 @@ from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
+from lrei.lottery.prospective_ledger import build_snapshot, parse_target_datetime, write_snapshot
 
 app = typer.Typer(
     help="Manage local LREI data and lottery recommendations.",
@@ -134,6 +137,14 @@ def recommend(
             help="Smart-only objective: coverage_any_prize (default), coverage_4plus, or historical model selection.",
         ),
     ] = "coverage_any_prize",
+    snapshot_dir: Annotated[
+        Path | None,
+        typer.Option("--snapshot-dir", help="Write a hashed pre-draw JSON snapshot, never overwriting existing records."),
+    ] = None,
+    target_draw_at: Annotated[
+        str | None,
+        typer.Option("--target-draw-at", help="Future target draw time, ISO-8601 with timezone (requires --snapshot-dir)."),
+    ] = None,
 ) -> None:
     """Generate lottery recommendations from historical data."""
 
@@ -141,6 +152,18 @@ def recommend(
         raise typer.BadParameter(
             "Number of tickets must be greater than zero."
         )
+
+    if (snapshot_dir is None) != (target_draw_at is None):
+        raise typer.BadParameter("--snapshot-dir and --target-draw-at must be provided together")
+
+    target_time = None
+    if target_draw_at is not None:
+        try:
+            target_time = parse_target_datetime(target_draw_at)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc), param_hint="--target-draw-at") from exc
+        if target_time <= datetime.now(timezone.utc):
+            raise typer.BadParameter("target draw must be in the future", param_hint="--target-draw-at")
 
     root = Path(__file__).resolve().parents[2]
 
@@ -150,6 +173,19 @@ def recommend(
         raise typer.BadParameter(
             f"Lottery data file not found: {data_file}"
         )
+
+    source_commit = None
+    if snapshot_dir is not None:
+        try:
+            source_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root, check=True, capture_output=True, text=True,
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise typer.BadParameter(
+                "cannot record source Git commit; run from a Git checkout",
+                param_hint="--snapshot-dir",
+            ) from exc
 
     dataset = CsvDatasetLoader().load(data_file)
 
@@ -298,6 +334,29 @@ def recommend(
                     f"Strong {score.number:>2} | "
                     f"Score: {score.score:.6f}"
                 )
+
+    if snapshot_dir is not None:
+        try:
+            record = build_snapshot(
+                dataset_file=data_file,
+                dataset=dataset,
+                tickets=result.recommended_tickets_with_strong,
+                mode=mode,
+                objective=smart_objective,
+                seed=seed,
+                source_commit=source_commit,
+                target_draw_at=target_time,
+                generated_count=len(result.generated_tickets),
+            )
+            snapshot_path = write_snapshot(record, snapshot_dir)
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(
+                f"could not save pre-draw record: {exc}",
+                param_hint="--snapshot-dir",
+            ) from exc
+        typer.echo()
+        typer.echo(f"Pre-draw snapshot: {snapshot_path}")
+        typer.echo(f"Record SHA-256: {record['record_sha256']}")
 
     typer.echo()
     typer.echo("=" * 70)

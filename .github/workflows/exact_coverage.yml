@@ -17,7 +17,9 @@ on:
 jobs:
   exact_coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Exact-coverage multi-seed diagnostics may take >20 min on loaded runners.
+    # Run #46 hit the old 20-minute cap without reporting a pytest failure.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,4 +30,10 @@ jobs:
       - name: Install
         run: pip install -e . pytest
       - name: Verify exact coverage calculation
-        run: python -m pytest tests/lottery/test_portfolio_coverage.py tests/lottery/test_elite_portfolio_coverage.py tests/lottery/test_coverage_engine.py tests/lottery/test_any_prize_coverage_engine.py -q -s
+        run: >-
+          python -m pytest
+          tests/lottery/test_portfolio_coverage.py
+          tests/lottery/test_elite_portfolio_coverage.py
+          tests/lottery/test_coverage_engine.py
+          tests/lottery/test_any_prize_coverage_engine.py
+          -q -s --durations=10

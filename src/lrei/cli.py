@@ -261,6 +261,10 @@ def recommend(
                 f"{five['with_matching_strong_probability']:.4%} (1 in 6,216)"
             )
         typer.echo(
+            "These are exact probabilities under a uniform 6-of-37 draw model; "
+            "they are not predictions of winning numbers."
+        )
+        typer.echo(
             "The 5+ maximum is just 1 chance in 888 per fair draw, not a guarantee. "
             "Smart 4+ already reaches it. No combination selection can raise "
             "this probability with the same 14 valid unique lines."
@@ -322,8 +326,9 @@ def recommend(
             )
         elif smart_objective in {"coverage_4plus", "coverage_5plus"}:
             typer.echo(
-                "Portfolio goal: maximize the probability of at least one ticket hitting 4+ or 5+ main numbers; this is already optimal for both. "
-                "the same mathematically optimal 14-line portfolio."
+                "Portfolio goal: maximize the probability of at least one "
+                "ticket hitting 4+ or 5+ main numbers. The same 14-line "
+                "portfolio is mathematically optimal for both thresholds."
             )
             typer.echo(
                 "The 5+ goal does not guarantee five hits, predict the draw "

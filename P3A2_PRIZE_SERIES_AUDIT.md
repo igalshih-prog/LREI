@@ -1,6 +1,6 @@
 # LREI P3-A.2 — retrospective prize evidence, with explicit gaps
 
-**Status:** 3 of 20 consecutive target draws present, 17 missing.
+**Status:** 5 of 20 consecutive target draws present, 15 missing.
 This is a deliberately INCOMPLETE data-collection stage, **not an economic
 advantage**, not a winning-number predictor, and not a prospective test.
 
@@ -11,8 +11,10 @@ advantage**, not a winning-number predictor, and not a prospective test.
 | 3949 | 2026-07-25 | 8,14,20,25,26,34 | 6 | Manually reviewed | https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3949 |
 | 3950 | 2026-07-28 | 1,8,9,19,21,23 | 7 | Manually reviewed | https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3950 |
 | 3951 | 2026-08-01 | 12,14,16,18,32,33 | 4 | Manually reviewed | https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3951 |
+| 3952 | 2026-08-04 | 1,9,13,20,23,35 | 4 | Manually reviewed | https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3952 |
+| 3953 | 2026-08-08 | 1,6,9,16,22,33 | 7 | Manually reviewed | https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3953 |
 
-All three are cross-checked against the existing 1,141-draw archive.
+All five are cross-checked against the existing 1,141-draw archive.
 Published figures for regular/double ticket winnings and advertised prizes
 were transcribed manually. **We have not archived the underlying HTML bytes.**
 Therefore there is no claim of an HTML capture SHA-256, trusted source timestamp,
@@ -37,8 +39,8 @@ automatically presumed to be Extra, refunds, taxes or net profit.
 ## Why we intentionally do not backfill the rest with guesses
 
 The target window is draws **3949 through 3968**, inclusive. The manifest
-tracks the complete expected sequence. The first 3 have human-reviewed
-operator page values; draws **3952–3968** are explicitly reported as
+tracks the complete expected sequence. The first 5 have human-reviewed
+operator page values; draws **3954–3968** are explicitly reported as
 missing until all **16 tier rows** and advertised totals are verified for
 each. No fabricated zero counts, 2026 sales data, actual played combinations,
 taxes or payout model assumptions.
@@ -52,13 +54,13 @@ python -m lrei.lottery.prize_series_audit \
   --historical-csv data/lottery.csv
 \`\`\`
 
-Output includes observed count, 17 missing IDs, six+strong draw integrity
+Output includes observed count, 15 missing IDs, six+strong draw integrity
 checks, SHA-256 of canonical **observation** records, per-game accounting,
 gross published all-games total, source-manifest coverage, and conservative
 \`eligible_for_financial_prediction: false\`.
 
 Add \`--require-complete\` to fail the process until the full target window
-is populated, rather than silently treating 3 draws as a 20-draw sample.
+is populated, rather than silently treating 5 draws as a 20-draw sample.
 
 Run the regression suite:
 
@@ -69,7 +71,7 @@ python -m pytest -q tests/lottery/test_prize_data.py tests/lottery/test_prize_se
 ## Next predeclared step
 
 Obtain operator-approved bulk access/export or manually and transparently
-verify each remaining consecutive draw **3952–3968**, with fixed row format,
+verify each remaining consecutive draw **3954–3968**, with fixed row format,
 source page and timestamps. For future improvement, archive original
 authoritative files/HTML where permitted and store **actual** content hashes,
 rather than inventing them. Keep the status visibly incomplete if original

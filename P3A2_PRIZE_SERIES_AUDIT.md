@@ -20,7 +20,9 @@ Published figures for regular/double ticket winnings and advertised prizes
 were transcribed manually. For draw **3954** this was from the indexed text
 of the operator's own archived page: direct requests for that page timed out,
 and original HTML was **not** captured. This lower source-access confidence
-is explicitly marked in its manifest review notes. **We have not archived the underlying HTML bytes.**
+is explicitly marked in its manifest **review_method** as
+`indexed_operator_page_text`, not `manual_operator_page_comparison`, and in
+its review notes. The audit report counts the two evidence methods separately. **We have not archived the underlying HTML bytes.**
 Therefore there is no claim of an HTML capture SHA-256, trusted source timestamp,
 or legally approved draw protocol. The source manifest expressly records these
 as \`null\`/\`false\`. Git commits establish the time of **our recorded

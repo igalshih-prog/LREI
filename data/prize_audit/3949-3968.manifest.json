@@ -69,7 +69,7 @@
       "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3954",
       "reviewed_on_utc_date": "2026-10-13",
       "draw_time_local": "23:13",
-      "review_method": "manual_operator_page_comparison",
+      "review_method": "indexed_operator_page_text",
       "raw_source_sha256": null,
       "raw_source_archived": false,
       "approved_protocol_verified": false,

@@ -123,3 +123,39 @@ def test_snapshot_schema_accepts_explicit_five_plus_objective(tmp_path):
         generated_count=1000,
     )
     assert record["objective"] == "coverage_5plus"
+
+
+
+def test_cli_reports_five_hit_limit_and_strong_separately(monkeypatch):
+    import lrei.cli as cli_module
+    from lrei.lottery.recommendation import RecommendedTicket
+
+    lines = fourteen_lines()
+    tickets = tuple(
+        RecommendedTicket(numbers=line, strong_number=(index % 7) + 1)
+        for index, line in enumerate(lines)
+    )
+
+    class FakeSmart:
+        def __init__(self, config):
+            self.config = config
+
+        def recommend(self, dataset, seed):
+            assert seed == 42
+            return SimpleNamespace(
+                generated_tickets=lines,
+                recommended_tickets=lines,
+                recommended_tickets_with_strong=tickets,
+                scores=(),
+                strong_scores=(),
+            )
+
+    monkeypatch.setattr(cli_module, "SmartRecommendationEngine", FakeSmart)
+    result = CliRunner().invoke(
+        app, ["recommend", "--mode", "smart", "--objective", "coverage_5plus", "--seed", "42"],
+    )
+    assert result.exit_code == 0, result.output
+    assert "Exact 5+ main-number coverage: 0.1126%" in result.output
+    assert "Proven 5+ maximum attained: True" in result.output
+    assert "5+ main AND strong-number coverage: 0.0161%" in result.output
+    assert "1 in 6,216" in result.output

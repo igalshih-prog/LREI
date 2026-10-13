@@ -62,7 +62,7 @@ def build_snapshot(
     if mode not in {"regular", "pro", "elite", "smart"}:
         raise ValueError("unsupported recommendation mode")
     if mode == "smart":
-        if objective not in {"coverage_any_prize", "coverage_4plus", "historical"}:
+        if objective not in {"coverage_any_prize", "coverage_4plus", "coverage_5plus", "historical"}:
             raise ValueError("smart objective must be explicit")
     elif objective is not None:
         raise ValueError("objective only applies to smart mode")

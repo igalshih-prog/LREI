@@ -25,6 +25,8 @@ from .prize_data import (
 )
 
 REVIEW_METHOD = "manual_operator_page_comparison"
+INDEXED_REVIEW_METHOD = "indexed_operator_page_text"
+REVIEW_METHODS = {REVIEW_METHOD, INDEXED_REVIEW_METHOD}
 _MANIFEST_KEYS = {
     "schema_version", "window_start_draw_id", "window_end_draw_id",
     "purpose", "sources",
@@ -64,8 +66,12 @@ def _check_source(row: Any, observations: dict[int, dict[str, Any]]) -> None:
     if row["reviewed_on_utc_date"] < record["draw_date"]:
         raise PrizeDataError("source cannot be reviewed before the draw")
     _valid_hhmm(row["draw_time_local"])
-    if row["review_method"] != REVIEW_METHOD:
-        raise PrizeDataError("audit must use a documented manual comparison method")
+    if row["review_method"] not in REVIEW_METHODS:
+        raise PrizeDataError("audit method must explicitly identify operator-page review or indexed text")
+    if row["review_method"] == INDEXED_REVIEW_METHOD:
+        note = row["review_notes"]
+        if not isinstance(note, str) or "index" not in note.lower():
+            raise PrizeDataError("indexed operator-page review requires an honest source-access note")
     if row["raw_source_archived"] is not False or row["raw_source_sha256"] is not None:
         raise PrizeDataError(
             "raw source not archived here; never assert a hash without retained bytes"
@@ -133,6 +139,7 @@ def audit_prize_series(
         audited.add(identifier)
 
     missing = [n for n in range(first, last + 1) if n not in observations]
+    review_method_counts = {method: sum(row["review_method"] == method for row in sources) for method in sorted(REVIEW_METHODS)}
     accounting: dict[str, Any] = {}
     for identifier, observation in sorted(observations.items()):
         regular = sum(
@@ -162,6 +169,7 @@ def audit_prize_series(
         "expected_draws": last - first + 1,
         "observed_draws": len(observations),
         "source_audits": len(audited),
+        "review_method_counts": review_method_counts,
         "missing_draw_ids": missing,
         "series_complete": not missing,
         "source_raw_bytes_available": False,

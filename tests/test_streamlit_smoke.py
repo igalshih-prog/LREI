@@ -5,7 +5,10 @@ UI-level generation and downloading still require a manual browser test.
 
 from pathlib import Path
 
-from streamlit.testing.v1 import AppTest
+import pytest
+
+# Streamlit is an optional dependency; the dedicated UI CI job installs it.
+AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 
 
 def test_streamlit_launches_with_default_dataset_and_objective_selectors():

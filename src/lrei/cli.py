@@ -21,6 +21,7 @@ from lrei.lottery.smart import SmartConfig, SmartRecommendationEngine
 from lrei.lottery.statistics import LotteryStatistics
 from lrei.lottery.any_prize_coverage_engine import AnyPrizeCoverageRecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
+from lrei.lottery.five_plus import five_plus_metrics
 from lrei.lottery.prospective_ledger import build_snapshot, parse_target_datetime, write_snapshot
 from lrei.lottery.prospective_scoring import score_snapshot, write_score
 from lrei.lottery.dataset import LotteryDrawRecord
@@ -134,10 +135,10 @@ def recommend(
         ),
     ] = "elite",
     objective: Annotated[
-        Literal["coverage_any_prize", "coverage_4plus", "historical"],
+        Literal["coverage_any_prize", "coverage_4plus", "coverage_5plus", "historical"],
         typer.Option(
             "--objective",
-            help="Smart-only objective: coverage_any_prize (default), coverage_4plus, or historical model selection.",
+            help="Smart objective: coverage_any_prize (default), coverage_4plus, coverage_5plus (same optimal lines as 4+), or historical.",
         ),
     ] = "coverage_any_prize",
     snapshot_dir: Annotated[
@@ -245,13 +246,19 @@ def recommend(
             "This is the exact probability under a uniform 6-of-37 draw model; "
             "it is not a prediction of winning numbers."
         )
-    elif mode == "smart" and smart_objective == "coverage_4plus":
-        coverage = portfolio_coverage(result.recommended_tickets, threshold=4)
-        probability = float(coverage["probability"])
-        typer.echo(f"Exact 4+ main-number coverage: {probability:.2%}")
+    elif mode == "smart" and smart_objective in {"coverage_4plus", "coverage_5plus"}:
+        if smart_objective == "coverage_4plus":
+            coverage = portfolio_coverage(result.recommended_tickets, threshold=4)
+            probability = float(coverage["probability"])
+            typer.echo(f"Exact 4+ main-number coverage: {probability:.2%}")
+        five = five_plus_metrics(result.recommended_tickets)
+        typer.echo(f"Exact 5+ main-number coverage: {five['probability']:.4%}")
+        typer.echo(f"Maximum possible with 14 lines: {five['max_probability']:.4%}")
+        typer.echo(f"Proven 5+ maximum attained: {five['is_optimal']}")
         typer.echo(
-            "This is the exact probability under a uniform 6-of-37 draw model; "
-            "it is not a prediction of winning numbers."
+            "The 5+ maximum is just 1 chance in 888 per fair draw, not a guarantee. "
+            "Smart 4+ already reaches it. No combination selection can raise "
+            "this probability with the same 14 valid unique lines."
         )
 
     typer.echo()
@@ -308,14 +315,14 @@ def recommend(
                 "This optimizes portfolio coverage; it does not predict the "
                 "winning numbers or improve jackpot odds."
             )
-        elif smart_objective == "coverage_4plus":
+        elif smart_objective in {"coverage_4plus", "coverage_5plus"}:
             typer.echo(
-                "Portfolio goal: maximize the probability of at least one "
-                "ticket matching 4+ main numbers."
+                "Portfolio goal: maximal 4+ AND 5+ main-number coverage using "
+                "the same mathematically optimal 14-line portfolio."
             )
             typer.echo(
-                "This optimizes portfolio structure; it does not predict "
-                "the winning numbers or improve jackpot odds."
+                "The 5+ goal does not guarantee five hits, predict the draw "
+                "or improve jackpot odds."
             )
 
     # Coverage objectives use deliberately flat number scores and random

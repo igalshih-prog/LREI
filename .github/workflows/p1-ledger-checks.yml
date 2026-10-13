@@ -1,0 +1,31 @@
+name: P1 Prospective Ledger Checks
+
+on:
+  push:
+    branches:
+      - feature/p1-prospective-ledger-20261013
+    paths:
+      - src/lrei/lottery/prospective_ledger.py
+      - src/lrei/cli.py
+      - tests/lottery/test_prospective_ledger.py
+      - tests/test_cli_snapshot.py
+      - .github/workflows/p1-ledger-checks.yml
+
+permissions:
+  contents: read
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: python -m pip install -e . pytest
+      - name: Compile changed application components
+        run: python -m compileall -q src/lrei/lottery/prospective_ledger.py src/lrei/cli.py
+      - name: Run only focused prospective-ledger tests
+        run: python -m pytest -q tests/lottery/test_prospective_ledger.py tests/test_cli_snapshot.py

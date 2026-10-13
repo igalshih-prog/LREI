@@ -21,10 +21,14 @@ def test_streamlit_launches_with_default_dataset_and_objective_selectors():
 
     assert not screen.exception
     assert len(screen.selectbox) == 1
-    assert screen.selectbox[0].value == "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)"
+    assert screen.selectbox[0].value == "מקסום כיסוי ל־5+ (וגם 4+) — 14 טורים"
 
     screen.selectbox[0].set_value(
         "מקסום כיסוי ל־4+ במספרים הראשיים"
+    ).run()
+    assert not screen.exception
+    screen.selectbox[0].set_value(
+        "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)"
     ).run()
     assert not screen.exception
     assert screen.button[0].label.startswith("🎲 צור 14 טורים")

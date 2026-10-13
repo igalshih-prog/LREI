@@ -86,3 +86,10 @@ def test_cli_saves_valid_snapshot_without_running_historical_benchmarks(tmp_path
     assert record["seed"] == 42
     assert record["ticket_count"] == 14
     assert record["mode"] == "elite"
+
+
+def test_cli_documents_fixed_fourteen_ticket_contract():
+    output = runner.invoke(cli.app, ["recommend", "--help"])
+    assert output.exit_code == 0
+    assert "Regular-mode generated candidate count" in output.output
+    assert "14 lines" in output.output

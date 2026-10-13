@@ -38,6 +38,7 @@ def test_audit_does_not_pretend_six_observations_are_twenty():
     assert summary["observed_draws"] == summary["source_audits"] == 6
     assert summary["missing_draw_ids"] == list(range(3955, 3969))
     assert summary["series_complete"] is False
+    assert summary["review_method_counts"] == {"indexed_operator_page_text": 1, "manual_operator_page_comparison": 5}
     assert summary["source_raw_bytes_available"] is False
     assert summary["approved_protocols_verified"] is False
     assert summary["official_sales_data_available"] is False
@@ -90,6 +91,20 @@ def test_fabricated_raw_source_hash_cannot_pass(tmp_path):
     directory, manifest = sandbox(tmp_path)
     change_manifest(manifest, lambda doc: doc["sources"][0].update(raw_source_sha256="a"*64))
     with pytest.raises(PrizeDataError, match="raw source not archived"):
+        audit_prize_series(directory, manifest, historic())
+
+
+def test_indexed_source_requires_explicit_source_access_note(tmp_path):
+    directory, manifest = sandbox(tmp_path)
+    change_manifest(manifest, lambda doc: doc["sources"][-1].update(review_notes="Looked at the page"))
+    with pytest.raises(PrizeDataError, match="indexed operator-page review"):
+        audit_prize_series(directory, manifest, historic())
+
+
+def test_review_method_cannot_claim_unrecorded_verification_mode(tmp_path):
+    directory, manifest = sandbox(tmp_path)
+    change_manifest(manifest, lambda doc: doc["sources"][-1].update(review_method="approved_protocol"))
+    with pytest.raises(PrizeDataError, match="audit method"):
         audit_prize_series(directory, manifest, historic())
 
 

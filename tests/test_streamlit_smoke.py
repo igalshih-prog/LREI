@@ -14,15 +14,18 @@ def test_streamlit_launches_with_default_dataset_and_objective_selectors():
     assert not screen.exception
     assert screen.title[0].value == "🎯 LREI"
     assert int(str(screen.metric[0].value).replace(",", "")) == 1141
-    assert screen.radio[0].value == "Pro"
+    assert screen.radio[0].value == "Smart"
 
-    screen.radio[0].set_value("Smart").run()
     assert not screen.exception
     assert len(screen.selectbox) == 1
-    assert screen.selectbox[0].value == "מקסום כיסוי ל־4+ במספרים הראשיים"
+    assert screen.selectbox[0].value == "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)"
 
     screen.selectbox[0].set_value(
-        "מקסום הסיכוי לזכייה כלשהי (3+ ראשיים)"
+        "מקסום כיסוי ל־4+ במספרים הראשיים"
     ).run()
     assert not screen.exception
     assert screen.button[0].label.startswith("🎲 צור 14 טורים")
+
+    screen.radio[0].set_value("Pro").run()
+    assert not screen.exception
+    assert len(screen.selectbox) == 0

@@ -100,7 +100,7 @@ def _rows_from_section(text: str, *, game: str) -> list[dict[str, Any]]:
         )
     rows: list[dict[str, Any]] = []
     for expected, match in zip(PRIZE_TIER_LABELS, matches):
-        label = re.sub(r"\s+", "", match.group(1)).replace("+", "+")
+        label = re.sub(r"\s+", "", match.group(1)).replace("חזק", "strong")
         if label != expected:
             raise PrizeDataError(f"{game}: prize tier order mismatch at {expected}")
         count = int(match.group(2).replace(",", ""))

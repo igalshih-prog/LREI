@@ -63,6 +63,18 @@
       "approved_protocol_verified": false,
       "rule_version": null,
       "review_notes": "Manually crosschecked original operator page including 40 million regular jackpot winner and double table; 2026 special promotion rule version still unverified and not imputed."
+    },
+    {
+      "draw_id": 3954,
+      "source_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3954",
+      "reviewed_on_utc_date": "2026-10-13",
+      "draw_time_local": "23:13",
+      "review_method": "indexed_operator_page_text",
+      "raw_source_sha256": null,
+      "raw_source_archived": false,
+      "approved_protocol_verified": false,
+      "rule_version": null,
+      "review_notes": "16 prize tiers, date, time and advertised prizes transcribed from indexed content of the ORIGINAL operator page (search-index cache). Direct live page fetch timed out. No raw HTML archived; legally approved protocol unverified. Do not claim independent live-page access."
     }
   ]
 }

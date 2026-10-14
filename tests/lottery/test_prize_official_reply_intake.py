@@ -13,7 +13,10 @@ import pytest
 
 from lrei.lottery.dataset import CsvDatasetLoader
 from lrei.lottery.prize_data import PrizeDataError
-from lrei.lottery.prize_official_reply_intake import quarantine_official_payout_csv
+from lrei.lottery.prize_official_reply_intake import (
+    quarantine_official_payout_csv,
+    quarantine_partial_payout_csv,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE = ROOT / "data/prize_request_templates/3955-3968_blank_16_tiers.csv"
@@ -147,3 +150,99 @@ def test_invalid_bytes_and_oversize_rejected():
         check(encode(rows()) + b"\x00")
     with pytest.raises(PrizeDataError, match="2 MiB"):
         check(b"A" * (2 * 1024 * 1024 + 1))
+
+
+
+def partial(data, when=WHEN):
+    return quarantine_partial_payout_csv(
+        encode(data), historical=history(), received_at_utc=when
+    )
+
+
+def test_one_draw_full_sixteen_rows_can_be_quarantined_but_not_promoted():
+    result = partial(rows()[:16])
+    assert result["draw_ids_in_reply"] == [3955]
+    assert result["draw_count_in_reply"] == 1
+    assert result["tier_row_count"] == 16
+    assert result["missing_draw_ids"] == list(range(3956, 3969))
+    assert result["complete_target_window"] is False
+    assert result["source_evidence"]["source_authenticity_verified"] is False
+    assert result["source_evidence"]["approved_draw_protocol_verified"] is False
+    assert result["auto_promoted_to_verified_observations"] is False
+    assert result["eligible_for_expected_value"] is False
+    assert result["requires_human_review"] is True
+    with pytest.raises(PrizeDataError, match="exactly 224"):
+        check(encode(rows()[:16]))  # original default strict path remains unchanged
+
+
+def test_nonconsecutive_drawing_batches_keep_missing_ids_visible():
+    data = rows()
+    result = partial(data[:16] + data[32:48])
+    assert result["draw_ids_in_reply"] == [3955, 3957]
+    assert result["missing_draw_ids"] == [3956, *range(3958, 3969)]
+    assert result["tier_row_count"] == 32
+    assert result["source_evidence"]["sha256_of_actual_received_bytes"] == hashlib.sha256(
+        encode(data[:16] + data[32:48])
+    ).hexdigest()
+
+
+def test_full_csv_in_partial_mode_is_still_unverified():
+    result = partial(rows())
+    assert result["draw_ids_in_reply"] == list(range(3955, 3969))
+    assert result["complete_target_window"] is True
+    assert result["source_evidence"]["source_sender_verified"] is False
+    assert result["auto_promoted_to_verified_observations"] is False
+    assert result["eligible_for_expected_value"] is False
+
+
+@pytest.mark.parametrize("mutate,reason", [
+    (lambda d: d.pop(), "whole 16-tier"),
+    (lambda d: d.insert(1, dict(d[0])), "whole 16-tier"),
+    (lambda d: d[0].update(draw_date="2026-08-14"), "out-of-order"),
+    (lambda d: d[0].update(draw_id="3954"), "ascending"),
+    (lambda d: d[0].update(tier="5+strong"), "out-of-order"),
+    (lambda d: d[1].update(game="double"), "out-of-order"),
+    (lambda d: d[1].update(winning_entries=""), "complete numeric"),
+    (lambda d: d[1].update(winning_entries="=2+2"), "complete numeric"),
+    (lambda d: d[7].update(payout_per_winning_entry_ils="0"), "zero payout"),
+    (lambda d: d[0].update(extra_field="x"), "missing/extra"),
+])
+def test_partial_reply_fail_closed(mutate, reason):
+    data = rows()[:16]
+    mutate(data)
+    head = list(HEAD) + (["extra_field"] if "extra_field" in data[0] else [])
+    with pytest.raises(PrizeDataError, match=reason):
+        raw = encode(data, head)
+        quarantine_partial_payout_csv(
+            raw, historical=history(), received_at_utc=WHEN
+        )
+
+
+def test_partial_duplicate_draw_blocks_and_out_of_order_draw_rejected():
+    data = rows()
+    with pytest.raises(PrizeDataError, match="unique ascending"):
+        partial(data[:16] + data[:16])
+    with pytest.raises(PrizeDataError, match="unique ascending"):
+        partial(data[16:32] + data[:16])
+
+
+def test_partial_all_zero_and_blank_request_rejected():
+    data = rows()[:16]
+    for record in data:
+        record["winning_entries"] = "0"
+        record["payout_per_winning_entry_ils"] = "0"
+    with pytest.raises(PrizeDataError, match="all-zero placeholder"):
+        partial(data)
+    with pytest.raises(PrizeDataError, match="complete numeric"):
+        quarantine_partial_payout_csv(
+            TEMPLATE.read_bytes(), historical=history(), received_at_utc=WHEN
+        )
+
+
+def test_partial_garbled_source_or_invalid_timestamp_rejected():
+    with pytest.raises(PrizeDataError, match="UTF-8"):
+        quarantine_partial_payout_csv(
+            b"\xff", historical=history(), received_at_utc=WHEN
+        )
+    with pytest.raises(PrizeDataError, match="UTC"):
+        partial(rows()[:16], when="2026-10-14")

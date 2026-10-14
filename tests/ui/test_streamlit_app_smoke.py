@@ -6,6 +6,9 @@ The app's default CSV must remain available. Requires pip install -e '.[ui]'.
 """
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip("streamlit", reason="Streamlit is an optional UI dependency")
 from streamlit.testing.v1 import AppTest
 
 APP = Path(__file__).resolve().parents[2] / "app.py"

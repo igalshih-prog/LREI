@@ -205,7 +205,7 @@ def test_full_csv_in_partial_mode_is_still_unverified():
     (lambda d: d[1].update(winning_entries=""), "complete numeric"),
     (lambda d: d[1].update(winning_entries="=2+2"), "complete numeric"),
     (lambda d: d[7].update(payout_per_winning_entry_ils="0"), "zero payout"),
-    (lambda d: d[0].update(extra_field="x"), "missing/extra"),
+    (lambda d: d[0].update(extra_field="x"), "header mismatch"),
 ])
 def test_partial_reply_fail_closed(mutate, reason):
     data = rows()[:16]

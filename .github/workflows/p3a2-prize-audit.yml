@@ -6,6 +6,8 @@ on:
     paths:
       - src/lrei/lottery/prize_series_audit.py
       - src/lrei/lottery/prize_data.py
+      - src/lrei/lottery/prize_aggregate_crosscheck.py
+      - tests/lottery/test_prize_aggregate_crosscheck.py
       - src/lrei/lottery/prize_capture_intake.py
       - tests/lottery/test_prize_capture_intake.py
       - src/lrei/lottery/source_capture_check.py
@@ -24,6 +26,8 @@ on:
     paths:
       - src/lrei/lottery/prize_series_audit.py
       - src/lrei/lottery/prize_data.py
+      - src/lrei/lottery/prize_aggregate_crosscheck.py
+      - tests/lottery/test_prize_aggregate_crosscheck.py
       - src/lrei/lottery/prize_capture_intake.py
       - tests/lottery/test_prize_capture_intake.py
       - src/lrei/lottery/source_capture_check.py
@@ -53,7 +57,7 @@ jobs:
       - name: Install application and pytest
         run: python -m pip install -e . pytest
       - name: Compile audit code
-        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py src/lrei/lottery/prize_research_checks.py src/lrei/lottery/source_capture_check.py src/lrei/lottery/prize_capture_intake.py
+        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py src/lrei/lottery/prize_research_checks.py src/lrei/lottery/source_capture_check.py src/lrei/lottery/prize_capture_intake.py src/lrei/lottery/prize_aggregate_crosscheck.py
       - name: Test individual prize records and audit
         run: >-
           python -m pytest -q
@@ -62,6 +66,7 @@ jobs:
           tests/lottery/test_prize_research_checks.py
           tests/lottery/test_source_capture_check.py
           tests/lottery/test_prize_capture_intake.py
+          tests/lottery/test_prize_aggregate_crosscheck.py
       - name: Validate archived observations without web fetching
         run: >-
           python -m lrei.lottery.prize_series_audit

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "purpose": "secondary_only_crosscheck_of_aggregate_figures_never_eight_tier_prize_observations",
+  "source_url": "https://lottohistory.co.il/",
+  "source_status": "third_party_archival_page_not_lottery_operator",
+  "retrieved_date_utc": "2026-10-14",
+  "raw_source_archived": false,
+  "raw_source_sha256": null,
+  "reported_lotto_only_total_for_draws": [
+    {
+      "draw_id": 3955,
+      "draw_date": "2026-08-13",
+      "reported_lotto_only_ils": 4496223
+    },
+    {
+      "draw_id": 3956,
+      "draw_date": "2026-08-15",
+      "reported_lotto_only_ils": 20428062
+    },
+    {
+      "draw_id": 3957,
+      "draw_date": "2026-08-18",
+      "reported_lotto_only_ils": 13995056
+    },
+    {
+      "draw_id": 3958,
+      "draw_date": "2026-08-22",
+      "reported_lotto_only_ils": 5981873
+    }
+  ],
+  "all_game_total_source": "https://www.paisresults.co.il/index.php",
+  "all_game_source_status": "another_third_party_not_operator",
+  "eight_tier_tables_available": false,
+  "authoritative_protocol_verified": false
+}

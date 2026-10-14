@@ -89,7 +89,7 @@ def test_synthetic_complete_csv_remains_quarantined():
     (lambda v: v[0].update(winning_entries="999999999"), "outside safe"),
     (lambda v: v[0].update(payout_per_winning_entry_ils="9999999999"), "outside safe"),
     (lambda v: v[7].update(payout_per_winning_entry_ils="0"), "zero payout"),
-    (lambda v: v[0].update(extra_field="99"), "missing/extra"),
+    (lambda v: v[0].update(extra_field="99"), "headers"),
 ])
 def test_reject_tampered_incomplete_or_extra_tiers(mutator, pattern):
     data = rows()

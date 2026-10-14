@@ -19,6 +19,8 @@ on:
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
+      - src/lrei/lottery/prize_official_reply_intake.py
+      - tests/lottery/test_prize_official_reply_intake.py
       - data/prize_request_templates/**
       - tests/lottery/test_official_prize_request_template.py
       - data/prize_audit/**
@@ -41,6 +43,8 @@ on:
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
+      - src/lrei/lottery/prize_official_reply_intake.py
+      - tests/lottery/test_prize_official_reply_intake.py
       - data/prize_request_templates/**
       - tests/lottery/test_official_prize_request_template.py
       - data/prize_audit/**
@@ -61,7 +65,7 @@ jobs:
       - name: Install application and pytest
         run: python -m pip install -e . pytest
       - name: Compile audit code
-        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py src/lrei/lottery/prize_research_checks.py src/lrei/lottery/source_capture_check.py src/lrei/lottery/prize_capture_intake.py src/lrei/lottery/prize_aggregate_crosscheck.py
+        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py src/lrei/lottery/prize_research_checks.py src/lrei/lottery/source_capture_check.py src/lrei/lottery/prize_capture_intake.py src/lrei/lottery/prize_aggregate_crosscheck.py src/lrei/lottery/prize_official_reply_intake.py
       - name: Test individual prize records and audit
         run: >-
           python -m pytest -q
@@ -72,6 +76,7 @@ jobs:
           tests/lottery/test_prize_capture_intake.py
           tests/lottery/test_prize_aggregate_crosscheck.py
           tests/lottery/test_official_prize_request_template.py
+          tests/lottery/test_prize_official_reply_intake.py
       - name: Validate archived observations without web fetching
         run: >-
           python -m lrei.lottery.prize_series_audit

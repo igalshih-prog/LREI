@@ -6,6 +6,10 @@ on:
     paths:
       - src/lrei/lottery/prize_series_audit.py
       - src/lrei/lottery/prize_data.py
+      - src/lrei/lottery/prize_research_checks.py
+      - tests/lottery/test_prize_research_checks.py
+      - data/prize_leads/**
+      - data/prize_rule_notices/**
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
@@ -16,6 +20,10 @@ on:
     paths:
       - src/lrei/lottery/prize_series_audit.py
       - src/lrei/lottery/prize_data.py
+      - src/lrei/lottery/prize_research_checks.py
+      - tests/lottery/test_prize_research_checks.py
+      - data/prize_leads/**
+      - data/prize_rule_notices/**
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
@@ -37,13 +45,14 @@ jobs:
       - name: Install application and pytest
         run: python -m pip install -e . pytest
       - name: Compile audit code
-        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py
+        run: python -m compileall -q src/lrei/lottery/prize_series_audit.py src/lrei/lottery/prize_data.py src/lrei/lottery/prize_research_checks.py
       - name: Test individual prize records and audit
         run: >-
           python -m pytest -q
           tests/lottery/test_prize_data.py
           tests/lottery/test_prize_series_audit.py
-      - name: Validate live repository observations without web fetching
+          tests/lottery/test_prize_research_checks.py
+      - name: Validate archived observations without web fetching
         run: >-
           python -m lrei.lottery.prize_series_audit
           --observations-dir data/prize_observations

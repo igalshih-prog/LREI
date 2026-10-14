@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "draw_id": 3953,
+  "notice_date": "2026-08-05",
+  "draw_date": "2026-08-08",
+  "source_url": "https://www.pais.co.il/news/news.aspx?newsId=3133",
+  "authority": "Mifal HaPais statutory public notice",
+  "source_review_method": "official_notice_page_text_read_without_archived_html",
+  "original_html_archived": false,
+  "original_html_sha256": null,
+  "notice_context": "After no first-prize winner in regular or Double Lotto draw 3952; modified 3rd-8th prize tiers for draw 3953 or until a first-prize winner/new notice",
+  "first_prize_regular_ils": 40000000,
+  "first_prize_double_advertised_ils": 80000000,
+  "second_prize_regular_ils": 750000,
+  "second_prize_double_advertised_ils": 1500000,
+  "approx_percent_of_total_draw_receipts_by_tier": {
+    "3": "2.7",
+    "4": "2.4",
+    "5": "3.21",
+    "6": "6.45",
+    "7": "10.5"
+  },
+  "eighth_prize_ils": {
+    "regular": 15,
+    "double": 30
+  },
+  "receipts_amount_ils": null,
+  "rule_operational_since_draw": 3953,
+  "rule_end_draw": 3953,
+  "rule_end_reason": "A regular Lotto ticket won the first prize in draw 3953; this is an observed stop condition, not an inference about any future rule."
+}

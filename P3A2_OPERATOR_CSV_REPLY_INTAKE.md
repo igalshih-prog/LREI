@@ -65,6 +65,35 @@ never contacts the operator, and never assumes matching structure
 proves official provenance.** The command writes JSON to standard
 output; save it only to an appropriate restricted evidence area.
 
+## Partial replies: one or more complete draws
+
+The original default parser remains strict: exactly **224 rows** are
+required. Some legitimate replies could contain only one or several
+historical draws, however. Use the explicit `--allow-partial` option
+when the supplied file contains **16 complete regular + Double rows
+for each included draw**, in ascending draw order.
+
+```bash
+python -m lrei.lottery.prize_official_reply_intake \
+  --reply-csv /private/path/actual-reply-one-draw.csv \
+  --historical-csv data/lottery.csv \
+  --received-at-utc 2026-10-14T12:00:00Z \
+  --allow-partial
+```
+
+**The path and UTC timestamp are placeholders**, not records of a
+received reply. The partial parser accepts 1–14 draws (including
+non-consecutive ones if each has all 16 tier rows), computes an actual
+input SHA-256 and explicitly returns `missing_draw_ids`. One
+fully filled draw is *not* a complete 14-draw source. An
+`auto_promoted_to_verified_observations=false` result means human
+provenance and payout review remain mandatory.
+
+Never pad absent draws with zero winners, estimate values from
+advertised jackpot amounts, or submit a synthetic test fixture as
+genuine evidence. Both partial and full imports remain candidate
+quarantine only, never source authentication.
+
 ## Human approval gate
 
 An authorized reviewer must verify the original actual source, lawful

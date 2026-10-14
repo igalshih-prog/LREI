@@ -19,6 +19,8 @@ on:
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
+      - data/prize_request_templates/**
+      - tests/lottery/test_official_prize_request_template.py
       - data/prize_audit/**
       - .github/workflows/p3a2-prize-audit.yml
   push:
@@ -39,6 +41,8 @@ on:
       - tests/lottery/test_prize_series_audit.py
       - tests/lottery/test_prize_data.py
       - data/prize_observations/**
+      - data/prize_request_templates/**
+      - tests/lottery/test_official_prize_request_template.py
       - data/prize_audit/**
       - .github/workflows/p3a2-prize-audit.yml
 
@@ -67,6 +71,7 @@ jobs:
           tests/lottery/test_source_capture_check.py
           tests/lottery/test_prize_capture_intake.py
           tests/lottery/test_prize_aggregate_crosscheck.py
+          tests/lottery/test_official_prize_request_template.py
       - name: Validate archived observations without web fetching
         run: >-
           python -m lrei.lottery.prize_series_audit

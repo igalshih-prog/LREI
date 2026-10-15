@@ -1,4 +1,4 @@
-name: P1 3975 prospective paper snapshot (one-shot)
+name: P1 draw 3975 Thursday 2026-10-15 pre-draw experiment
 
 on:
   pull_request:
@@ -29,7 +29,7 @@ jobs:
           from pathlib import Path
           from lrei.lottery.dataset import CsvDatasetLoader, parse_draw_date
           dataset = CsvDatasetLoader().load(Path("data/lottery.csv"))
-          target = datetime.fromisoformat("2026-10-17T23:00:00+03:00")
+          target = datetime.fromisoformat("2026-10-15T23:00:00+03:00")
           assert datetime.now(timezone.utc) < target.astimezone(timezone.utc), "target already elapsed"
           assert dataset.latest().draw_id == "3974", "stale or unexpected training cutoff"
           assert parse_draw_date(dataset.latest().date).isoformat() == "2026-10-13"
@@ -43,7 +43,7 @@ jobs:
             --mode smart --objective coverage_5plus \
             --tickets 14 --seed 42 \
             --snapshot-dir predraw-3975 \
-            --target-draw-at "2026-10-17T23:00:00+03:00" \
+            --target-draw-at "2026-10-15T23:00:00+03:00" \
             > predraw-3975/smart-cli-output.txt
       - name: Freeze independent same-size random paper baseline and audit hashes
         run: |
@@ -63,12 +63,12 @@ jobs:
           assert smart["latest_draw"] == {"id": "3974", "date": "2026-10-13"}
           assert smart["mode"] == "smart" and smart["objective"] == "coverage_5plus"
           assert len(smart["tickets"]) == 14
-          assert smart["target_draw_date_local"] == "2026-10-17"
+          assert smart["target_draw_date_local"] == "2026-10-15"
           source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert source == smart["source_commit"]
           actual_dataset_hash = sha256(Path("data/lottery.csv").read_bytes()).hexdigest()
           assert actual_dataset_hash == smart["dataset_sha256"]
-          target = datetime.fromisoformat("2026-10-17T23:00:00+03:00")
+          target = datetime.fromisoformat("2026-10-15T23:00:00+03:00")
           now = datetime.now(timezone.utc)
           assert now < target.astimezone(timezone.utc), "cannot create a baseline after draw cutoff"
           rng = random.Random(42)
@@ -86,7 +86,7 @@ jobs:
               "baseline": "uniform_random_14_independent_of_draw_history",
               "created_at_utc": now.isoformat().replace("+00:00", "Z"),
               "target_draw_at_utc": target.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
-              "target_draw_date_local": "2026-10-17",
+              "target_draw_date_local": "2026-10-15",
               "expected_next_draw_id": "3975",
               "source_commit": source,
               "dataset_sha256": actual_dataset_hash,

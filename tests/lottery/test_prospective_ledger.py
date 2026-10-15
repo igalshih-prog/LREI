@@ -1,7 +1,7 @@
 """Fast P1 checks: no old historical benchmark is re-executed."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -108,3 +108,27 @@ def test_timezone_required_and_normalized():
     assert parse_target_datetime("2026-10-15T18:00:00Z") == TARGET
     with pytest.raises(ValueError, match="timezone"):
         parse_target_datetime("2026-10-15T21:00:00")
+
+
+def test_local_draw_date_is_not_replaced_by_utc_date(tmp_path):
+    # Israel 00:30 on the 15th is still the 14th in UTC. History from
+    # the 14th is valid, while a local draw on the 15th is not.
+    target = datetime(2026, 10, 15, 0, 30, tzinfo=timezone(timedelta(hours=3)))
+    created = datetime(2026, 10, 14, 20, 0, tzinfo=timezone.utc)
+    record = sample(tmp_path, draws_date="14-10-26", now=created, target=target)
+    assert record["target_draw_date_local"] == "2026-10-15"
+    assert record["target_draw_at_utc"].startswith("2026-10-14")
+    assert verify_snapshot(record)
+    with pytest.raises(ValueError, match="precede target draw date"):
+        sample(tmp_path, draws_date="15-10-26", now=created, target=target)
+
+
+def test_freshness_boundary_uses_target_local_calendar(tmp_path):
+    target = datetime(2026, 10, 15, 0, 30, tzinfo=timezone(timedelta(hours=3)))
+    # Local creation: Oct 15 at 00:15; UTC creation: Oct 14 at 21:15.
+    created = datetime(2026, 10, 14, 21, 15, tzinfo=timezone.utc)
+    assert verify_snapshot(sample(
+        tmp_path, draws_date="11-10-26", now=created, target=target,
+    ))
+    with pytest.raises(ValueError, match="four days old"):
+        sample(tmp_path, draws_date="10-10-26", now=created, target=target)

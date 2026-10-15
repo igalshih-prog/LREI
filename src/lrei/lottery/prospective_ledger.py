@@ -55,6 +55,8 @@ def build_snapshot(
         raise ValueError("target_draw_at must have a timezone")
     target = target_draw_at.astimezone(timezone.utc)
     local_target_date = target_draw_at.date().isoformat()
+    # Draw dates in the CSV are local calendar dates, not UTC dates.
+    local_now_date = now.astimezone(target_draw_at.tzinfo).date()
     if target <= now:
         raise ValueError("target draw must be strictly in the future")
     if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
@@ -76,9 +78,9 @@ def build_snapshot(
     latest_date = parse_draw_date(latest.date)
     if latest_date is None:
         raise ValueError("latest historical draw must have a valid date")
-    if latest_date >= target.date():
+    if latest_date >= target_draw_at.date():
         raise ValueError("historical dataset must precede target draw date")
-    age = (now.date() - latest_date).days
+    age = (local_now_date - latest_date).days
     if not 0 <= age <= 4:
         raise ValueError("historical data is future-dated or more than four days old")
     data_path = Path(dataset_file)

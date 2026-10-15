@@ -1,4 +1,4 @@
-name: P1 Official Lotto CSV evidence
+name: P1 Lotto CSV source parser (offline)
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  capture-3974:
+  source-parser-regressions:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
@@ -24,9 +24,25 @@ jobs:
           python-version: "3.11"
       - name: Install LREI and pytest
         run: python -m pip install -e . pytest
-      - name: Run local source parser regression tests
+      - name: Run 17 offline source parser regression cases
         run: python -m pytest -q tests/lottery/test_official_draw_source.py
-      - name: Download original first-party CSV via verified TLS and compare draw 3974
+
+  # Network availability is a separate external dependency, not a code
+  # regression. This job only runs when intentionally dispatched. Its
+  # successful result is still NOT approval of source provenance or a legal
+  # draw protocol; both require a separately recorded human review.
+  optional-first-party-capture:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install LREI
+        run: python -m pip install -e .
+      - name: Request first-party HTTPS Lotto export, compare draw 3974
         run: >-
           python -m lrei.lottery.official_draw_source
           --download
@@ -34,7 +50,7 @@ jobs:
           --draw-id 3974
           --report audit-evidence/operator_csv_report.json
           --raw-copy audit-evidence/operator_original.csv
-      - name: Preserve original bytes and inspection report
+      - name: Retain genuine operator response and audit (when available)
         if: always()
         uses: actions/upload-artifact@v4
         with:

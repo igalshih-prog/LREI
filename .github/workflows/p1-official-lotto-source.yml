@@ -6,7 +6,9 @@ on:
     paths:
       - data/lottery.csv
       - src/lrei/lottery/official_draw_source.py
+      - src/lrei/lottery/archive_reconciliation.py
       - tests/lottery/test_official_draw_source.py
+      - tests/lottery/test_archive_reconciliation.py
       - .github/workflows/p1-official-lotto-source.yml
   workflow_dispatch:
 
@@ -24,8 +26,8 @@ jobs:
           python-version: "3.11"
       - name: Install LREI and pytest
         run: python -m pip install -e . pytest
-      - name: Run 17 offline source parser regression cases
-        run: python -m pytest -q tests/lottery/test_official_draw_source.py
+      - name: Run offline source parsing and complete archive reconciliation regressions
+        run: python -m pytest -q tests/lottery/test_official_draw_source.py tests/lottery/test_archive_reconciliation.py
 
   # Network availability is a separate external dependency, not a code
   # regression. This job only runs when intentionally dispatched. Its

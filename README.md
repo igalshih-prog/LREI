@@ -118,9 +118,9 @@ When benchmark results are close to the random baseline, LREI treats that as evi
 
 ## Dataset
 
-The repository currently includes a rolling **10-calendar-year** lottery dataset ending with draw 3973 on 10-10-2026.
+The repository includes a rolling **10-calendar-year** lottery dataset ending with draw 3974 on 13-10-2026 (the 3974 refresh is under official-source review in its draft PR).
 
-The current file contains **1,141 consecutive draws**, covering the period from 10-10-2016 through 10-10-2026. When refreshing the file, add newly published draws and remove the oldest draws outside the rolling 10-year window; the test suite checks chronology, contiguous draw IDs, and data freshness.
+The current file contains **1,141 consecutive draws**, covering the period from 15-10-2016 through 13-10-2026. When refreshing the file, add newly published draws and remove the oldest draws outside the rolling 10-year window; the test suite checks chronology, contiguous draw IDs, and data freshness.
 
 The main lottery numbers are 1–37, with six main numbers per draw and a separate strong number.
 

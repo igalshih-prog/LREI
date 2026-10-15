@@ -1,0 +1,44 @@
+name: P1 Official Lotto CSV evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - data/lottery.csv
+      - src/lrei/lottery/official_draw_source.py
+      - tests/lottery/test_official_draw_source.py
+      - .github/workflows/p1-official-lotto-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture-3974:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install LREI and pytest
+        run: python -m pip install -e . pytest
+      - name: Run local source parser regression tests
+        run: python -m pytest -q tests/lottery/test_official_draw_source.py
+      - name: Download original first-party CSV via verified TLS and compare draw 3974
+        run: >-
+          python -m lrei.lottery.official_draw_source
+          --download
+          --historical-csv data/lottery.csv
+          --draw-id 3974
+          --report audit-evidence/operator_csv_report.json
+          --raw-copy audit-evidence/operator_original.csv
+      - name: Preserve original bytes and inspection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: draw-3974-operator-csv-evidence
+          path: audit-evidence/
+          if-no-files-found: warn
+          retention-days: 30

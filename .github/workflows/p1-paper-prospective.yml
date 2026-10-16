@@ -99,6 +99,13 @@ jobs:
           if target.astimezone(timezone.utc) - datetime.now(timezone.utc) < timedelta(minutes=30):
               raise SystemExit("Insufficient margin to publish before draw: fail closed")
           PY
+      - name: Retain a timestamped secondary artifact copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-predraw-paper-${{ inputs.draw_id }}
+          path: audit/prospective/paper-draw-${{ inputs.draw_id }}/
+          if-no-files-found: error
+          retention-days: 90
       - name: Publish a new permanent GitHub evidence branch; never overwrite an existing one
         run: |
           set -euo pipefail
@@ -112,12 +119,14 @@ jobs:
           git switch -c "$BRANCH"
           git add -- "audit/prospective/paper-draw-$TARGET_DRAW_ID"
           git commit -m "evidence(p1): freeze draw $TARGET_DRAW_ID Smart and three controls"
+          python - <<'PY'
+          from datetime import datetime, timedelta, timezone
+          import os
+          target = datetime.fromisoformat(
+              os.environ["TARGET_DRAW_AT"].replace("Z", "+00:00")
+          )
+          if target.astimezone(timezone.utc) - datetime.now(timezone.utc) < timedelta(minutes=30):
+              raise SystemExit("Evidence branch push was not authorized before safety cutoff")
+          PY
           git push origin "HEAD:refs/heads/$BRANCH"
           echo "Evidence published at https://github.com/$GITHUB_REPOSITORY/tree/$BRANCH"
-      - name: Retain a timestamped secondary artifact copy
-        uses: actions/upload-artifact@v4
-        with:
-          name: p1-predraw-paper-${{ inputs.draw_id }}
-          path: audit/prospective/paper-draw-${{ inputs.draw_id }}/
-          if-no-files-found: error
-          retention-days: 90

@@ -5,6 +5,10 @@ report red whenever the checked CSV is genuinely stale.
 """
 
 from datetime import datetime, timedelta, timezone
+import json
+from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -85,3 +89,41 @@ def test_empty_dataset_rejected():
             raise RuntimeError("must not reach")
     with pytest.raises(ValueError, match="empty"):
         inspect_freshness(Empty(), checked_at=LOCAL_MIDNIGHT)
+
+
+def test_cli_exit_nonzero_and_preserves_auditable_staleness_report(tmp_path):
+    # A real command invocation must visibly fail, not just set an in-memory flag.
+    archive = tmp_path / "stale.csv"
+    archive.write_text(
+        'draw_id,numbers,date,strong_number\\n'
+        '3973,"1,2,3,4,5,6",10-10-20,7\\n',
+        encoding="utf-8",
+    )
+    report_path = tmp_path / "audit" / "recency.json"
+    invoked = subprocess.run(
+        [
+            sys.executable, "-m", "lrei.lottery.dataset_freshness",
+            "--dataset", str(archive), "--report", str(report_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert invoked.returncode == 2
+    assert "stale" in invoked.stderr.lower()
+    assert report_path.exists()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "stale_dataset"
+    assert report["data_recency_ok"] is False
+    assert report["operator_source_provenance_verified"] is False
+    assert report["authorized_for_financial_prediction"] is False
+
+
+def test_operational_workflow_keeps_recency_red_separate_from_pr_checks():
+    path = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "lotto-dataset-freshness.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "workflow_dispatch:" in text
+    assert "schedule:" in text
+    assert "\\n  pull_request:" not in text
+    assert "python -m lrei.lottery.dataset_freshness" in text
+    assert "if: always()" in text

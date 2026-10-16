@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "notes": "Result is consistent across several secondary sources, not acquired or authenticated from Mifal HaPais. Earliest reported draw time 22:55 Israel (=19:55Z) is intentionally used as stricter eligibility cutoff than the research workflow's declared 23:00 local target.",
+  "draw": {
+    "id": 3975,
+    "date": "2026-10-15",
+    "main": [
+      18,
+      22,
+      24,
+      25,
+      27,
+      28
+    ],
+    "strong": 5,
+    "earliest_secondary_reported_draw_at_utc": "2026-10-15T19:55:00Z"
+  },
+  "secondary_source_urls": [
+    "https://lottoplus.co.il/lotto-result/",
+    "https://chancestats.co.il/lotto/",
+    "https://lottoishi.co.il/g/lotto-3975/"
+  ],
+  "publications": {
+    "smart": {
+      "kind": "github_actions_artifact",
+      "url": "https://github.com/igalshih-prog/LREI/actions/runs/38785439927/artifacts/11999416107",
+      "published_at_utc": "2026-10-15T18:52:25Z"
+    },
+    "random": {
+      "kind": "github_commit",
+      "url": "https://github.com/igalshih-prog/LREI/commit/3e1b3ac6716309c0ce737e9b153e6735ccf494eb",
+      "published_at_utc": "2026-10-15T18:27:50Z"
+    },
+    "grid": {
+      "kind": "github_commit",
+      "url": "https://github.com/igalshih-prog/LREI/commit/e518a0325525c5a9e461b54b3929f427f158447c",
+      "published_at_utc": "2026-10-15T18:29:22Z"
+    }
+  },
+  "source_disclaimer": {
+    "official_operator_bytes_captured": false,
+    "officially_approved_protocol_captured": false,
+    "actual_ticket_purchase": false,
+    "financial_expected_value_supported": false,
+    "results_use_secondary_sources": true
+  }
+}

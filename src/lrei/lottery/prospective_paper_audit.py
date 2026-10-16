@@ -17,6 +17,8 @@ from urllib.parse import urlsplit
 
 from .dataset import LotteryDrawRecord, parse_draw_date
 from .prize_evaluation import evaluate_portfolio_prizes
+from .five_plus import five_plus_metrics
+from itertools import combinations
 from .recommendation import RecommendedTicket
 
 def _digest(data: dict[str, Any]) -> str:
@@ -133,10 +135,16 @@ def score_paper_study(
         source_commits.add(record["source_commit"])
         dataset_hashes.add(record.get("dataset_sha256",record.get("source_dataset_sha256")))
         prize=evaluate_portfolio_prizes(tickets,result)
+        five=five_plus_metrics(t.numbers for t in tickets)
+        overlap=max(len(set(a.numbers)&set(b.numbers)) for a,b in combinations(tickets,2))
         scored[name]={
             "frozen_record_sha256":record["record_sha256"],
             "external_publication":publications[name],
             "ticket_count":14,
+            "maximum_pairwise_main_overlap":overlap,
+            "exact_five_plus_main_probability":five["probability"],
+            "maximum_possible_five_plus_main_probability":five["max_probability"],
+            "attains_five_plus_main_ceiling":five["is_optimal"],
             "best_main_matches":max(t.main_matches for t in prize.tickets),
             "main_3plus_tickets":sum(t.main_matches>=3 for t in prize.tickets),
             "main_4plus_tickets":sum(t.main_matches>=4 for t in prize.tickets),

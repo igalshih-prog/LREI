@@ -95,8 +95,8 @@ def test_cli_exit_nonzero_and_preserves_auditable_staleness_report(tmp_path):
     # A real command invocation must visibly fail, not just set an in-memory flag.
     archive = tmp_path / "stale.csv"
     archive.write_text(
-        'draw_id,numbers,date,strong_number\\n'
-        '3973,"1,2,3,4,5,6",10-10-20,7\\n',
+        'draw_id,numbers,date,strong_number\n'
+        '3973,"1,2,3,4,5,6",10-10-20,7\n',
         encoding="utf-8",
     )
     report_path = tmp_path / "audit" / "recency.json"
@@ -124,6 +124,6 @@ def test_operational_workflow_keeps_recency_red_separate_from_pr_checks():
     text = path.read_text(encoding="utf-8")
     assert "workflow_dispatch:" in text
     assert "schedule:" in text
-    assert "\\n  pull_request:" not in text
+    assert "\n  pull_request:" not in text
     assert "python -m lrei.lottery.dataset_freshness" in text
     assert "if: always()" in text

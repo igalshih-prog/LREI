@@ -143,3 +143,9 @@ All benchmark conclusions should be interpreted as historical empirical measurem
 ## P1 prospective evidence ledger (opt-in)
 
 Use `lrei recommend --snapshot-dir DIR --target-draw-at ISO_8601_WITH_OFFSET` to create a checksum-verified, no-overwrite record of 14 lines *before* their target draw. See [P1 pre-draw protocol](P1_PROSPECTIVE_LEDGER.md) for freshness checks, timestamps, independent publication, and limitations. This does not change model weights, historical evidence, or jackpot odds.
+
+## Reusable future-draw paper research (P1, manual)
+
+See [Hebrew pre-draw operating protocol](P1_REUSABLE_PAPER_FREEZE_HE.md). The opt-in GitHub workflow `P1 Manual Prospective Paper Freeze` will publish **one real Smart 5+ and three predeclared uniform-random 14-line paper portfolios** to a fresh immutable evidence branch, only with an explicitly human-reviewed first-party drawing schedule and a verified preceding draw in `data/lottery.csv`. It rejects incorrect Israel-local time offsets, draws less than 60 minutes away, stale or nonconsecutive history and attempts to overwrite prior evidence. It does not auto-run, submit bets, verify result provenance, or claim a predictive advantage.
+
+**Readiness currently blocked:** the draft data file ends at #3974, while #3975 has already occurred. Do **not** run the next batch against old input; obtain and record trustworthy first-party source data for #3975 first. The one-draw [provisional score report](P1_DRAW_3975_PROVISIONAL_ANALYSIS_HE.md) and its historical GitHub timestamps are research evidence, not an authenticated official protocol. The payout series P3-A.2 still lacks 14/20 full tier tables, so no financial EV/PLAY recommendation is supported.

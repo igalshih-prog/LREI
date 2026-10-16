@@ -1,0 +1,62 @@
+name: P1 Lotto CSV source parser (offline)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - data/lottery.csv
+      - src/lrei/lottery/official_draw_source.py
+      - src/lrei/lottery/archive_reconciliation.py
+      - tests/lottery/test_official_draw_source.py
+      - tests/lottery/test_archive_reconciliation.py
+      - .github/workflows/p1-official-lotto-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-parser-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install LREI and pytest
+        run: python -m pip install -e . pytest
+      - name: Run offline source parsing and complete archive reconciliation regressions
+        run: python -m pytest -q tests/lottery/test_official_draw_source.py tests/lottery/test_archive_reconciliation.py
+
+  # Network availability is a separate external dependency, not a code
+  # regression. This job only runs when intentionally dispatched. Its
+  # successful result is still NOT approval of source provenance or a legal
+  # draw protocol; both require a separately recorded human review.
+  optional-first-party-capture:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install LREI
+        run: python -m pip install -e .
+      - name: Request first-party HTTPS Lotto export, compare draw 3974
+        run: >-
+          python -m lrei.lottery.official_draw_source
+          --download
+          --historical-csv data/lottery.csv
+          --draw-id 3974
+          --report audit-evidence/operator_csv_report.json
+          --raw-copy audit-evidence/operator_original.csv
+      - name: Retain genuine operator response and audit (when available)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: draw-3974-operator-csv-evidence
+          path: audit-evidence/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "research_status": "preregistered_paper_only_grid_coverage_5plus",
+  "construction": "6x6 grid over 36 seeded shuffled distinct numbers, 6 rows + 6 columns + 2 disjoint cyclic diagonals; pairwise main overlap <=1",
+  "seed": 42,
+  "ticket_count": 14,
+  "created_at_utc": "2026-10-15T18:29:01.632187Z",
+  "draw_id_expected": 3975,
+  "draw_date_local": "2026-10-15",
+  "draw_target_utc": "2026-10-15T20:00:00Z",
+  "source_commit": "cd4673b61ebc1463f5627e5643bd684317c574ef",
+  "source_dataset_sha256": "992d62c3001e0443e0ff76d81134548c72379c89ebb51378038051583dca20bc",
+  "dataset_last_draw": {
+    "draw_id": 3974,
+    "draw_date": "2026-10-13"
+  },
+  "tickets": [
+    {
+      "main": [
+        6,
+        10,
+        13,
+        21,
+        23,
+        27
+      ],
+      "strong": 2
+    },
+    {
+      "main": [
+        5,
+        25,
+        28,
+        30,
+        32,
+        34
+      ],
+      "strong": 2
+    },
+    {
+      "main": [
+        11,
+        12,
+        17,
+        20,
+        29,
+        33
+      ],
+      "strong": 7
+    },
+    {
+      "main": [
+        1,
+        7,
+        14,
+        26,
+        36,
+        37
+      ],
+      "strong": 3
+    },
+    {
+      "main": [
+        3,
+        4,
+        19,
+        22,
+        31,
+        35
+      ],
+      "strong": 1
+    },
+    {
+      "main": [
+        2,
+        9,
+        15,
+        16,
+        18,
+        24
+      ],
+      "strong": 1
+    },
+    {
+      "main": [
+        6,
+        19,
+        24,
+        28,
+        33,
+        37
+      ],
+      "strong": 4
+    },
+    {
+      "main": [
+        3,
+        5,
+        7,
+        9,
+        11,
+        21
+      ],
+      "strong": 1
+    },
+    {
+      "main": [
+        12,
+        13,
+        15,
+        25,
+        26,
+        35
+      ],
+      "strong": 3
+    },
+    {
+      "main": [
+        1,
+        10,
+        16,
+        20,
+        30,
+        31
+      ],
+      "strong": 7
+    },
+    {
+      "main": [
+        18,
+        22,
+        23,
+        29,
+        34,
+        36
+      ],
+      "strong": 3
+    },
+    {
+      "main": [
+        2,
+        4,
+        14,
+        17,
+        27,
+        32
+      ],
+      "strong": 5
+    },
+    {
+      "main": [
+        1,
+        2,
+        5,
+        6,
+        12,
+        22
+      ],
+      "strong": 3
+    },
+    {
+      "main": [
+        4,
+        20,
+        21,
+        24,
+        25,
+        36
+      ],
+      "strong": 7
+    }
+  ],
+  "coverage_5plus_exact_probability": 0.0011261261261261261,
+  "pairwise_maximum_overlap": 1,
+  "real_money_spent_ils": 0,
+  "is_actual_lrei_engine_output": false,
+  "counts_as_predictive_advantage": false,
+  "source_provenance_independently_verified": false,
+  "not_result_scored": true,
+  "record_sha256": "3f8bbf5e09fc02dd98ee368cbd3d3617e4fccc8dd895dd651b73ac4cebcd7ee0"
+}

@@ -1,0 +1,32 @@
+{
+  "audit_schema_version": 1,
+  "audit_date": "2026-10-15",
+  "method": "offline_raw_csv_vs_repo_rolling_history_full_window",
+  "source_kind": "user_uploaded_operator_style_csv",
+  "source_filename": "Lotto(3).csv",
+  "raw_source_bytes": 183478,
+  "raw_source_sha256": "befd18352e7acf3c5692e2200ab683ac0e434b90ec1050b6fe0bd4c737143f93",
+  "source_encoding": "cp1255",
+  "source_records": 4550,
+  "out_of_window_source_records": 3409,
+  "rolling_window_first_id": 2834,
+  "rolling_window_last_id": 3974,
+  "rolling_window_count": 1141,
+  "matched_records": 1141,
+  "missing_ids": [],
+  "duplicate_ids_in_window": [],
+  "mismatched_records": [],
+  "rolling_window_git_blob_sha1": "2c538bd31a8653e4d2de39c14e9feef867a2abf3",
+  "last_draw": {
+    "draw_id": 3974,
+    "date": "2026-10-13",
+    "main": [3, 4, 18, 19, 34, 35],
+    "strong": 2
+  },
+  "download_origin_independently_verified": false,
+  "operator_protocol_legally_verified": false,
+  "release_provenance_gate_satisfied": false,
+  "counts_as_prospective_prediction_evidence": false,
+  "eligible_for_expected_value_claim": false,
+  "notes": "Exact content reconciliation from supplied bytes. Digests cannot authenticate origin. Raw uploaded source was not added to repository."
+}

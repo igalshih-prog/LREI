@@ -1,0 +1,43 @@
+name: P1 Draw 3975 provisional paper audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/lrei/lottery/prospective_paper_audit.py
+      - tests/lottery/test_prospective_paper_audit.py
+      - audit/prospective/**
+      - .github/workflows/p1-paper-audit-3975.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixed-three-portfolio-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install LREI and test tools
+        run: python -m pip install -e . pytest
+      - name: Check signed pre-draw records, matched sources and no backdating
+        run: python -m pytest -q tests/lottery/test_prospective_paper_audit.py
+      - name: Score three fixed 3975 portfolios against explicitly unverified secondary outcome
+        run: >-
+          python -m lrei.lottery.prospective_paper_audit
+          --smart audit/prospective/3975-2026-10-15-smart-5plus-artifact-copy.json
+          --random audit/prospective/3975-2026-10-15-uniform-random-baseline.json
+          --grid audit/prospective/3975-2026-10-15-grid-optimal-5plus-paper.json
+          --publication-manifest audit/prospective/3975-2026-10-15-secondary-result-publication-manifest.json
+          --output p1-paper-score-output/draw3975_secondary_PROVISIONAL.json
+      - name: Keep reproducible secondary-only scoring report
+        uses: actions/upload-artifact@v4
+        with:
+          name: P1-3975-secondary-score-NOT-OFFICIAL
+          path: p1-paper-score-output/
+          if-no-files-found: error
+          retention-days: 90

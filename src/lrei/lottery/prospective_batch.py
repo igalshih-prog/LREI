@@ -41,7 +41,7 @@ def _schedule_url(value: str) -> None:
     parsed = urlsplit(value)
     if (
         parsed.scheme != "https"
-        or not parsed.hostname
+        or parsed.hostname not in {"pais.co.il", "www.pais.co.il"}
         or parsed.username is not None
         or parsed.password is not None
         or parsed.port not in (None, 443)
@@ -70,6 +70,10 @@ def build_paper_batch(
     _schedule_url(schedule_reference_url)
     if target_draw_at.tzinfo is None or target_draw_at.utcoffset() is None:
         raise ValueError("target draw requires an explicit local UTC offset")
+    from zoneinfo import ZoneInfo
+    israel_time = target_draw_at.astimezone(ZoneInfo("Asia/Jerusalem"))
+    if israel_time.replace(tzinfo=None) != target_draw_at.replace(tzinfo=None) or israel_time.utcoffset() != target_draw_at.utcoffset():
+        raise ValueError("target must be specified with the actual Israel local UTC offset")
     if now is None:
         now = datetime.now(timezone.utc)
     if now.tzinfo is None or now.utcoffset() is None:

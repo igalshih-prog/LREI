@@ -118,9 +118,9 @@ When benchmark results are close to the random baseline, LREI treats that as evi
 
 ## Dataset
 
-The repository includes a rolling **10-calendar-year** lottery dataset ending with draw 3974 on 13-10-2026 (the 3974 refresh is under official-source review in its draft PR).
+The repository currently includes a rolling **10-calendar-year** lottery dataset ending with draw 3973 on 10-10-2026.
 
-The current file contains **1,141 consecutive draws**, covering the period from 15-10-2016 through 13-10-2026. When refreshing the file, add newly published draws and remove the oldest draws outside the rolling 10-year window; the test suite checks chronology, contiguous draw IDs, and data freshness.
+The current file contains **1,141 consecutive draws**, covering the period from 10-10-2016 through 10-10-2026. When refreshing the file, add newly published draws and remove the oldest draws outside the rolling 10-year window; the test suite checks chronology, contiguous draw IDs, and data freshness.
 
 The main lottery numbers are 1–37, with six main numbers per draw and a separate strong number.
 
@@ -144,8 +144,20 @@ All benchmark conclusions should be interpreted as historical empirical measurem
 
 Use `lrei recommend --snapshot-dir DIR --target-draw-at ISO_8601_WITH_OFFSET` to create a checksum-verified, no-overwrite record of 14 lines *before* their target draw. See [P1 pre-draw protocol](P1_PROSPECTIVE_LEDGER.md) for freshness checks, timestamps, independent publication, and limitations. This does not change model weights, historical evidence, or jackpot odds.
 
-## Reusable future-draw paper research (P1, manual)
+## Reusable paper-only prospective studies (manual, P1)
 
-See [Hebrew pre-draw operating protocol](P1_REUSABLE_PAPER_FREEZE_HE.md). The opt-in GitHub workflow `P1 Manual Prospective Paper Freeze` will publish **one real Smart 5+ and three predeclared uniform-random 14-line paper portfolios** to a fresh immutable evidence branch, only with an explicitly human-reviewed first-party drawing schedule and a verified preceding draw in `data/lottery.csv`. It rejects incorrect Israel-local time offsets, draws less than 60 minutes away, stale or nonconsecutive history and attempts to overwrite prior evidence. It does not auto-run, submit bets, verify result provenance, or claim a predictive advantage.
+The [Hebrew operating guide](P1_REUSABLE_PAPER_FREEZE_HE.md) documents a fail-closed manual GitHub Actions workflow for independently timestamped future draw experiments. It creates one real Smart 5+ portfolio and three uniformly random, fixed-seed 14-line controls, predeclares the paired 3+ primary metric, checks the Israel-local draw time and last recorded draw ID, and refuses to overwrite prior evidence. External publication must be reviewed before any score is labeled prospective. **This research code does not verify winning-result provenance or infer a financial advantage, and it never buys a ticket.**
 
-**Readiness currently blocked:** the draft data file ends at #3974, while #3975 has already occurred. Do **not** run the next batch against old input; obtain and record trustworthy first-party source data for #3975 first. The one-draw [provisional score report](P1_DRAW_3975_PROVISIONAL_ANALYSIS_HE.md) and its historical GitHub timestamps are research evidence, not an authenticated official protocol. The payout series P3-A.2 still lacks 14/20 full tier tables, so no financial EV/PLAY recommendation is supported.
+## Draw-data readiness vs code regression tests
+
+`python -m pytest -q tests/lottery/test_real_dataset.py` verifies the repository's draw record structure, consecutive IDs, dates, six unique main numbers and strong numbers; this is intentionally independent of today's date. **A successful code test does not authorize a forecast.**
+
+To check time-dependent production-data readiness, run:
+
+```bash
+python -m lrei.lottery.dataset_freshness --dataset data/lottery.csv
+```
+
+That explicit operational command returns a **nonzero exit code** if the most recent draw is future-dated or older than **four calendar days in Asia/Jerusalem**; it emits a JSON report even when it is red. GitHub's `Lotto Historical Dataset Operational Freshness` workflow runs the same check automatically on the default branch (scheduled daily and on relevant changes), independently of the PR code CI. No date-dependent checks are silently ignored or reported as green.
+
+The manual pre-draw workflow imposes an additional **stronger freshness rule**: the last draw ID must be exactly one less than the target drawing, and the draw time/source must be manually reviewed. Passing an age-only gate is **not sufficient** for eligibility, and neither result establishes first-party CSV provenance or legally approved payout data. Until these readiness gates pass, **NO PAPER PREDICTION / NO PLAY**.

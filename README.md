@@ -143,3 +143,7 @@ All benchmark conclusions should be interpreted as historical empirical measurem
 ## P1 prospective evidence ledger (opt-in)
 
 Use `lrei recommend --snapshot-dir DIR --target-draw-at ISO_8601_WITH_OFFSET` to create a checksum-verified, no-overwrite record of 14 lines *before* their target draw. See [P1 pre-draw protocol](P1_PROSPECTIVE_LEDGER.md) for freshness checks, timestamps, independent publication, and limitations. This does not change model weights, historical evidence, or jackpot odds.
+
+## Reusable paper-only prospective studies (manual, P1)
+
+The [Hebrew operating guide](P1_REUSABLE_PAPER_FREEZE_HE.md) documents a fail-closed manual GitHub Actions workflow for independently timestamped future draw experiments. It creates one real Smart 5+ portfolio and three uniformly random, fixed-seed 14-line controls, predeclares the paired 3+ primary metric, checks the Israel-local draw time and last recorded draw ID, and refuses to overwrite prior evidence. External publication must be reviewed before any score is labeled prospective. **This research code does not verify winning-result provenance or infer a financial advantage, and it never buys a ticket.**

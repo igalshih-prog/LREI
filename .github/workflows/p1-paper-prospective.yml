@@ -1,0 +1,132 @@
+name: P1 Manual Prospective Paper Freeze
+
+on:
+  workflow_dispatch:
+    inputs:
+      draw_id:
+        description: "Actual upcoming official Lotto draw ID (e.g. 3976)"
+        type: string
+        required: true
+      target_draw_at:
+        description: "Verified scheduled start in Israel with UTC offset (ISO-8601)"
+        type: string
+        required: true
+      schedule_reference_url:
+        description: "Reviewed public HTTPS source of the scheduled drawing"
+        type: string
+        required: true
+      schedule_reviewed:
+        description: "I checked the actual draw ID, weekday, date and start time"
+        type: choice
+        required: true
+        default: "NO"
+        options:
+          - "NO"
+          - "YES"
+      smart_seed:
+        description: "Fixed Smart candidate seed; baseline seeds are 1042/1043/1044"
+        type: number
+        required: true
+        default: 42
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p1-immutable-paper-freeze-${{ inputs.draw_id }}
+  cancel-in-progress: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_DRAW_ID: ${{ inputs.draw_id }}
+      TARGET_DRAW_AT: ${{ inputs.target_draw_at }}
+      SCHEDULE_REFERENCE: ${{ inputs.schedule_reference_url }}
+      SCHEDULE_REVIEWED: ${{ inputs.schedule_reviewed }}
+      SMART_SEED: ${{ inputs.smart_seed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate the human-reviewed draw identity and allowed input shape
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from datetime import datetime, timezone
+          draw = os.environ["TARGET_DRAW_ID"]
+          if not re.fullmatch(r"[1-9][0-9]{2,5}", draw):
+              raise SystemExit("Invalid draw ID; an existing upcoming numeric draw is required")
+          if os.environ["SCHEDULE_REVIEWED"] != "YES":
+              raise SystemExit("Manual verification of draw schedule is mandatory")
+          try:
+              target = datetime.fromisoformat(
+                  os.environ["TARGET_DRAW_AT"].replace("Z", "+00:00")
+              )
+          except ValueError:
+              raise SystemExit("Target time must be valid ISO-8601")
+          if target.tzinfo is None or target.utcoffset() is None:
+              raise SystemExit("Target time requires an explicit UTC offset")
+          if target <= datetime.now(timezone.utc):
+              raise SystemExit("Cannot freeze a drawing after its scheduled time")
+          print("Manual schedule reference supplied; origin is not automatically authenticated")
+          PY
+      - name: Install checked-in LREI package
+        run: python -m pip install -e .
+      - name: Generate Smart 5+ and three equal-budget random paper controls
+        run: |
+          python -m lrei.lottery.prospective_batch \
+            --dataset data/lottery.csv \
+            --target-draw-id "$TARGET_DRAW_ID" \
+            --target-draw-at "$TARGET_DRAW_AT" \
+            --schedule-reference-url "$SCHEDULE_REFERENCE" \
+            --schedule-reviewed \
+            --smart-seed "$SMART_SEED" \
+            --output-dir "audit/prospective/paper-draw-$TARGET_DRAW_ID"
+      - name: Reject any publication attempt less than 30 minutes before target
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timedelta, timezone
+          import os
+          target = datetime.fromisoformat(
+              os.environ["TARGET_DRAW_AT"].replace("Z", "+00:00")
+          )
+          if target.astimezone(timezone.utc) - datetime.now(timezone.utc) < timedelta(minutes=30):
+              raise SystemExit("Insufficient margin to publish before draw: fail closed")
+          PY
+      - name: Retain a timestamped secondary artifact copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-predraw-paper-${{ inputs.draw_id }}
+          path: audit/prospective/paper-draw-${{ inputs.draw_id }}/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish a new permanent GitHub evidence branch; never overwrite an existing one
+        run: |
+          set -euo pipefail
+          BRANCH="evidence/p1/draw-$TARGET_DRAW_ID"
+          if git ls-remote --exit-code --heads origin "refs/heads/$BRANCH" > /dev/null; then
+            echo "Evidence branch already exists; will not overwrite evidence" >&2
+            exit 1
+          fi
+          git config user.name "LREI Evidence Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add -- "audit/prospective/paper-draw-$TARGET_DRAW_ID"
+          git commit -m "evidence(p1): freeze draw $TARGET_DRAW_ID Smart and three controls"
+          python - <<'PY'
+          from datetime import datetime, timedelta, timezone
+          import os
+          target = datetime.fromisoformat(
+              os.environ["TARGET_DRAW_AT"].replace("Z", "+00:00")
+          )
+          if target.astimezone(timezone.utc) - datetime.now(timezone.utc) < timedelta(minutes=30):
+              raise SystemExit("Evidence branch push was not authorized before safety cutoff")
+          PY
+          git push origin "HEAD:refs/heads/$BRANCH"
+          echo "Evidence published at https://github.com/$GITHUB_REPOSITORY/tree/$BRANCH"

@@ -1,0 +1,43 @@
+name: Lotto Historical Dataset Operational Freshness
+
+# Deliberately NOT a PR code-regression check. Freshness changes with the
+# calendar even when no code or CSV changes. This separate gate stays RED
+# until real first-party draws are independently checked and added.
+on:
+  push:
+    branches: [main]
+    paths:
+      - data/lottery.csv
+      - src/lrei/lottery/dataset_freshness.py
+      - .github/workflows/lotto-dataset-freshness.yml
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  data-recency-operational-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install checked-in LREI package
+        run: python -m pip install -e .
+      - name: Fail closed when the last draw is over four Israeli-local calendar days old
+        run: >-
+          python -m lrei.lottery.dataset_freshness
+          --dataset data/lottery.csv
+          --report audit-output/lotto-data-readiness.json
+      - name: Retain real recency report even on a red readiness gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lotto-dataset-operational-freshness
+          path: audit-output/lotto-data-readiness.json
+          if-no-files-found: warn
+          retention-days: 30

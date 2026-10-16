@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from lrei.lottery.dataset import CsvDatasetLoader
@@ -31,7 +31,7 @@ def test_real_lottery_dataset_has_valid_draws():
         assert all(1 <= number <= 37 for number in draw.numbers)
 
 
-def test_real_lottery_dataset_is_chronological_contiguous_and_fresh():
+def test_real_lottery_dataset_is_chronological_contiguous_and_has_valid_strong():
     root = Path(__file__).resolve().parents[2]
     data_file = root / "data" / "lottery.csv"
     dataset = CsvDatasetLoader().load(data_file)
@@ -42,15 +42,10 @@ def test_real_lottery_dataset_is_chronological_contiguous_and_fresh():
     dates = [datetime.strptime(draw.date, "%d-%m-%y").date() for draw in dataset]
     assert dates == sorted(dates)
 
-    latest_date = dates[-1]
-    today_utc = datetime.now(timezone.utc).date()
-    age_days = (today_utc - latest_date).days
-    # Israel Lotto draws are ordinarily held twice a week. Four days
-    # allows the Tue/Sat cadence while catching a missed published draw
-    # shortly after its expected release.
-    assert 0 <= age_days <= 4, (
-        f"Lottery data is {age_days} days old (latest draw: {latest_date}); "
-        "refresh data/lottery.csv with the latest published draw before relying on recent-window analysis."
-    )
+    # Wall-clock freshness is a *separate operational red/green gate*:
+    # python -m lrei.lottery.dataset_freshness --dataset data/lottery.csv
+    # Do not let a stale but unchanged CSV make unrelated code regressions red.
+    # The runtime prospective batch still fails closed on both latest draw ID
+    # and <=4 Israel-local calendar days before allowing any forecast.
 
     assert all(draw.strong_number is not None and 1 <= draw.strong_number <= 7 for draw in dataset)

@@ -147,3 +147,17 @@ Use `lrei recommend --snapshot-dir DIR --target-draw-at ISO_8601_WITH_OFFSET` to
 ## Reusable paper-only prospective studies (manual, P1)
 
 The [Hebrew operating guide](P1_REUSABLE_PAPER_FREEZE_HE.md) documents a fail-closed manual GitHub Actions workflow for independently timestamped future draw experiments. It creates one real Smart 5+ portfolio and three uniformly random, fixed-seed 14-line controls, predeclares the paired 3+ primary metric, checks the Israel-local draw time and last recorded draw ID, and refuses to overwrite prior evidence. External publication must be reviewed before any score is labeled prospective. **This research code does not verify winning-result provenance or infer a financial advantage, and it never buys a ticket.**
+
+## Draw-data readiness vs code regression tests
+
+`python -m pytest -q tests/lottery/test_real_dataset.py` verifies the repository's draw record structure, consecutive IDs, dates, six unique main numbers and strong numbers; this is intentionally independent of today's date. **A successful code test does not authorize a forecast.**
+
+To check time-dependent production-data readiness, run:
+
+```bash
+python -m lrei.lottery.dataset_freshness --dataset data/lottery.csv
+```
+
+That explicit operational command returns a **nonzero exit code** if the most recent draw is future-dated or older than **four calendar days in Asia/Jerusalem**; it emits a JSON report even when it is red. GitHub's `Lotto Historical Dataset Operational Freshness` workflow runs the same check automatically on the default branch (scheduled daily and on relevant changes), independently of the PR code CI. No date-dependent checks are silently ignored or reported as green.
+
+The manual pre-draw workflow imposes an additional **stronger freshness rule**: the last draw ID must be exactly one less than the target drawing, and the draw time/source must be manually reviewed. Passing an age-only gate is **not sufficient** for eligibility, and neither result establishes first-party CSV provenance or legally approved payout data. Until these readiness gates pass, **NO PAPER PREDICTION / NO PLAY**.

@@ -61,6 +61,15 @@ def test_full_study_fixed_records_checksum_and_secondary_score():
     assert result["portfolios"]["grid"]["any_prize_under_assumed_rules"] is False
     assert len(result["report_sha256"])==64
     assert all(p["ticket_count"]==14 for p in result["portfolios"].values())
+    assert result["portfolios"]["smart"]["maximum_pairwise_main_overlap"]==1
+    assert result["portfolios"]["random"]["maximum_pairwise_main_overlap"]==3
+    assert result["portfolios"]["grid"]["maximum_pairwise_main_overlap"]==1
+    assert all(p["attains_five_plus_main_ceiling"] for p in result["portfolios"].values())
+    assert all(
+        p["exact_five_plus_main_probability"] == 1/888
+        for p in result["portfolios"].values()
+    )
+
 
 @pytest.mark.parametrize("key",["smart","random","grid"])
 def test_any_tamper_rejected(key):

@@ -1,0 +1,39 @@
+{
+  "audit_kind": "raw_archive_incremental_file_delta",
+  "status": "exact_common_row_match_one_new_draw_origin_unverified",
+  "old_filename": "Lotto(3).csv",
+  "old_sha256": "befd18352e7acf3c5692e2200ab683ac0e434b90ec1050b6fe0bd4c737143f93",
+  "old_file_bytes": 183478,
+  "old_csv_data_rows": 4550,
+  "new_filename": "Lotto (1)(1).csv",
+  "new_sha256": "9d3015c90c96713b0171a78dc6249dcc2d95a51168f0efb8303105a09e1ab31a",
+  "new_file_bytes": 183520,
+  "new_csv_data_rows": 4551,
+  "shared_numeric_ids": 4550,
+  "shared_rows_differing_any_csv_field": 0,
+  "old_only_ids": [],
+  "new_only_ids": [
+    3975
+  ],
+  "new_only_record": {
+    "draw_id": 3975,
+    "date": "15/10/2026",
+    "main": [
+      18,
+      22,
+      24,
+      25,
+      27,
+      28
+    ],
+    "strong": 5,
+    "regular_jackpot_winner_count_in_supplied_csv": 1,
+    "double_jackpot_winner_count_in_supplied_csv": 0
+  },
+  "source_header_and_all_extra_columns_compared": true,
+  "both_files_cp1255": true,
+  "download_origin_independently_verified": false,
+  "legally_binding_protocol_verified": false,
+  "eligible_for_dataset_promotion": false,
+  "basis": "Two raw user-provided source files compared using csv.DictReader and every field per shared numeric draw ID; no official TLS response obtained."
+}

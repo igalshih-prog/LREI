@@ -1,12 +1,14 @@
 """Focused CLI tests for the opt-in prospective snapshot path."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
+from pathlib import Path
 from types import SimpleNamespace
 
 from typer.testing import CliRunner
 
 import lrei.cli as cli
+from lrei.lottery.dataset import CsvDatasetLoader, parse_draw_date
 from lrei.lottery.prospective_ledger import build_snapshot, verify_snapshot
 from lrei.lottery.recommendation import RecommendationResult, RecommendedTicket
 
@@ -62,9 +64,12 @@ def test_cli_saves_valid_snapshot_without_running_historical_benchmarks(tmp_path
             stdout="f949eb8e3b5d8cca82997ec4cf0d6b48d907baef\n"
         ),
     )
-    # Simulated creation must follow the candidate's latest draw (15 October).
-    # Production still rejects future-dated or more-than-four-day-old history.
-    frozen = datetime(2026, 10, 16, 8, 0, tzinfo=timezone.utc)
+    # Keep the synthetic clock one day after the checked-in latest draw.
+    # A hard-coded date becomes future-dated after each legitimate CSV refresh.
+    data_file = Path(cli.__file__).resolve().parents[2] / "data" / "lottery.csv"
+    latest_date = parse_draw_date(CsvDatasetLoader().load(data_file).latest().date)
+    assert latest_date is not None
+    frozen = datetime.combine(latest_date + timedelta(days=1), time(8), tzinfo=timezone.utc)
     monkeypatch.setattr(
         cli, "build_snapshot",
         lambda **kwargs: build_snapshot(**kwargs, created_at=frozen),

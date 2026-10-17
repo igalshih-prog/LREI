@@ -77,6 +77,8 @@ def compare_archive_updates(old: bytes, new: bytes) -> dict[str, Any]:
     added = sorted(new_ids - old_ids)
     if any(i <= max(old_ids) for i in added):
         raise OfficialCsvAuditError("new archive backfilled an earlier draw ID")
+    if added and added != list(range(max(old_ids) + 1, added[-1] + 1)):
+        raise OfficialCsvAuditError("new archive has a gap in newly added draw IDs")
     return {
         "schema_version": 1,
         "status": "old_archive_rows_preserved_origin_unverified",

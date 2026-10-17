@@ -62,7 +62,9 @@ def test_cli_saves_valid_snapshot_without_running_historical_benchmarks(tmp_path
             stdout="f949eb8e3b5d8cca82997ec4cf0d6b48d907baef\n"
         ),
     )
-    frozen = datetime(2026, 10, 13, 8, 0, tzinfo=timezone.utc)
+    # Simulated creation must follow the candidate's latest draw (15 October).
+    # Production still rejects future-dated or more-than-four-day-old history.
+    frozen = datetime(2026, 10, 16, 8, 0, tzinfo=timezone.utc)
     monkeypatch.setattr(
         cli, "build_snapshot",
         lambda **kwargs: build_snapshot(**kwargs, created_at=frozen),

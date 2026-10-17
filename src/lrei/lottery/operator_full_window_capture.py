@@ -33,10 +33,14 @@ def capture_full_window(
     Caller cannot pass arbitrary local bytes and call them a network capture:
     the fetch is performed by download_operator_csv within this function.
     """
-    captured = captured_at_utc or datetime.now(timezone.utc)
-    if captured.tzinfo is None or captured.utcoffset() is None:
+    if (
+        captured_at_utc is not None
+        and (captured_at_utc.tzinfo is None or captured_at_utc.utcoffset() is None)
+    ):
         raise OfficialCsvAuditError("capture timestamp requires a UTC offset")
     raw, final_url, mime = download_operator_csv()
+    # Capture AFTER the response has been received (no guessed pre-request time).
+    captured = captured_at_utc or datetime.now(timezone.utc)
     _safe_official_url(final_url)
     compared = reconcile_uploaded_archive(
         raw, historical, reviewed_at_utc=captured,

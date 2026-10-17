@@ -96,6 +96,12 @@ def test_header_change_rejected_including_extra_columns():
         compare_archive_updates(raw(FIRST), new)
 
 
+
+def test_appended_draw_id_gap_rejected():
+    next_but_one = THIRD.replace("3975", "3976")
+    with pytest.raises(OfficialCsvAuditError, match="gap"):
+        compare_archive_updates(raw(FIRST, SECOND), raw(FIRST, SECOND, next_but_one))
+
 def test_no_trust_in_same_named_or_claimed_source():
     # Even identical files cannot be promoted from offline content alone.
     report = compare_archive_updates(raw(FIRST), raw(FIRST))

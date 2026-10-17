@@ -75,3 +75,14 @@ Store the acquisition evidence in an authorized safe location. An
 informational source check does not verify the legally binding approved
 draw protocol. The already published draw 3974 cannot be counted as a
 prospective prediction. P3-A.2 remains 6/20 audited payout observations.
+
+
+## 17 October 2026 — code-only independent release (separate from PR #25)
+
+This source-audit checker is being extracted for independent CI/review, **without** the unverified draw #3974 CSV update in [PR #25](https://github.com/igalshih-prog/LREI/pull/25). Its new workflow, `P1 Operator Lotto CSV source audit (manual, code only)`, separates:
+- PR-time **offline synthetic parser tests**, which do not claim first-party publication.
+- **manual** `workflow_dispatch` source capture after code lands on `main`. The operator request uses trusted `main` code, and checks the last draw ID actually found in either `main`'s history or a *read-only candidate copy* of PR #25's history. Candidate branch code is NEVER executed and candidate data is NEVER merged by this workflow.
+- A successful capture may provide a genuine HTTPS response location, timestamp, byte count and SHA256 in a temporary audit artifact, **not** commission-approved protocol or automatic permission to promote data. Operator rights/reuse still require human review. Original raw response is not uploaded to public artifacts by default.
+- If direct HTTPS capture times out, the manual job MUST remain **RED**. No synthetic or secondary result is substituted.
+
+To preserve a legally authorized raw response for later independently reproducible verification, retrieve/store the original bytes in a permitted private location and record the exact checksum together with acquisition details. The success of an offline parser never upgrades the recorded source gate to green.

@@ -13,8 +13,8 @@ from lrei.lottery.prospective_batch_scoring import (
 )
 from lrei.lottery.prospective_ledger import build_snapshot
 
-NOW = datetime(2026, 10, 17, 17, 0, tzinfo=timezone.utc)
-TARGET = datetime(2026, 10, 17, 23, 0, tzinfo=timezone(timedelta(hours=3)))
+NOW = datetime(2026, 10, 11, 17, 0, tzinfo=timezone.utc)
+TARGET = datetime(2026, 10, 11, 23, 0, tzinfo=timezone(timedelta(hours=3)))
 REPORTED = "2026-10-11T19:55:00Z"
 PUBLICATION = {
     "kind": "github_commit",
@@ -29,10 +29,11 @@ RESULT = {
     "strong": 5,
     "source_url": "https://example.org/secondary/unverified/9000",
 }
-SCORE_AT = datetime(2026, 10, 17, 21, 0, tzinfo=timezone.utc)
+SCORE_AT = datetime(2026, 10, 11, 21, 0, tzinfo=timezone.utc)
 
 
-# All dates, IDs and numbers here are synthetic; no actual draw is scored.\nclass FakeHistory:
+# All dates, IDs and numbers here are synthetic; no actual draw is scored.
+class FakeHistory:
     def __len__(self):
         return 1141
 
@@ -243,9 +244,9 @@ def test_training_cutoff_cannot_be_changed_even_with_valid_new_manifest_checksum
 
 def test_no_scoring_before_draw_and_naive_evaluation_clock_refused(paper):
     with pytest.raises(ValueError, match="before"):
-        score(paper, evaluated_at=datetime(2026, 10, 17, 19, tzinfo=timezone.utc))
+        score(paper, evaluated_at=datetime(2026, 10, 11, 19, tzinfo=timezone.utc))
     with pytest.raises(ValueError, match="UTC offset"):
-        score(paper, evaluated_at=datetime(2026, 10, 17, 21))
+        score(paper, evaluated_at=datetime(2026, 10, 11, 21))
 
 
 def test_cli_writes_verified_digest_once_and_never_overwrites(tmp_path, paper, monkeypatch):

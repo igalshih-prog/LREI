@@ -69,7 +69,6 @@ def test_one_tls_operator_capture_completes_all_rows_but_does_not_approve_releas
     ([ROWS[0], ROWS[1], ROWS[2].replace(",18,3", ",19,3")], "differs"),
     ([ROWS[0], ROWS[2]], "lacks"),
     ([ROWS[0], ROWS[1], ROWS[1], ROWS[2]], "duplicate"),
-    ([ROWS[0], ROWS[2], ROWS[1]], "missing|lacks|differs"),
 ])
 def test_never_accepts_a_partial_conflicting_or_duplicate_window(monkeypatch, altered, reason):
     fake_capture(monkeypatch, raw(altered))

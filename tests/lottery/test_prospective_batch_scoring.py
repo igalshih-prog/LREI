@@ -281,3 +281,54 @@ def test_report_never_contains_claimed_positive_monetary_return(paper):
     assert report["positive_expected_value_or_predictive_edge_established"] is False
     assert report["independent_operator_draw_result_verified"] is False
     assert "profit_ils" not in json.dumps(report)
+
+
+
+def test_actual_prospective_batch_writer_integrates_with_generic_score(
+    tmp_path, monkeypatch
+):
+    # End-to-end schema contract, using real freezer/writer/scorer code.
+    # Stub only the numerical recommendation search; all data are fictional.
+    from lrei.lottery import prospective_batch as freezer
+
+    class StubSmartEngine:
+        def __init__(self, config):
+            assert config.objective == "coverage_5plus"
+
+        def recommend(self, history, seed):
+            assert seed == 42
+            return SimpleNamespace(
+                recommended_tickets_with_strong=tuple(
+                    SimpleNamespace(numbers=row, strong_number=(i % 7) + 1)
+                    for i, row in enumerate(grid_lines())
+                ),
+                generated_tickets=tuple(range(500)),
+            )
+
+    monkeypatch.setattr(freezer, "SmartRecommendationEngine", StubSmartEngine)
+    dataset = tmp_path / "fictional-history.csv"
+    dataset.write_bytes(b"fictional cutoff fixture, not a real operator export")
+    frozen = freezer.build_paper_batch(
+        historical=FakeHistory(),
+        dataset_file=dataset,
+        source_commit="a" * 40,
+        target_draw_id=9000,
+        target_draw_at=TARGET,
+        schedule_reference_url="https://www.pais.co.il/lotto/archive.aspx",
+        schedule_reviewed=True,
+        now=NOW,
+    )
+    location = freezer.write_paper_batch(frozen, tmp_path / "frozen")
+    loaded = {
+        "manifest": json.loads((location / "manifest.json").read_text()),
+        "smart": json.loads((location / "smart_14.json").read_text()),
+        "controls": {
+            name: json.loads((location / f"{name}_14.json").read_text())
+            for name in ARMS[1:]
+        },
+    }
+    result = score(loaded)
+    assert set(result["portfolios"]) == set(ARMS)
+    assert result["frozen_batch_sha256"] == frozen["manifest"]["record_sha256"]
+    assert result["independent_operator_draw_result_verified"] is False
+    assert result["one_draw_observation_only"]["do_not_interpret_as_statistical_evidence"] is True

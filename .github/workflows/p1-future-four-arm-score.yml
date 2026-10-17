@@ -1,0 +1,27 @@
+name: P1 Future Four-Arm Paper Score Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/lrei/lottery/prospective_batch_scoring.py
+      - tests/lottery/test_prospective_batch_scoring.py
+      - .github/workflows/p1-future-four-arm-score.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-and-score-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and test runner
+        run: python -m pip install -e . pytest
+      - name: Audit four-arm same-budget, tamper, timestamp and data-source invariants
+        run: python -m pytest -q tests/lottery/test_prospective_batch_scoring.py

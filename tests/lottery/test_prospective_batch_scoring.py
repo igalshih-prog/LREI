@@ -15,29 +15,29 @@ from lrei.lottery.prospective_ledger import build_snapshot
 
 NOW = datetime(2026, 10, 17, 17, 0, tzinfo=timezone.utc)
 TARGET = datetime(2026, 10, 17, 23, 0, tzinfo=timezone(timedelta(hours=3)))
-REPORTED = "2026-10-17T19:55:00Z"
+REPORTED = "2026-10-11T19:55:00Z"
 PUBLICATION = {
     "kind": "github_commit",
     "url": "https://github.com/example/LREI/commit/" + "b" * 40,
-    "published_at_utc": "2026-10-17T18:00:00Z",
+    "published_at_utc": "2026-10-11T18:00:00Z",
 }
 RESULT = {
-    "draw_id": 3976,
-    "draw_date_local": "2026-10-17",
+    "draw_id": 9000,
+    "draw_date_local": "2026-10-11",
     "reported_draw_at_utc": REPORTED,
     "main": [3, 9, 15, 21, 27, 33],
     "strong": 5,
-    "source_url": "https://example.org/secondary/unverified/3976",
+    "source_url": "https://example.org/secondary/unverified/9000",
 }
 SCORE_AT = datetime(2026, 10, 17, 21, 0, tzinfo=timezone.utc)
 
 
-class FakeHistory:
+# All dates, IDs and numbers here are synthetic; no actual draw is scored.\nclass FakeHistory:
     def __len__(self):
         return 1141
 
     def latest(self):
-        return SimpleNamespace(draw_id="3975", date="15-10-26")
+        return SimpleNamespace(draw_id="8999", date="09-10-26")
 
 
 def grid_lines():
@@ -88,7 +88,7 @@ def paper(tmp_path):
             "created_at_utc": smart["created_at_utc"],
             "target_draw_at_utc": smart["target_draw_at_utc"],
             "target_draw_date_local": smart["target_draw_date_local"],
-            "expected_next_draw_id": "3976",
+            "expected_next_draw_id": "9000",
             "source_commit": smart["source_commit"],
             "dataset_sha256": smart["dataset_sha256"],
             "latest_draw": smart["latest_draw"],
@@ -106,7 +106,7 @@ def paper(tmp_path):
         "schema_version": 1,
         "status": "paper_snapshot_prepared_external_publication_pending",
         "created_at_utc": smart["created_at_utc"],
-        "target_draw_id": 3976,
+        "target_draw_id": 9000,
         "target_draw_date_local": smart["target_draw_date_local"],
         "target_draw_at_utc": smart["target_draw_at_utc"],
         "schedule_reference_url_user_supplied": "https://www.pais.co.il/lotto/archive.aspx",
@@ -200,12 +200,12 @@ def test_tampered_manifest_or_primary_metric_cannot_be_scored(paper):
 
 @pytest.mark.parametrize("patch,error", [
     ({"draw_id": 3977}, "differs"),
-    ({"draw_date_local": "2026-10-18"}, "differs"),
+    ({"draw_date_local": "2026-10-12"}, "differs"),
     ({"main": [1, 1, 2, 3, 4, 5]}, "invalid"),
     ({"main": [0, 2, 3, 4, 5, 6]}, "invalid"),
     ({"strong": 8}, "invalid"),
-    ({"reported_draw_at_utc": "2026-10-18T19:55:00Z"}, "local date"),
-    ({"reported_draw_at_utc": "2026-10-17T19:55:00"}, "UTC offset"),
+    ({"reported_draw_at_utc": "2026-10-12T19:55:00Z"}, "local date"),
+    ({"reported_draw_at_utc": "2026-10-11T19:55:00"}, "UTC offset"),
     ({"source_url": "http://example.org/unverified"}, "HTTPS"),
     ({"source_url": "https://pais.co.il@evil.invalid/forged"}, "HTTPS"),
 ])
@@ -220,10 +220,10 @@ def test_invalid_result_refused(paper, patch, error):
     ({"kind": "unknown"}, "unrecognized"),
     ({"url": "https://github.com.evil.invalid/fake"}, "HTTPS"),
     ({"url": "https://someone@github.com/repo"}, "HTTPS"),
-    ({"published_at_utc": "2026-10-17T19:56:00Z"}, "not before"),
-    ({"published_at_utc": "2026-10-17T20:01:00Z"}, "not before"),
-    ({"published_at_utc": "2026-10-17T16:59:00Z"}, "before publication"),
-    ({"published_at_utc": "2026-10-17T18:00:00"}, "UTC offset"),
+    ({"published_at_utc": "2026-10-11T19:56:00Z"}, "not before"),
+    ({"published_at_utc": "2026-10-11T20:01:00Z"}, "not before"),
+    ({"published_at_utc": "2026-10-11T16:59:00Z"}, "before publication"),
+    ({"published_at_utc": "2026-10-11T18:00:00"}, "UTC offset"),
 ])
 def test_false_publication_or_invalid_claim_rejected(paper, patch, error):
     candidate = dict(PUBLICATION)
@@ -233,7 +233,7 @@ def test_false_publication_or_invalid_claim_rejected(paper, patch, error):
 
 
 def test_training_cutoff_cannot_be_changed_even_with_valid_new_manifest_checksum(paper):
-    paper["manifest"]["latest_draw"] = {"id": "3974", "date": "2026-10-13"}
+    paper["manifest"]["latest_draw"] = {"id": "8998", "date": "2026-10-13"}
     paper["manifest"]["record_sha256"] = _hash({
         k: v for k, v in paper["manifest"].items() if k != "record_sha256"
     })

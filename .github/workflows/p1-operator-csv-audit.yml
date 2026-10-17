@@ -1,0 +1,98 @@
+name: P1 Operator Lotto CSV source audit (manual, code only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/lrei/lottery/official_draw_source.py
+      - src/lrei/lottery/archive_reconciliation.py
+      - tests/lottery/test_official_draw_source.py
+      - tests/lottery/test_archive_reconciliation.py
+      - .github/workflows/p1-operator-csv-audit.yml
+  workflow_dispatch:
+    inputs:
+      candidate_dataset:
+        description: "Dataset to CHECK, not to merge: main or source-gated PR #25"
+        required: true
+        type: choice
+        default: "main"
+        options:
+          - main
+          - source-gated-pr25
+
+permissions:
+  contents: read
+
+jobs:
+  offline-parser-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and tests
+        run: python -m pip install -e . pytest
+      - name: Test operator CSV and full archive reconciliation (synthetic only)
+        run: >-
+          python -m pytest -q
+          tests/lottery/test_official_draw_source.py
+          tests/lottery/test_archive_reconciliation.py
+
+  optional-real-operator-capture:
+    # This job never runs on a PR or automatically. Network access errors
+    # must be reported RED rather than misrepresented as authentic results.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout trusted verification code from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted
+          persist-credentials: false
+      - name: Checkout candidate DATA only for comparison (never execute code)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_dataset == 'source-gated-pr25' && 'data/lotto-refresh-3974-20261015' || 'main' }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install trusted checker
+        run: python -m pip install -e ./trusted
+      - name: Resolve target from candidate dataset latest draw (not a guessed ID)
+        id: latest
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from lrei.lottery.dataset import CsvDatasetLoader
+          dataset = CsvDatasetLoader().load(Path("candidate/data/lottery.csv"))
+          latest = str(dataset.latest().draw_id)
+          if not latest.isdecimal():
+              raise SystemExit("Candidate last draw ID is not numeric")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              print(f"draw_id={latest}", file=out)
+          print(f"Candidate reference: {os.environ['CANDIDATE_REF']}, draw {latest}")
+          PY
+        env:
+          CANDIDATE_REF: ${{ inputs.candidate_dataset }}
+      - name: Request operator HTTPS raw bytes and compare candidate latest draw
+        run: >-
+          python -m lrei.lottery.official_draw_source
+          --download
+          --historical-csv candidate/data/lottery.csv
+          --draw-id ${{ steps.latest.outputs.draw_id }}
+          --report audit-evidence/operator-source-report.json
+      - name: Retain source-hash report if a first-party capture succeeds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-operator-csv-audit-${{ inputs.candidate_dataset }}
+          path: audit-evidence/operator-source-report.json
+          if-no-files-found: warn
+          retention-days: 30

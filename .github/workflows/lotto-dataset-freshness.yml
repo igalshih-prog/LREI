@@ -33,6 +33,55 @@ jobs:
           python -m lrei.lottery.dataset_freshness
           --dataset data/lottery.csv
           --report audit-output/lotto-data-readiness.json
+      - name: Explain operational readiness without weakening the gate
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = Path("audit-output/lotto-data-readiness.json")
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          if not report.is_file():
+              message = (
+                  "### Lotto operational freshness: check unavailable\n"
+                  "The diagnostic JSON was not produced. Treat readiness as "
+                  "**unverified**; do not assume freshness or official provenance.\n"
+              )
+          else:
+              try:
+                  data = json.loads(report.read_text(encoding="utf-8"))
+                  if not isinstance(data, dict):
+                      raise ValueError("report must be an object")
+                  status = str(data["status"])
+                  draw = str(data["latest_draw_id"])
+                  date = str(data["latest_draw_date_israel"])
+                  age = int(data["age_days"])
+                  limit = int(data["max_age_days"])
+                  recency = data.get("data_recency_ok") is True
+                  message = (
+                      "### Lotto operational freshness\n"
+                      f"- Status: `{status}`\n"
+                      f"- Latest checked draw: **{draw}** ({date})\n"
+                      f"- Israel-local age: **{age}** calendar days (limit: {limit})\n"
+                      f"- Recency gate: **{'PASS' if recency else 'FAIL'}**\n"
+                      "- **Operator provenance remains unverified by this check.**\n"
+                      "- **Financial-prediction authorization: NO.**\n"
+                      "- Next: obtain and independently authenticate official "
+                      "draw-source bytes, reconcile against the archive, then "
+                      "submit a gated data-update PR. Do not relax the age limit "
+                      "or merge the unverified candidate CSV.\n"
+                  )
+              except (OSError, ValueError, KeyError, TypeError) as exc:
+                  message = (
+                      "### Lotto operational freshness: invalid report\n"
+                      f"Report could not be interpreted ({type(exc).__name__}). "
+                      "Treat readiness as **unverified**.\n"
+                  )
+          with summary.open("a", encoding="utf-8") as output:
+              output.write(message)
+          PY
       - name: Retain real recency report even on a red readiness gate
         if: always()
         uses: actions/upload-artifact@v4

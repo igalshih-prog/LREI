@@ -227,7 +227,7 @@ def main() -> None:
             options.report.parent.mkdir(parents=True, exist_ok=True)
             with options.report.open("x", encoding="utf-8") as stream:
                 json.dump(report, stream, ensure_ascii=False, sort_keys=True, indent=2)
-                stream.write("\\n")
+                stream.write("\n")
     except (PrizeDataError, OSError, ValueError) as exc:
         parser.exit(2, f"Prize audit failed: {exc}\n")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2))

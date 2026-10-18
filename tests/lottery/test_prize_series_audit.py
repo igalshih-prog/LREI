@@ -199,7 +199,7 @@ def test_prize_readiness_report_cli_exclusive_write_and_no_play(tmp_path):
     completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
     assert completed.returncode == 0, completed.stderr
     assert output.is_file()
-    assert output.read_bytes().endswith(b"\\n")
+    assert output.read_bytes().endswith(b"\n")
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["observed_draws"] == 6
     assert result["missing_prize_tier_rows"] == 224

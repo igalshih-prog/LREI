@@ -83,3 +83,12 @@ jobs:
           --observations-dir data/prize_observations
           --manifest data/prize_audit/3949-3968.manifest.json
           --historical-csv data/lottery.csv
+          --report audit-evidence/p3a2-research-readiness.json
+      - name: Upload descriptive P3-A readiness report (NO PLAY; not source proof)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p3a2-research-readiness
+          path: audit-evidence/p3a2-research-readiness.json
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,7 +1,10 @@
 """P3-A.2 audit regression tests: source integrity and visible incomplete window."""
 
 import copy
+import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -43,6 +46,12 @@ def test_audit_does_not_pretend_six_observations_are_twenty():
     assert summary["approved_protocols_verified"] is False
     assert summary["official_sales_data_available"] is False
     assert summary["eligible_for_financial_prediction"] is False
+    assert summary["missing_prize_tier_rows"] == 14 * 16 == 224
+    assert summary["source_manifest_sha256"] == hashlib.sha256(MANIFEST.read_bytes()).hexdigest()
+    assert summary["p3_economic_readiness"]["decision"] == "NO_PLAY"
+    assert summary["p3_economic_readiness"]["data_readiness_ok"] is False
+    assert summary["p3_economic_readiness"]["source_authenticity_verified"] is False
+    assert "missing_16_tier_prize_tables" in summary["p3_economic_readiness"]["blocking_reasons"]
 
 
 def test_payout_reconciliation_does_not_mislabel_extra_as_lotto():
@@ -176,3 +185,43 @@ def test_wrong_manifest_schema_rejected(tmp_path, bad):
     change_manifest(manifest, lambda doc: doc.update(schema_version=bad))
     with pytest.raises(PrizeDataError, match="schema"):
         audit_prize_series(directory, manifest, historic())
+
+
+def test_prize_readiness_report_cli_exclusive_write_and_no_play(tmp_path):
+    output = tmp_path / "p3a-readiness.json"
+    command = [
+        sys.executable, "-m", "lrei.lottery.prize_series_audit",
+        "--observations-dir", str(RECORDS),
+        "--manifest", str(MANIFEST),
+        "--historical-csv", str(HISTORY),
+        "--report", str(output),
+    ]
+    completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    assert completed.returncode == 0, completed.stderr
+    assert output.is_file()
+    assert output.read_bytes().endswith(b"\\n")
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["observed_draws"] == 6
+    assert result["missing_prize_tier_rows"] == 224
+    assert result["p3_economic_readiness"]["decision"] == "NO_PLAY"
+    assert result["source_manifest_sha256"] == hashlib.sha256(MANIFEST.read_bytes()).hexdigest()
+    assert subprocess.run(command, cwd=ROOT, capture_output=True).returncode == 2
+    assert json.loads(output.read_text(encoding="utf-8")) == result
+
+
+def test_strict_incomplete_prize_report_still_written(tmp_path):
+    output = tmp_path / "strict.json"
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "lrei.lottery.prize_series_audit",
+            "--observations-dir", str(RECORDS),
+            "--manifest", str(MANIFEST),
+            "--historical-csv", str(HISTORY),
+            "--report", str(output),
+            "--require-complete",
+        ],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    assert result.returncode == 1
+    assert output.exists()
+    assert json.loads(output.read_text(encoding="utf-8"))["p3_economic_readiness"]["decision"] == "NO_PLAY"

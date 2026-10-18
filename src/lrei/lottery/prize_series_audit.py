@@ -10,6 +10,7 @@ The audit is descriptive only; it cannot estimate financial expected value.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from datetime import date
@@ -98,8 +99,9 @@ def audit_prize_series(
     """
     directory = Path(observations_dir)
     try:
-        manifest = json.loads(Path(manifest_file).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        manifest_bytes = Path(manifest_file).read_bytes()
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise PrizeDataError("cannot read series manifest") from exc
     if not isinstance(manifest, dict) or set(manifest) != _MANIFEST_KEYS:
         raise PrizeDataError("series manifest fields missing or unexpected")
@@ -139,6 +141,18 @@ def audit_prize_series(
         audited.add(identifier)
 
     missing = [n for n in range(first, last + 1) if n not in observations]
+    # Every absent draw is missing eight regular and eight Double prize tiers.
+    # Do not equate a "green" software audit with complete source evidence.
+    missing_prize_tier_rows = 16 * len(missing)
+    readiness_blockers = []
+    if missing:
+        readiness_blockers.append("missing_16_tier_prize_tables")
+    readiness_blockers.extend((
+        "operator_raw_source_bytes_not_independently_authenticated",
+        "commission_approved_draw_protocols_not_verified",
+        "sales_co_winner_ticket_cost_tax_inputs_not_verified",
+        "positive_net_expected_value_not_established",
+    ))
     review_method_counts = {method: sum(row["review_method"] == method for row in sources) for method in sorted(REVIEW_METHODS)}
     accounting: dict[str, Any] = {}
     for identifier, observation in sorted(observations.items()):
@@ -169,13 +183,22 @@ def audit_prize_series(
         "expected_draws": last - first + 1,
         "observed_draws": len(observations),
         "source_audits": len(audited),
+        "source_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "review_method_counts": review_method_counts,
         "missing_draw_ids": missing,
+        "missing_prize_tier_rows": missing_prize_tier_rows,
         "series_complete": not missing,
         "source_raw_bytes_available": False,
         "approved_protocols_verified": False,
         "official_sales_data_available": all(x["ticket_sales_ils"] is not None for x in observations.values()) and bool(observations),
         "eligible_for_financial_prediction": False,
+        "p3_economic_readiness": {
+            "decision": "NO_PLAY",
+            "data_readiness_ok": False,
+            "source_authenticity_verified": False,
+            "positive_net_expected_value_established": False,
+            "blocking_reasons": readiness_blockers,
+        },
         "accounting": accounting,
         "purpose": PURPOSE,
     }
@@ -194,10 +217,17 @@ def main() -> None:
     parser.add_argument("--historical-csv", type=Path, required=True)
     parser.add_argument("--require-complete", action="store_true",
                         help="Exit nonzero if at least one draw is missing.")
+    parser.add_argument("--report", type=Path,
+                        help="Write an exclusive, non-overwriting research readiness JSON report.")
     options = parser.parse_args()
     try:
         archive = CsvDatasetLoader().load(options.historical_csv)
         report = audit_prize_series(options.observations_dir, options.manifest, archive)
+        if options.report is not None:
+            options.report.parent.mkdir(parents=True, exist_ok=True)
+            with options.report.open("x", encoding="utf-8") as stream:
+                json.dump(report, stream, ensure_ascii=False, sort_keys=True, indent=2)
+                stream.write("\n")
     except (PrizeDataError, OSError, ValueError) as exc:
         parser.exit(2, f"Prize audit failed: {exc}\n")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2))

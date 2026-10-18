@@ -91,3 +91,22 @@ References:
 - [MASTER PLAN #7](https://github.com/igalshih-prog/LREI/issues/7)
 - [P3-A.2 tracking issue #9](https://github.com/igalshih-prog/LREI/issues/9)
 - [Original P3 economics research #6](https://github.com/igalshih-prog/LREI/issues/6)
+
+
+## P3-A research-readiness artifact — code tests are not economic authorization
+
+The prize-series audit also produces a **machine-readable research-readiness report**. Use:
+
+```bash
+python -m lrei.lottery.prize_series_audit \
+  --observations-dir data/prize_observations \
+  --manifest data/prize_audit/3949-3968.manifest.json \
+  --historical-csv data/lottery.csv \
+  --report audit-evidence/p3a2-research-readiness.json
+```
+
+The JSON includes the exact SHA-256 of the source audit *manifest* (not of a retrieved operator page), the missing draw IDs and number of incomplete prize-tier rows, review method counts, and an explicit `p3_economic_readiness.decision = "NO_PLAY"`. With the current six complete observations and fourteen missing draws, exactly **224 prize-tier rows** are missing (14 × 8 regular + 8 Double).
+
+The new CI artifact in `P3-A.2 Prize Series Audit` is **descriptive, not a successful financial gate**: the source pages' raw bytes, binding protocols, ticket-sales/co-winner estimates, ticket costs, tax rules and positive net expected value have not been independently verified. Consequently, the software tests can and should pass while economic readiness remains `data_readiness_ok=false`. An incomplete or invalid source manifest still fails the audit. The report uses exclusive-write mode and cannot overwrite an earlier file with the same path.
+
+This step **does not authorize a wager**, release the quarantined draw-history PR, authenticate an operator export, or treat the 6/20 cohort as a prospective holdout. The formal data request remains unsubmitted.

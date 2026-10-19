@@ -120,3 +120,39 @@ def test_rule_eighth_tier_reconciliation_protects_payout_precision():
     wrong["games"]["double"][-1]["payout_per_winning_entry_ils"] = 20
     with pytest.raises(PrizeDataError, match="tier-eight"):
         validate_special_rule_notice(rule(), wrong)
+
+
+@pytest.mark.parametrize("bad_value", [
+    None,
+    3955,
+    "1,2,3,4,5,6",
+    [],
+    [1, 2, 3, 4, 5, 38],
+])
+def test_secondary_main_malformed_types_fail_with_research_data_error(bad_value):
+    data = leads()
+    data["draws"][0]["main_numbers"] = bad_value
+    with pytest.raises(PrizeDataError, match="six sorted distinct integers"):
+        validate_secondary_leads(data, history())
+
+
+@pytest.mark.parametrize("replacement", [
+    lambda original: [float(v) if i == 0 else v for i, v in enumerate(original)],
+    lambda original: [True if i == 0 else v for i, v in enumerate(original)],
+    lambda original: [original[0]] * 6,
+    lambda original: list(reversed(original)),
+])
+def test_secondary_main_never_coerces_float_bool_duplicate_or_order(replacement):
+    data = leads()
+    nums = data["draws"][0]["main_numbers"]
+    data["draws"][0]["main_numbers"] = replacement(nums)
+    with pytest.raises(PrizeDataError, match="six sorted distinct integers"):
+        validate_secondary_leads(data, history())
+
+
+def test_special_rule_fixed_eighth_prize_rejects_numeric_coercion():
+    data = rule()
+    # Python compares 15.0 == 15, but a verified payout requires exact integer type.
+    data["eighth_prize_ils"]["regular"] = 15.0
+    with pytest.raises(PrizeDataError, match="tier-eight"):
+        validate_special_rule_notice(data, observation())

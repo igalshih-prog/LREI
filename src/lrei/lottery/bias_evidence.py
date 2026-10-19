@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 from .dataset import LotteryDrawRecord, parse_draw_date
 
@@ -32,6 +33,7 @@ DRAWS_IN_LINE = 6
 NUMBER_MAX = 37
 NULL_DRAWS = math.comb(NUMBER_MAX, DRAWS_IN_LINE)
 EVIDENCE_LOG_THRESHOLD = math.log(20)
+ISRAEL = ZoneInfo("Asia/Jerusalem")
 
 
 def _utc(value: datetime, label: str) -> datetime:
@@ -110,7 +112,9 @@ def freeze_bias_model(
     last_date = parse_draw_date(last.date)
     if last_date is None:
         raise ValueError("last historical draw needs a valid date")
-    age = (created.date() - last_date).days
+    # The operational four-day boundary is the Israel-local calendar date,
+    # not the UTC date (which can still be yesterday after Israeli midnight).
+    age = (created.astimezone(ISRAEL).date() - last_date).days
     if not 0 <= age <= 4:
         raise ValueError("archive is future dated or more than four days old")
 
@@ -216,7 +220,7 @@ def score_future_draw(
     if now < target:
         raise ValueError("cannot score a draw before it takes place")
     draw_date = parse_draw_date(draw.date)
-    if draw_date is None or draw_date != draw_occurred_at.date():
+    if draw_date is None or draw_date != target.astimezone(ISRAEL).date():
         raise ValueError("official draw date must match the target local date")
     if type(draw.strong_number) is not int or not 1 <= draw.strong_number <= 7:
         raise ValueError("official result must supply a valid strong number")

@@ -214,3 +214,83 @@ def test_cli_future_input_cannot_be_counted_before_draw(tmp_path):
     assert result.exit_code != 0
     assert "before it takes place" in result.output
     assert not (tmp_path / "result").exists()
+
+
+# Calendar safety regressions: Israel changes calendar days before UTC.
+# These use synthetic draw histories only, not authenticated results.
+@pytest.mark.parametrize(
+    "utc_instant,should_pass",
+    [
+        ("2026-10-14T20:59:00Z", True),  # 14 Oct 23:59 Israel: age exactly 4
+        ("2026-10-14T21:00:00Z", False),  # 15 Oct 00:00 Israel: age 5
+        ("2026-10-09T20:59:00Z", False),  # 9 Oct 23:59 Israel: future date
+    ],
+)
+def test_freeze_age_uses_israel_local_calendar_even_at_midnight(
+    tmp_path, utc_instant, should_pass,
+):
+    path = tmp_path / "synthetic.csv"
+    path.write_bytes(b"synthetic-not-official")
+    created = datetime.fromisoformat(utc_instant.replace("Z", "+00:00"))
+    if should_pass:
+        assert verify_frozen_model(
+            freeze_bias_model(archive(), path, SHA, created_at=created)
+        )
+    else:
+        with pytest.raises(ValueError, match="future dated|four days old"):
+            freeze_bias_model(archive(), path, SHA, created_at=created)
+
+
+def test_freeze_age_obeys_israeli_winter_utc_plus_two_after_dst(tmp_path):
+    path = tmp_path / "synthetic.csv"
+    path.write_bytes(b"synthetic-not-official")
+    # Freeze on Oct 26 Israel at 00:00 while UTC date is still Oct 25.
+    # Synthetic historical newest draw Oct 21: true local age is five.
+    draws = [
+        LotteryDrawRecord(
+            draw_id=str(3000 + j),
+            numbers=tuple(sorted(((j * 7 + i) % 37) + 1 for i in range(6))),
+            date="21-10-26",
+            strong_number=1 + j % 7,
+        )
+        for j in range(120)
+    ]
+    data = LotteryDataset(draws)
+    created = datetime(2026, 10, 25, 22, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="four days old"):
+        freeze_bias_model(data, path, SHA, created_at=created)
+
+
+def test_p2_score_matches_israel_calendar_and_is_timezone_invariant(tmp_path):
+    model = frozen(tmp_path)
+    instant = datetime(2026, 10, 13, 21, 30, tzinfo=timezone.utc)
+    # UTC is still Oct 13, but in Israel the draw date is Oct 14.
+    local_draw = LotteryDrawRecord(
+        "3120", (1, 2, 3, 4, 5, 6), "14-10-26", 1
+    )
+    params = dict(
+        source_url=SOURCE,
+        evaluated_at=datetime(2026, 10, 14, 2, tzinfo=timezone.utc),
+    )
+    utc_score = score_future_draw(
+        model, local_draw, draw_occurred_at=instant, **params
+    )
+    local_score = score_future_draw(
+        model,
+        local_draw,
+        draw_occurred_at=instant.astimezone(timezone(timedelta(hours=3))),
+        **params,
+    )
+    assert utc_score == local_score
+    assert verify_evidence_record(utc_score)
+    assert utc_score["draw"]["date"] == "2026-10-14"
+    assert utc_score["source_independently_verified"] is False
+
+    # A UTC-local date mistakenly supplied as the draw date must be rejected.
+    wrong_day = LotteryDrawRecord(
+        "3120", (1, 2, 3, 4, 5, 6), "13-10-26", 1
+    )
+    with pytest.raises(ValueError, match="target local date"):
+        score_future_draw(
+            model, wrong_day, draw_occurred_at=instant, **params
+        )

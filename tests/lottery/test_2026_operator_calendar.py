@@ -92,11 +92,14 @@ def test_existing_archive_matches_operator_2026_extra_and_holiday_notices():
     cutoff = parse_draw_date(archive.latest().date)
     assert cutoff is not None
     report = calendar_discrepancies(archive, cutoff)
-    # As of the current checked-in archive cutoff, 11 special Thursdays
-    # and three holiday-shifted draws have already occurred.
-    assert cutoff == date(2026, 10, 10)
-    assert report["checked_published_extra_thursdays"] == 11
-    assert report["checked_published_postponements"] == 3
+    # Expected count grows with a future VERIFIED CSV update. Do not lock
+    # the archive permanently at draw #3973 / 10 October 2026.
+    assert report["checked_published_extra_thursdays"] == sum(
+        day <= cutoff for day in EXTRA_THURSDAYS_2026
+    )
+    assert report["checked_published_postponements"] == sum(
+        day <= cutoff for day in POSTPONED_DRAWS_2026.values()
+    )
     assert report["discrepancies"] == []
     assert report["operator_outcome_or_payout_authenticity_verified"] is False
     assert report["data_freshness_verified"] is False

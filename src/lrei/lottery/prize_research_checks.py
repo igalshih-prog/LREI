@@ -99,8 +99,20 @@ def validate_secondary_leads(
         if len(found) != 1:
             raise PrizeDataError("missing or duplicated draw in historical results")
         archive = found[0]
+        # JSON booleans and floats may compare equal to Python integers
+        # (True == 1, 1.0 == 1). Never let malformed secondary-source
+        # numbers pass by equality, or crash on a non-iterable/null value.
+        main = row["main_numbers"]
         if (
-            tuple(row["main_numbers"]) != tuple(sorted(archive.numbers))
+            not isinstance(main, list)
+            or len(main) != 6
+            or any(type(number) is not int or not 1 <= number <= 37 for number in main)
+            or len(set(main)) != 6
+            or main != sorted(main)
+        ):
+            raise PrizeDataError("secondary main_numbers must be six sorted distinct integers in 1..37")
+        if (
+            tuple(main) != tuple(sorted(archive.numbers))
             or type(row["strong_number"]) is not int
             or row["strong_number"] != archive.strong_number
             or recorded_date != parse_draw_date(archive.date)
@@ -163,7 +175,13 @@ def validate_special_rule_notice(
     for key, expected in prize_amounts.items():
         if type(record[key]) is not int or record[key] != expected:
             raise PrizeDataError(f"{key} mismatch with operator announcement")
-    if record["eighth_prize_ils"] != {"regular": 15, "double": 30}:
+    eighth = record["eighth_prize_ils"]
+    if (
+        not isinstance(eighth, dict)
+        or set(eighth) != {"regular", "double"}
+        or any(type(value) is not int for value in eighth.values())
+        or eighth != {"regular": 15, "double": 30}
+    ):
         raise PrizeDataError("tier-eight special fixed payout mismatch")
     if record["receipts_amount_ils"] is not None:
         raise PrizeDataError("draw receipts were not provided; do not infer sales")

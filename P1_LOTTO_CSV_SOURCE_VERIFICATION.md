@@ -7,9 +7,8 @@ confirmation that a downloaded file is genuine or legally binding.
 
 ## Workflows
 
-- Pull requests run `P1 Lotto CSV source parser (offline)`: tests the
-  local parser without contacting external websites.
-- `optional-first-party-capture` is intentionally restricted to a
+- Pull requests run the `offline-parser-integrity` job in `P1 Operator Lotto CSV source audit (manual, code only)` when relevant parser/workflow paths change. It tests synthetic data without contacting external websites.
+- `optional-real-operator-capture` is intentionally restricted to a
   manually triggered workflow dispatch. Direct operator HTTPS download may
   fail because of operator availability, network blocking, or timeout.
 - A dispatch success records only a candidate raw-file match. It is not a
@@ -17,8 +16,9 @@ confirmation that a downloaded file is genuine or legally binding.
 - A failed dispatch means **no first-party network evidence was acquired**.
   Do not mark it as successful, skip provenance review, or fabricate a hash.
 
-Until the workflow file is on the repository default branch, direct manual
-CLI verification is the supported immediate route for the PR.
+The workflow is already on the repository's default `main` branch.
+Its source-capture job is available only through explicit **Run workflow**;
+normal pull-request tests cannot perform this network provenance check.
 
 ## Offline verification of a user-supplied CSV
 
@@ -81,7 +81,7 @@ prospective prediction. P3-A.2 remains 6/20 audited payout observations.
 
 This source-audit checker is being extracted for independent CI/review, **without** the unverified draw #3974 CSV update in [PR #25](https://github.com/igalshih-prog/LREI/pull/25). Its new workflow, `P1 Operator Lotto CSV source audit (manual, code only)`, separates:
 - PR-time **offline synthetic parser tests**, which do not claim first-party publication.
-- **manual** `workflow_dispatch` source capture after code lands on `main`. The operator request uses trusted `main` code, and checks the last draw ID actually found in either `main`'s history or a *read-only candidate copy* of PR #25's history. Candidate branch code is NEVER executed and candidate data is NEVER merged by this workflow.
+- **manual** `workflow_dispatch` source capture on `main`. The operator request uses trusted `main` code and checks the full historical CSV window in either `main` or a *read-only candidate copy* of PR #25 **or PR #30**. Candidate branch code is NEVER executed and candidate data is NEVER merged by this workflow.
 - A successful capture may provide a genuine HTTPS response location, timestamp, byte count and SHA256 in a temporary audit artifact, **not** commission-approved protocol or automatic permission to promote data. Operator rights/reuse still require human review. Original raw response is not uploaded to public artifacts by default.
 - If direct HTTPS capture times out, the manual job MUST remain **RED**. No synthetic or secondary result is substituted.
 
@@ -91,12 +91,21 @@ To preserve a legally authorized raw response for later independently reproducib
 
 Following the independently merged source parser [PR #28](https://github.com/igalshih-prog/LREI/pull/28), the manual-only workflow has been upgraded from checking **only the candidate's latest draw** to reconciling **every draw in the candidate's historical window against a single first-party TLS download**. This is a fail-closed requirement: if even one ID is missing, duplicated, date/strong/main mismatched, or the operator host redirects outside the permitted domain, the workflow returns RED.
 
-After a successful first-party request, the `operator_full_window_capture` tool records the effective operator HTTPS URL, response MIME, post-response UTC capture timestamp, real byte count and SHA-256, CSV source row count, target first/last draw IDs and number compared. It publishes a **report only**, not original operator CSV bytes, as a 30-day Actions artifact. The candidate file in PR #25 is read-only for the comparison; its source code is not executed and it is never merged automatically.
+After a successful first-party request, the `operator_full_window_capture` tool records the effective operator HTTPS URL, response MIME, post-response UTC capture timestamp, real byte count and SHA-256, CSV source row count, target first/last draw IDs and number compared. It publishes a **report only**, not original operator CSV bytes, as a 30-day Actions artifact. The candidate files in PR #25 and PR #30 are read-only for comparison; candidate-branch source code is never executed and candidate data are never merged automatically.
 
-**Manual operation after code has been merged to main:**
+**Manual operator-capture execution (as of 20 October 2026):**
 1. Open [GitHub Actions: P1 Operator Lotto CSV source audit](https://github.com/igalshih-prog/LREI/actions/workflows/p1-operator-csv-audit.yml).
-2. Choose **Run workflow**, branch `main`, and select `source-gated-pr25` to compare every one of the 1,141 uploaded candidate history rows against the operator's **newly acquired** response. Alternatively choose `main` to audit the currently committed older window.
-3. Inspect the `optional-real-operator-capture` job. A timeout, access refusal, HTML payload or mismatch is **RED**; the offline test being green does not override it.
-4. If it completes, download the **audit report**, verify SHA/URL/IDs/row counts, and separately review operator source rights and whether an approved committee protocol is available.
+2. Select **Run workflow**, source branch **`main`** (trusted current checker), and choose one exact `candidate_dataset` input:
+   - `main`: currently committed rolling window ending **#3973 (10 Oct 2026)**; this tests the old production dataset, NOT a candidate refresh.
+   - `source-gated-pr25`: read-only candidate history ending **#3974 (13 Oct 2026)** from `data/lotto-refresh-3974-20261015`.
+   - **`candidate-pr30`**: read-only candidate history ending **#3975 (15 Oct 2026)** from `data/lotto-candidate-3975-20261017`. **Select this to attempt independent first-party evidence for [draft PR #30](https://github.com/igalshih-prog/LREI/pull/30).**
+3. Inspect **both jobs separately**. `offline-parser-integrity` passing means synthetic code tests passed; it is never evidence that operator bytes were received. Only `optional-real-operator-capture` attempts first-party HTTPS acquisition from the operator and compares **every one of the 1,141 candidate rows**, not merely the last row.
+4. A timeout, network refusal, HTML response, missing official row or any mismatched draw means the **real-source job stays RED**. Do not rerun by substituting secondary-site snippets, skip failures, change data to match guesses or claim the upload was authenticated.
+5. On a real successful first-party capture, inspect the **30-day audit artifact**: confirm `download_performed_by_tool_over_tls=true`, effective operator URL, collection UTC, actual response byte count and SHA-256, `compared_draw_count=window_draw_count=1141`, `mismatched_or_missing_draw_count=0`, and that the reported window ends at the **selected** draw ID. Ensure `dataset_promotion_approved=false` and original-upload provenance / commission-protocol verification remain explicitly **false**.
+6. Preserve legally allowed original operator bytes **privately** and cross-check source rights and any approved commission protocol before an explicitly human-reviewed release decision. The workflow never uploads original raw operator data into a public artifact and never merges PR #25/#30.
+
+The first-party CSV is **a winning-results archive**, not a download of all **8 regular + 8 Double prize-tier winning-count/payout tables**. Even a fully green `candidate-pr30` capture does **not** resolve [P3-A.2's 14 missing prize tables](https://github.com/igalshih-prog/LREI/issues/18), supply current player ticket choices, establish ticket sales/tax, or justify live financial calculations. Data readiness stays `NO PLAY` until the independent source and economics gates are met.
+
+The GitHub connector used for research can inspect workflow results but does not provide a manual `workflow_dispatch` operation here; this step therefore must be invoked through the GitHub **Run workflow** UI by a repository-authorized operator. **No such new dispatch is claimed by this document.**
 
 The JSON must still mark `historical_download_provenance_of_user_upload_proven=false`, `legally_binding_commission_protocol_verified=false` and `dataset_promotion_approved=false`. A live operator export agreeing with candidate bytes gives strong present-time content corroboration **but does not prove how the old user-uploaded file was originally acquired**. No payout amount, official prize table, true expected value or predictive advantage is established by this workflow.

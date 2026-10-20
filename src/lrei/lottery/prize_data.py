@@ -58,6 +58,11 @@ def _validate_tiers(tiers: Any, game: str) -> None:
         )
         if row["winning_entries"] and row["payout_per_winning_entry_ils"] is None:
             raise PrizeDataError(f"{game}.{expected}: observed wins require published payout")
+        # The CSV reply quarantine already refuses this inconsistent state.
+        # A production observation must not silently turn actual winners into
+        # zero prize payments; zero-winner rows may legitimately show 0/null.
+        if row["winning_entries"] and row["payout_per_winning_entry_ils"] == 0:
+            raise PrizeDataError(f"{game}.{expected}: winning entries cannot have zero payout")
 
 
 def _valid_source(url: Any, draw_id: int) -> bool:
@@ -89,7 +94,11 @@ def validate_prize_observation(record: Any, historical: LotteryDataset | None = 
         "games", "advertised_prizes_ils", "total_prizes_paid_ils",
         "ticket_sales_ils", "tax_paid_ils", "special_rules_note",
     }
-    if set(record) != required or record["schema_version"] != 1:
+    if (
+        set(record) != required
+        or type(record["schema_version"]) is not int
+        or record["schema_version"] != 1
+    ):
         raise PrizeDataError("schema v1 fields missing or unexpected")
     draw_id = record["draw_id"]
     if type(draw_id) is not int or draw_id <= 0:

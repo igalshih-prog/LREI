@@ -122,3 +122,37 @@ def test_unsupported_fields_are_not_silently_accepted():
     record["projected_profit_ils"] = 100_000
     with pytest.raises(PrizeDataError, match="fields"):
         validate_prize_observation(record)
+
+
+@pytest.mark.parametrize("game,tier_index", [
+    ("regular", 3),
+    ("double", 3),
+    ("regular", 7),
+])
+def test_observed_winners_with_zero_payment_are_rejected(game, tier_index):
+    """Quarantine CSV and stored prize observations must agree on this gate."""
+    record = draw_record()
+    assert record["games"][game][tier_index]["winning_entries"] > 0
+    record["games"][game][tier_index]["payout_per_winning_entry_ils"] = 0
+    with pytest.raises(PrizeDataError, match="winning entries cannot have zero payout"):
+        validate_prize_observation(record)
+
+
+def test_zero_winner_tier_allows_reported_zero_or_unknown_payout():
+    # A draw without jackpot winners may legitimately publish 0 or an empty
+    # payout for that tier, without inventing an actual paid prize.
+    record = draw_record()
+    row = record["games"]["regular"][0]
+    assert row["winning_entries"] == 0
+    row["payout_per_winning_entry_ils"] = 0
+    assert validate_prize_observation(record)["games"]["regular"][0]["payout_per_winning_entry_ils"] == 0
+    row["payout_per_winning_entry_ils"] = None
+    assert validate_prize_observation(record)["games"]["regular"][0]["payout_per_winning_entry_ils"] is None
+
+
+@pytest.mark.parametrize("schema", [True, 1.0, "1", False])
+def test_schema_version_requires_exact_integer_one(schema):
+    record = draw_record()
+    record["schema_version"] = schema
+    with pytest.raises(PrizeDataError, match="schema"):
+        validate_prize_observation(record)

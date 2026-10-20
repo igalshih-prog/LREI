@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "reviewed_date_israel": "2026-10-17",
+  "status": "two_operator_domain_search_index_result_matches_no_live_first_party_capture",
+  "extraction_method": "Independently indexed search snippets of HTML pages hosted on www.pais.co.il; not raw HTTPS response bytes, live authenticated operator fetch, certified draw protocol, or complete CSV archive.",
+  "original_user_archive_sha256": "9d3015c90c96713b0171a78dc6249dcc2d95a51168f0efb8303105a09e1ab31a",
+  "candidate_git_blob_sha1": "0bdb0eaf554c4240aba88a67820011b1f1e5b076",
+  "indexed_official_site_rows": [
+    {
+      "draw_id": 3974,
+      "draw_date": "2026-10-13",
+      "numbers": [
+        3,
+        4,
+        18,
+        19,
+        34,
+        35
+      ],
+      "strong": 2,
+      "official_domain_result_url": "https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3974",
+      "matches_supplied_csv": true
+    },
+    {
+      "draw_id": 3975,
+      "draw_date": "2026-10-15",
+      "numbers": [
+        18,
+        22,
+        24,
+        25,
+        27,
+        28
+      ],
+      "strong": 5,
+      "official_domain_result_url": "https://www.pais.co.il/lotto/CurrentLotto.aspx?lotteryId=3975",
+      "matches_supplied_csv": true
+    }
+  ],
+  "index_snippet_corroborated_draw_count": 2,
+  "full_window_draws": 1141,
+  "entire_window_officially_retrieved": false,
+  "raw_official_operator_html_acquired": false,
+  "raw_official_operator_csv_acquired": false,
+  "original_download_origin_independently_verified": false,
+  "binding_commission_protocol_verified": false,
+  "eligible_for_dataset_promotion": false,
+  "can_be_used_to_score_verified_prospective_trial": false,
+  "next_needed": "Direct official HTTPS response or independently documented authorized operator-origin download of full archive and 1141-row reconciliation; obtain binding protocol separately for legally official results."
+}

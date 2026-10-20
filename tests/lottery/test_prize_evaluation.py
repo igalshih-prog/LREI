@@ -128,3 +128,26 @@ def test_empty_portfolio_reports_no_prize():
     assert not result.any_prize
     assert result.winning_ticket_count == 0
     assert result.best_prize_tier is None
+
+
+
+@pytest.mark.parametrize("strong", [None, 8])
+def test_missing_or_out_of_range_draw_strong_never_scores_as_non_strong_tier(strong):
+    """A pending result must not be assigned a real lower prize tier."""
+    ticket = RecommendedTicket(numbers=TICKET_NUMBERS, strong_number=7)
+    with pytest.raises(ValueError, match="Draw strong number"):
+        evaluate_ticket_prize(ticket, _draw(TICKET_NUMBERS, strong=strong))
+
+
+def test_empty_portfolio_still_refuses_incomplete_draw():
+    with pytest.raises(ValueError, match="Draw strong number"):
+        evaluate_portfolio_prizes((), _draw(TICKET_NUMBERS, strong=None))
+
+
+def test_portfolio_rejects_missing_draw_strong_before_scoring_tickets():
+    tickets = (
+        RecommendedTicket(numbers=TICKET_NUMBERS, strong_number=7),
+        RecommendedTicket(numbers=(10, 11, 12, 13, 14, 15), strong_number=1),
+    )
+    with pytest.raises(ValueError, match="Draw strong number"):
+        evaluate_portfolio_prizes(tickets, _draw(TICKET_NUMBERS, strong=None))

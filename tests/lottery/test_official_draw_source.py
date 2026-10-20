@@ -153,3 +153,65 @@ def test_offline_cli_produces_unverified_report_without_network(tmp_path, monkey
     assert raw_copy.read_bytes() == csv_path.read_bytes()
     with pytest.raises(SystemExit):
         official_draw_source.main()  # exclusive write rejects overwrite
+
+
+
+def test_offline_inspector_cannot_forge_a_tls_download_attestation():
+    # Previously this public API accepted True from a caller holding only
+    # user-supplied bytes. A local CSV match is never first-party provenance.
+    with pytest.raises(OfficialCsvAuditError, match="cannot attest"):
+        inspect(raw_csv(), direct_https_download=True)
+
+
+def test_download_cli_sets_capture_flag_only_after_downloader_returns(
+    tmp_path, monkeypatch
+):
+    from lrei.lottery import official_draw_source
+
+    historical = tmp_path / "history.csv"
+    historical.write_text(
+        "draw_id\\tnumbers\\tdate\\tstrong_number\\n"
+        "3974\\t03,04,18,19,34,35\\t13-10-26\\t2\\n",
+        encoding="utf-8",
+    )
+    report = tmp_path / "network-audit.json"
+    calls = []
+
+    def fake_download():
+        calls.append(True)
+        return raw_csv(), OFFICIAL_CSV_URL, "text/csv"
+
+    monkeypatch.setattr(official_draw_source, "download_operator_csv", fake_download)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "official-draw-source", "--download",
+            "--historical-csv", str(historical),
+            "--draw-id", "3974", "--report", str(report),
+        ],
+    )
+    official_draw_source.main()
+    assert calls == [True]
+    saved = json.loads(report.read_text(encoding="utf-8"))
+    assert saved["direct_https_download_performed_by_tool"] is True
+    assert saved["legally_binding_protocol_verified"] is False
+    assert saved["human_source_review_required"] is True
+
+    # When a real source request fails, there is no success report to read.
+    def denied():
+        raise OfficialCsvAuditError("first-party CSV download unavailable: timed out")
+
+    monkeypatch.setattr(official_draw_source, "download_operator_csv", denied)
+    failed_report = tmp_path / "failed-source.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "official-draw-source", "--download",
+            "--historical-csv", str(historical),
+            "--draw-id", "3974", "--report", str(failed_report),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        official_draw_source.main()
+    assert exc.value.code == 2
+    assert not failed_report.exists()

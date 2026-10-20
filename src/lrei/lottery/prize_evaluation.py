@@ -66,6 +66,18 @@ def _validate_strong_number(number: int | None, label: str) -> None:
         raise ValueError(f"{label} strong number must be between 1 and 7")
 
 
+def _validate_complete_draw(draw: LotteryDrawRecord) -> None:
+    """A real prize tier cannot be graded without an actual strong result.
+
+    Draw archives may represent a pending/partial draw with strong_number=None,
+    but treating that omission as a non-strong match would silently demote
+    otherwise winning tickets into an incorrect payout tier.
+    """
+    _validate_main_numbers(tuple(draw.numbers), "Draw")
+    if type(draw.strong_number) is not int or not 1 <= draw.strong_number <= 7:
+        raise ValueError("Draw strong number must be an integer between 1 and 7")
+
+
 def evaluate_ticket_prize(
     ticket: RecommendedTicket,
     draw: LotteryDrawRecord,
@@ -77,9 +89,8 @@ def evaluate_ticket_prize(
     Fewer than three main-number matches is not a prize, even if strong matches.
     """
     _validate_main_numbers(tuple(ticket.numbers), "Ticket")
-    _validate_main_numbers(tuple(draw.numbers), "Draw")
+    _validate_complete_draw(draw)
     _validate_strong_number(ticket.strong_number, "Ticket")
-    _validate_strong_number(draw.strong_number, "Draw")
 
     main_matches = len(set(ticket.numbers) & set(draw.numbers))
     strong_match = (
@@ -110,7 +121,12 @@ def evaluate_portfolio_prizes(
     tickets: Iterable[RecommendedTicket],
     draw: LotteryDrawRecord,
 ) -> PortfolioPrizeResult:
-    """Evaluate every ticket in a portfolio against one historical draw."""
+    """Evaluate every ticket in a portfolio against one complete historical draw.
+
+    Validate before iterating tickets; even an empty portfolio cannot certify
+    an incomplete draw as a successful no-prize evaluation.
+    """
+    _validate_complete_draw(draw)
     return PortfolioPrizeResult(
         tickets=tuple(evaluate_ticket_prize(ticket, draw) for ticket in tickets)
     )

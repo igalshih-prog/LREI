@@ -170,8 +170,8 @@ def test_download_cli_sets_capture_flag_only_after_downloader_returns(
 
     historical = tmp_path / "history.csv"
     historical.write_text(
-        "draw_id\\tnumbers\\tdate\\tstrong_number\\n"
-        "3974\\t03,04,18,19,34,35\\t13-10-26\\t2\\n",
+        "draw_id\tnumbers\tdate\tstrong_number\n"
+        "3974\t03,04,18,19,34,35\t13-10-26\t2\n",
         encoding="utf-8",
     )
     report = tmp_path / "network-audit.json"

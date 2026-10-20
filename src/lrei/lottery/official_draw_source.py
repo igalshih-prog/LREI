@@ -77,9 +77,14 @@ def inspect_official_csv(
     """Compare an exact operator-style CSV row with the local history cutoff.
 
     For offline files, the checksum proves file integrity but not its origin.
-    The caller may only set direct_https_download=True after this tool has
-    successfully fetched from an allowed operator URL with TLS verification.
+    Callers cannot self-attest a network capture by supplying a boolean. Only
+    the download CLI can set the HTTPS capture flag after its own live fetch.
     """
+    if direct_https_download:
+        raise OfficialCsvAuditError(
+            "offline inspector cannot attest a direct HTTPS download; "
+            "use the trusted --download capture path"
+        )
     _safe_official_url(source_url)
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_SOURCE_BYTES:
         raise OfficialCsvAuditError("source file must contain 1–8 MiB of bytes")
@@ -205,8 +210,12 @@ def main() -> None:
         historical = CsvDatasetLoader().load(args.historical_csv)
         report = inspect_official_csv(
             raw, historical, expected_draw_id=args.draw_id,
-            source_url=url, direct_https_download=args.download,
+            source_url=url,
         )
+        # Set this attestation only inside the CLI after the actual live
+        # download completed. The reusable offline inspector always returns
+        # False and refuses caller-supplied True.
+        report["direct_https_download_performed_by_tool"] = bool(args.download)
         report["http_content_type_or_local"] = mime
         args.report.parent.mkdir(parents=True, exist_ok=True)
         with args.report.open("x", encoding="utf-8") as target:

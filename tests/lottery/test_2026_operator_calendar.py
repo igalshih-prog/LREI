@@ -129,11 +129,33 @@ def test_a_wrong_calendar_day_cannot_pass_as_the_same_postponed_draw():
 
 def test_future_notice_not_misrepresented_as_already_verified_result():
     archive = CsvDatasetLoader().load(ROOT / "data" / "lottery.csv")
-    as_of_last_csv = calendar_discrepancies(archive, date(2026, 10, 10))
-    assert not any("2026-10-15" in x for x in as_of_last_csv["discrepancies"])
-    # 15 October is a published future schedule date from the perspective
-    # of the old CSV, and must NOT generate a fake draw in that CSV.
-    as_of_today = calendar_discrepancies(archive, date(2026, 10, 19))
-    assert any("extra Thursday 2026-10-15: 0 records" == x
-               for x in as_of_today["discrepancies"])
-    assert as_of_today["data_freshness_verified"] is False
+    historical_cutoff = date(2026, 10, 10)
+    # Take the historical snapshot instead of assuming the checked-in
+    # archive still ends at #3973. This regression must survive later,
+    # independently reviewed data updates without relaxing calendar checks.
+    old_archive = tuple(
+        draw for draw in archive
+        if parse_draw_date(draw.date) <= historical_cutoff
+    )
+    as_of_old_csv = calendar_discrepancies(old_archive, historical_cutoff)
+    assert not any("2026-10-15" in x for x in as_of_old_csv["discrepancies"])
+
+    # An as-of date after the announced extra Thursday exposes the missing
+    # row in that same old snapshot; it never invents winning numbers.
+    as_of_later = calendar_discrepancies(old_archive, date(2026, 10, 19))
+    missing_notice = "extra Thursday 2026-10-15: 0 records"
+    assert missing_notice in as_of_later["discrepancies"]
+    assert as_of_later["data_freshness_verified"] is False
+
+    # A synthetic calendar-only entry demonstrates that a newer candidate
+    # can satisfy the schedule expectation without authenticating its result.
+    # This entry is NOT a real draw or source proof.
+    extra_schedule_only = type(
+        "CalendarOnly", (), {"draw_id": "synthetic", "date": "15-10-26"}
+    )()
+    with_extra = calendar_discrepancies(
+        (*old_archive, extra_schedule_only), date(2026, 10, 19)
+    )
+    assert missing_notice not in with_extra["discrepancies"]
+    assert with_extra["operator_outcome_or_payout_authenticity_verified"] is False
+    assert with_extra["data_freshness_verified"] is False

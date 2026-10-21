@@ -16,7 +16,7 @@ from .official_draw_source import OFFICIAL_CSV_URL, _safe_official_url
 
 
 def diagnose(*, timeout_seconds: float = 8.0) -> dict:
-    if not 0 < timeout_seconds <= 15:
+    if not isinstance(timeout_seconds, (int, float)) or not 0 < timeout_seconds <= 15:
         raise ValueError("timeout_seconds must be in (0, 15]")
     _safe_official_url(OFFICIAL_CSV_URL)
     parsed = urlsplit(OFFICIAL_CSV_URL)
@@ -47,7 +47,17 @@ def diagnose(*, timeout_seconds: float = 8.0) -> dict:
         return result
     # A single bounded connection, not an open-ended address fallback.
     family, kind, proto, _, sockaddr = addresses[0]
-    sock = run_phase("tcp", lambda: socket.create_connection(sockaddr, timeout=timeout_seconds))
+    def open_tcp():
+        # Use the exact DNS result; create_connection() would resolve again.
+        candidate = socket.socket(family, kind, proto)
+        try:
+            candidate.settimeout(timeout_seconds)
+            candidate.connect(sockaddr)
+            return candidate
+        except BaseException:
+            candidate.close()
+            raise
+    sock = run_phase("tcp", open_tcp)
     if sock is None:
         return result
     try:

@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       candidate_dataset:
-        description: "Dataset to CHECK, not to merge: main, source-gated PR #25 or draft PR #30"
+        description: "Dataset to CHECK, not to merge: main or source-gated draft PR #25/#30/#44"
         required: true
         type: choice
         default: "main"
@@ -22,6 +22,7 @@ on:
           - main
           - source-gated-pr25
           - candidate-pr30
+          - candidate-pr44
 
 permissions:
   contents: read
@@ -60,7 +61,7 @@ jobs:
       - name: Checkout candidate DATA only for comparison (never execute code)
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.candidate_dataset == 'candidate-pr30' && 'data/lotto-candidate-3975-20261017' || (inputs.candidate_dataset == 'source-gated-pr25' && 'data/lotto-refresh-3974-20261015' || 'main') }}
+          ref: ${{ inputs.candidate_dataset == 'candidate-pr44' && 'data/lotto-3976-user-upload-quarantine-20261020' || (inputs.candidate_dataset == 'candidate-pr30' && 'data/lotto-candidate-3975-20261017' || (inputs.candidate_dataset == 'source-gated-pr25' && 'data/lotto-refresh-3974-20261015' || 'main')) }}
           path: candidate
           persist-credentials: false
       - uses: actions/setup-python@v5

@@ -114,3 +114,49 @@ def test_bad_ip_family_timeout_rejected(bad):
     from lrei.lottery.operator_https_diagnostic import diagnose_ip_families
     with pytest.raises(ValueError):
         diagnose_ip_families(timeout_seconds=bad)
+
+
+def test_failed_probe_still_prints_machine_readable_non_attesting_json(monkeypatch, capsys):
+    import json
+    from lrei.lottery import operator_https_diagnostic as module
+
+    monkeypatch.setattr(module, "diagnose", lambda: {
+        "schema_version": 1,
+        "phases": {"dns": {"ok": True}, "tcp": {"ok": False}},
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+    })
+    monkeypatch.setattr(module, "diagnose_ip_families", lambda: {
+        "families": {"ipv4": {"tcp_ok": False}, "ipv6": {"tcp_ok": False}},
+        "source_provenance_verified": False,
+    })
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert exc.value.code == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["phases"]["tcp"]["ok"] is False
+    assert result["ip_family_diagnostic"]["families"]["ipv4"]["tcp_ok"] is False
+    assert result["source_provenance_verified"] is False
+    assert result["dataset_promotion_approved"] is False
+
+
+def test_working_ipv4_with_missing_ipv6_is_not_false_red(monkeypatch, capsys):
+    import json
+    from lrei.lottery import operator_https_diagnostic as module
+
+    monkeypatch.setattr(module, "diagnose", lambda: {
+        "phases": {"dns": {"ok": True}, "tcp": {"ok": True}, "tls": {"ok": True}},
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+    })
+    monkeypatch.setattr(module, "diagnose_ip_families", lambda: {
+        "families": {
+            "ipv4": {"dns_ok": True, "tcp_ok": True},
+            "ipv6": {"dns_ok": False, "tcp_ok": False},
+        },
+        "source_provenance_verified": False,
+    })
+    module.main()
+    result = json.loads(capsys.readouterr().out)
+    assert result["ip_family_diagnostic"]["families"]["ipv6"]["tcp_ok"] is False
+    assert result["source_provenance_verified"] is False

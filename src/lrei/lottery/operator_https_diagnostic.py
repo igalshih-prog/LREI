@@ -142,7 +142,9 @@ def main() -> None:
     families = diagnose_ip_families()
     report["ip_family_diagnostic"] = families
     print(json.dumps(report, sort_keys=True))
-    if any(not phase["ok"] for phase in report["phases"].values()) or not all(
+    # IPv6 is optional on some runners; report it, but do not require it.
+    # Still fail closed if the primary check fails or neither family connects.
+    if any(not phase["ok"] for phase in report["phases"].values()) or not any(
         f["tcp_ok"] for f in families["families"].values()
     ):
         sys.exit(2)

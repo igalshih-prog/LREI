@@ -53,3 +53,64 @@ def test_failed_tcp_connection_closes_socket():
 def test_invalid_timeout_rejected(bad):
     with pytest.raises(ValueError):
         diagnose(timeout_seconds=bad)
+
+
+
+def test_ip_families_are_independently_probed_without_download():
+    from lrei.lottery.operator_https_diagnostic import diagnose_ip_families
+    ipv4 = ("192.0.2.10", 443)
+    ipv6 = ("2001:db8::10", 443, 0, 0)
+    first = Mock()
+    first.__enter__ = Mock(return_value=first)
+    first.__exit__ = Mock(return_value=False)
+    first.connect.side_effect = TimeoutError("ipv4 timeout")
+    second = Mock()
+    second.__enter__ = Mock(return_value=second)
+    second.__exit__ = Mock(return_value=False)
+
+    def resolve(host, port, *, family, type):
+        assert port == 443
+        return [(family, 1, 6, "", ipv4 if family == 2 else ipv6)]
+
+    with patch("lrei.lottery.operator_https_diagnostic.socket.getaddrinfo", side_effect=resolve) as dns:
+        with patch("lrei.lottery.operator_https_diagnostic.socket.socket", side_effect=[first, second]) as create:
+            result = diagnose_ip_families(timeout_seconds=3)
+
+    assert dns.call_count == 2
+    assert create.call_count == 2
+    first.settimeout.assert_called_once_with(3)
+    second.settimeout.assert_called_once_with(3)
+    first.connect.assert_called_once_with(ipv4)
+    second.connect.assert_called_once_with(ipv6)
+    assert result["families"]["ipv4"]["tcp_ok"] is False
+    assert result["families"]["ipv4"]["tcp_error_type"] == "TimeoutError"
+    assert result["families"]["ipv6"]["tcp_ok"] is True
+    assert result["source_provenance_verified"] is False
+    assert result["dataset_promotion_approved"] is False
+
+
+def test_missing_ipv6_does_not_block_ipv4_diagnosis():
+    from lrei.lottery.operator_https_diagnostic import diagnose_ip_families
+    sock = Mock()
+    sock.__enter__ = Mock(return_value=sock)
+    sock.__exit__ = Mock(return_value=False)
+
+    def resolve(host, port, *, family, type):
+        if family == 10:
+            raise OSError("IPv6 unavailable")
+        return [(2, 1, 6, "", ("192.0.2.2", 443))]
+
+    with patch("lrei.lottery.operator_https_diagnostic.socket.getaddrinfo", side_effect=resolve):
+        with patch("lrei.lottery.operator_https_diagnostic.socket.socket", return_value=sock) as create:
+            result = diagnose_ip_families()
+    create.assert_called_once()
+    assert result["families"]["ipv4"]["tcp_ok"] is True
+    assert result["families"]["ipv6"]["dns_ok"] is False
+    assert result["families"]["ipv6"]["tcp_ok"] is False
+
+
+@pytest.mark.parametrize("bad", [0, -2, 20, True, None, "2"])
+def test_bad_ip_family_timeout_rejected(bad):
+    from lrei.lottery.operator_https_diagnostic import diagnose_ip_families
+    with pytest.raises(ValueError):
+        diagnose_ip_families(timeout_seconds=bad)

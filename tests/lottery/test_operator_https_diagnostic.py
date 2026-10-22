@@ -138,3 +138,25 @@ def test_failed_probe_still_prints_machine_readable_non_attesting_json(monkeypat
     assert result["ip_family_diagnostic"]["families"]["ipv4"]["tcp_ok"] is False
     assert result["source_provenance_verified"] is False
     assert result["dataset_promotion_approved"] is False
+
+
+def test_working_ipv4_with_missing_ipv6_is_not_false_red(monkeypatch, capsys):
+    import json
+    from lrei.lottery import operator_https_diagnostic as module
+
+    monkeypatch.setattr(module, "diagnose", lambda: {
+        "phases": {"dns": {"ok": True}, "tcp": {"ok": True}, "tls": {"ok": True}},
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+    })
+    monkeypatch.setattr(module, "diagnose_ip_families", lambda: {
+        "families": {
+            "ipv4": {"dns_ok": True, "tcp_ok": True},
+            "ipv6": {"dns_ok": False, "tcp_ok": False},
+        },
+        "source_provenance_verified": False,
+    })
+    module.main()
+    result = json.loads(capsys.readouterr().out)
+    assert result["ip_family_diagnostic"]["families"]["ipv6"]["tcp_ok"] is False
+    assert result["source_provenance_verified"] is False

@@ -89,6 +89,50 @@ jobs:
           python-version: "3.11"
       - name: Install trusted checker
         run: python -m pip install -e ./trusted
+      - name: Record immutable checked-out inputs (NOT source authentication)
+        env:
+          CANDIDATE_SELECTION: ${{ inputs.candidate_dataset }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          def head(path):
+              return subprocess.check_output(
+                  ["git", "-C", str(path), "rev-parse", "--verify", "HEAD"],
+                  text=True,
+              ).strip()
+
+          candidate = Path("candidate/data/lottery.csv")
+          # Hash precisely the candidate bytes used by the subsequent checker.
+          digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+          manifest = {
+              "schema_version": 1,
+              "status": "candidate_input_fingerprints_ONLY_NO_SOURCE_ATTESTATION",
+              "candidate_selection": os.environ["CANDIDATE_SELECTION"],
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "candidate_checkout_commit_sha": head("candidate"),
+              "trusted_checker_checkout_commit_sha": head("trusted"),
+              "candidate_csv_sha256": digest,
+              "candidate_csv_bytes": candidate.stat().st_size,
+              "recorded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "operator_source_provenance_verified": False,
+              "candidate_matches_operator": False,
+              "dataset_promotion_approved": False,
+              "requires_human_review": True,
+          }
+          out = Path("audit-evidence/candidate-input-manifest.json")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          with out.open("x", encoding="utf-8") as stream:
+              json.dump(manifest, stream, ensure_ascii=False, indent=2, sort_keys=True)
+              stream.write("\n")
+          print(json.dumps(manifest, sort_keys=True))
+          PY
       - name: Fetch original first-party HTTPS response once and compare ALL candidate draw rows
         run: >-
           python -m lrei.lottery.operator_full_window_capture
@@ -103,5 +147,6 @@ jobs:
           path: |
             audit-evidence/operator-full-window-report.json
             audit-evidence/operator-full-window-failure.json
+            audit-evidence/candidate-input-manifest.json
           if-no-files-found: warn
           retention-days: 30

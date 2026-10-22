@@ -88,10 +88,63 @@ def diagnose(*, timeout_seconds: float = 8.0) -> dict:
     return result
 
 
+
+def diagnose_ip_families(*, timeout_seconds: float = 5.0) -> dict:
+    """Probe at most one DNS-returned TCP address per family, never fetch CSV."""
+    if (
+        isinstance(timeout_seconds, bool)
+        or not isinstance(timeout_seconds, (int, float))
+        or not 0 < timeout_seconds <= 15
+    ):
+        raise ValueError("timeout_seconds must be in (0, 15]")
+    _safe_official_url(OFFICIAL_CSV_URL)
+    host = urlsplit(OFFICIAL_CSV_URL).hostname
+    result = {
+        "schema_version": 1,
+        "status": "ip_family_connectivity_only_NOT_source_attestation",
+        "source_host": host,
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+        "families": {},
+    }
+    for family, name in ((socket.AF_INET, "ipv4"), (socket.AF_INET6, "ipv6")):
+        outcome = {"dns_ok": False, "tcp_ok": False}
+        result["families"][name] = outcome
+        started = time.monotonic()
+        try:
+            addresses = socket.getaddrinfo(
+                host, 443, family=family, type=socket.SOCK_STREAM
+            )
+        except OSError as exc:
+            outcome["dns_error_type"] = type(exc).__name__
+            continue
+        outcome["dns_elapsed_ms"] = round((time.monotonic() - started) * 1000)
+        if not addresses:
+            outcome["dns_error_type"] = "NoAddresses"
+            continue
+        outcome["dns_ok"] = True
+        af, kind, proto, _, sockaddr = addresses[0]
+        started = time.monotonic()
+        try:
+            with socket.socket(af, kind, proto) as sock:
+                sock.settimeout(timeout_seconds)
+                sock.connect(sockaddr)
+            outcome["tcp_ok"] = True
+        except OSError as exc:
+            outcome["tcp_error_type"] = type(exc).__name__
+        outcome["tcp_elapsed_ms"] = round((time.monotonic() - started) * 1000)
+    return result
+
+
 def main() -> None:
     report = diagnose()
+    # Independent IPv4/IPv6 TCP diagnosis; no download or source attestation.
+    families = diagnose_ip_families()
+    report["ip_family_diagnostic"] = families
     print(json.dumps(report, sort_keys=True))
-    if any(not phase["ok"] for phase in report["phases"].values()):
+    if any(not phase["ok"] for phase in report["phases"].values()) or not all(
+        f["tcp_ok"] for f in families["families"].values()
+    ):
         sys.exit(2)
 
 

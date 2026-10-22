@@ -79,19 +79,69 @@ def capture_full_window(
     }
 
 
+def _failure_code(stage: str, exc: Exception) -> str:
+    """Return an allowlisted diagnosis; never store raw exception text in artifacts."""
+    if stage == "load_candidate":
+        return "candidate_load_failed"
+    if stage == "save_success_report":
+        return "success_report_write_failed"
+    if isinstance(exc, OfficialCsvAuditError) and "first-party CSV download unavailable" in str(exc):
+        if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
+            return "first_party_download_timeout"
+        return "first_party_download_unavailable"
+    return "full_window_capture_rejected"
+
+
+def _record_failure(path: Path, stage: str, exc: Exception) -> None:
+    """Write a separate, non-attesting failure artifact without overwriting evidence."""
+    failure = {
+        "schema_version": 1,
+        "status": "capture_refused_NO_SOURCE_ATTESTATION",
+        "failure_stage": stage,
+        "failure_code": _failure_code(stage, exc),
+        "exception_type": type(exc).__name__,
+        "recorded_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "successful_full_window_match_verified": False,
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+        "full_prize_tier_payouts_verified": False,
+        "eligible_for_economic_or_predictive_advantage_claim": False,
+        "requires_human_review": True,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(failure, stream, ensure_ascii=False, sort_keys=True, indent=2)
+        stream.write("\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--historical-csv", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--failure-report", type=Path)
     args = parser.parse_args()
+    if args.failure_report is not None and args.failure_report == args.report:
+        parser.error("--failure-report must differ from --report")
+    stage = "load_candidate"
     try:
         historical = CsvDatasetLoader().load(args.historical_csv)
+        stage = "operator_capture_and_compare"
         report = capture_full_window(historical)
+        stage = "save_success_report"
         args.report.parent.mkdir(parents=True, exist_ok=True)
         with args.report.open("x", encoding="utf-8") as stream:
             json.dump(report, stream, ensure_ascii=False, sort_keys=True, indent=2)
             stream.write("\n")
     except (OSError, ValueError, OfficialCsvAuditError, DatasetError) as exc:
+        if args.failure_report is not None:
+            try:
+                _record_failure(args.failure_report, stage, exc)
+            except OSError as artifact_error:
+                parser.exit(
+                    2,
+                    "First-party full-window capture refused: "
+                    f"{exc}; failure artifact unavailable: {type(artifact_error).__name__}\n",
+                )
         parser.exit(2, f"First-party full-window capture refused: {exc}\n")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
 

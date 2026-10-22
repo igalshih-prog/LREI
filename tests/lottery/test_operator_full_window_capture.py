@@ -140,3 +140,70 @@ def test_cli_writes_single_audit_and_will_not_replace_an_existing_report(
     assert exc.value.code == 2
     assert len(calls) == 2
     assert json.loads(out.read_text(encoding="utf-8")) == result
+
+
+def test_cli_timeout_writes_only_non_attesting_failure_artifact(tmp_path, monkeypatch):
+    csv_file = tmp_path / "candidate.csv"
+    csv_file.write_text(
+        "draw_id\tnumbers\tdate\tstrong_number\n"
+        "8000\t1,4,7,10,13,16\t01-01-26\t1\n"
+        "8001\t2,5,8,11,14,17\t03-01-26\t2\n"
+        "8002\t3,6,9,12,15,18\t05-01-26\t3\n",
+        encoding="utf-8",
+    )
+    success = tmp_path / "audit" / "success.json"
+    failure = tmp_path / "audit" / "failure.json"
+
+    def timed_out():
+        raise OfficialCsvAuditError("first-party CSV download unavailable: <urlopen error timed out>")
+
+    monkeypatch.setattr(module, "download_operator_csv", timed_out)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["operator_full_window_capture", "--historical-csv", str(csv_file),
+         "--report", str(success), "--failure-report", str(failure)],
+    )
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert exc.value.code == 2
+    assert not success.exists()
+    report = json.loads(failure.read_text(encoding="utf-8"))
+    assert report["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
+    assert report["failure_stage"] == "operator_capture_and_compare"
+    assert report["failure_code"] == "first_party_download_timeout"
+    assert report["successful_full_window_match_verified"] is False
+    assert report["source_provenance_verified"] is False
+    assert report["dataset_promotion_approved"] is False
+    assert "raw_operator_response_sha256" not in report
+    original = failure.read_bytes()
+    with pytest.raises(SystemExit) as again:
+        module.main()
+    assert again.value.code == 2
+    assert failure.read_bytes() == original
+
+
+def test_mismatch_failure_artifact_never_claims_verified_source(tmp_path, monkeypatch):
+    csv_file = tmp_path / "candidate.csv"
+    csv_file.write_text(
+        "draw_id\tnumbers\tdate\tstrong_number\n"
+        "8000\t1,4,7,10,13,16\t01-01-26\t1\n"
+        "8001\t2,5,8,11,14,17\t03-01-26\t2\n"
+        "8002\t3,6,9,12,15,18\t05-01-26\t3\n",
+        encoding="utf-8",
+    )
+    fake_capture(monkeypatch, raw([ROWS[0], ROWS[2]]))
+    good = tmp_path / "success.json"
+    refused = tmp_path / "failure.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        ["operator_full_window_capture", "--historical-csv", str(csv_file),
+         "--report", str(good), "--failure-report", str(refused)],
+    )
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert exc.value.code == 2
+    assert not good.exists()
+    result = json.loads(refused.read_text(encoding="utf-8"))
+    assert result["failure_code"] == "full_window_capture_rejected"
+    assert result["source_provenance_verified"] is False
+    assert result["dataset_promotion_approved"] is False

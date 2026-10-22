@@ -114,3 +114,27 @@ def test_bad_ip_family_timeout_rejected(bad):
     from lrei.lottery.operator_https_diagnostic import diagnose_ip_families
     with pytest.raises(ValueError):
         diagnose_ip_families(timeout_seconds=bad)
+
+
+def test_failed_probe_still_prints_machine_readable_non_attesting_json(monkeypatch, capsys):
+    import json
+    from lrei.lottery import operator_https_diagnostic as module
+
+    monkeypatch.setattr(module, "diagnose", lambda: {
+        "schema_version": 1,
+        "phases": {"dns": {"ok": True}, "tcp": {"ok": False}},
+        "source_provenance_verified": False,
+        "dataset_promotion_approved": False,
+    })
+    monkeypatch.setattr(module, "diagnose_ip_families", lambda: {
+        "families": {"ipv4": {"tcp_ok": False}, "ipv6": {"tcp_ok": False}},
+        "source_provenance_verified": False,
+    })
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert exc.value.code == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["phases"]["tcp"]["ok"] is False
+    assert result["ip_family_diagnostic"]["families"]["ipv4"]["tcp_ok"] is False
+    assert result["source_provenance_verified"] is False
+    assert result["dataset_promotion_approved"] is False

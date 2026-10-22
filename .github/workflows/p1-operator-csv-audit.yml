@@ -94,11 +94,14 @@ jobs:
           python -m lrei.lottery.operator_full_window_capture
           --historical-csv candidate/data/lottery.csv
           --report audit-evidence/operator-full-window-report.json
-      - name: Retain source-hash report if a first-party capture succeeds
+          --failure-report audit-evidence/operator-full-window-failure.json
+      - name: Retain success hash or explicit non-attesting failure artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: p1-operator-csv-audit-${{ inputs.candidate_dataset }}
-          path: audit-evidence/operator-full-window-report.json
+          path: |
+            audit-evidence/operator-full-window-report.json
+            audit-evidence/operator-full-window-failure.json
           if-no-files-found: warn
           retention-days: 30

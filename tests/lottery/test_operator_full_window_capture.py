@@ -292,3 +292,16 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
     assert rejected["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
     assert rejected["source_provenance_verified"] is False
     assert rejected["dataset_promotion_approved"] is False
+
+
+
+def test_pinned_capture_refuses_oversize_sparse_candidate_before_network(
+    tmp_path, monkeypatch
+):
+    candidate = tmp_path / "oversize.csv"
+    with candidate.open("wb") as stream:
+        stream.truncate(8 * 1024 * 1024 + 1)
+    calls = fake_capture(monkeypatch)
+    with pytest.raises(OfficialCsvAuditError, match="1–8 MiB"):
+        module.capture_pinned_candidate(candidate, expected_sha256="0" * 64)
+    assert calls == []

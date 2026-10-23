@@ -4,10 +4,12 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - src/lrei/lottery/local_audit_manifest.py
       - src/lrei/lottery/operator_https_diagnostic.py
       - src/lrei/lottery/official_draw_source.py
       - src/lrei/lottery/archive_reconciliation.py
       - src/lrei/lottery/operator_full_window_capture.py
+      - tests/lottery/test_local_audit_manifest.py
       - tests/lottery/test_operator_https_diagnostic.py
       - tests/lottery/test_official_draw_source.py
       - tests/lottery/test_archive_reconciliation.py
@@ -43,6 +45,7 @@ jobs:
       - name: Test parser, archive reconciliation and full-window capture (synthetic only)
         run: >-
           python -m pytest -q
+          tests/lottery/test_local_audit_manifest.py
           tests/lottery/test_operator_https_diagnostic.py
           tests/lottery/test_official_draw_source.py
           tests/lottery/test_archive_reconciliation.py

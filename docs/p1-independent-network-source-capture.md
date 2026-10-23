@@ -23,6 +23,8 @@ From PowerShell in a directory you control:
 ```powershell
 git clone https://github.com/igalshih-prog/LREI.git
 Set-Location LREI
+# Preserve raw committed candidate CSV bytes on Windows (avoid checkout CRLF conversion).
+git config core.autocrlf false
 git fetch origin main data/lotto-3976-user-upload-quarantine-20261020
 git checkout main
 git pull --ff-only origin main
@@ -49,6 +51,26 @@ At the original 2026-10-22 audit, the candidate was commit
 These are **historical comparison fingerprints**, not official provenance attestations.
 If hashes differ, record the difference and do not attribute results to the earlier candidate.
 
+## Offline input manifest (before any network request)
+
+Use the trusted `main` package to create a JSON manifest that **refuses** a
+modified candidate working file, an unexpected candidate commit/hash, or local
+changes to trusted lottery source code. It compares the on-disk CSV with the
+**committed Git blob** and never contacts the operator.
+
+For the previously quarantined PR #44 snapshot, run this command from the
+trusted `LREI` directory before running any HTTPS probe:
+
+```powershell
+.\.venv\Scripts\python.exe -m lrei.lottery.local_audit_manifest --trusted-repo . --candidate-repo ..\LREI-candidate --expected-candidate-commit 5cd4db461ef061e62729e04ed990f9f106ab2574 --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\local-input-manifest.json
+```
+
+The command returns **exit 2** rather than creating an approval report if the
+working bytes or commit differ. Review `local-input-manifest.json` alongside
+any subsequent capture report, and do not overwrite it. The manifest records
+the trusted checkout commit and candidate fingerprints, **not** proof of
+official operator publication, human review, or authorization to use the data.
+
 ## Independent network diagnostics
 
 ```powershell
@@ -71,7 +93,7 @@ The exact source endpoint is `https://www.pais.co.il/Lotto/lotto_resultsDownload
 - **Exit 2 and failure JSON:** refused/unsupported; no source attestation. Preserve the files and do not merge.
 - **No JSON:** check the CLI error and record why even a failure artifact could not be produced. Do not generate fake success evidence.
 
-Keep the log, input commit IDs, the candidate CSV SHA-256, checker version, and any JSON artifacts together. Do not publish ID documents or credentials.
+Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
 
 ## Decision gate
 

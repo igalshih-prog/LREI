@@ -23,6 +23,8 @@ From PowerShell in a directory you control:
 ```powershell
 git clone https://github.com/igalshih-prog/LREI.git
 Set-Location LREI
+# Preserve raw committed candidate CSV bytes on Windows (avoid checkout CRLF conversion).
+git config core.autocrlf false
 git fetch origin main data/lotto-3976-user-upload-quarantine-20261020
 git checkout main
 git pull --ff-only origin main

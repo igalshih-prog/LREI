@@ -243,6 +243,24 @@ def test_pinned_candidate_wrong_sha_refused_before_network(tmp_path, monkeypatch
     assert calls == []
 
 
+
+@pytest.mark.parametrize("bad_digest", [
+    "",
+    "ABCDEF" + "0" * 58,
+    "0" * 63,
+    "0" * 65,
+    "g" * 64,
+])
+def test_pinned_candidate_rejects_malformed_digest_before_network(
+    tmp_path, monkeypatch, bad_digest
+):
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    with pytest.raises(OfficialCsvAuditError, match="64 lowercase hex"):
+        module.capture_pinned_candidate(candidate, expected_sha256=bad_digest)
+    assert calls == []
+
+
 def test_pinned_candidate_changes_during_network_capture_refused(tmp_path, monkeypatch):
     import hashlib
     candidate = local_candidate_csv(tmp_path)

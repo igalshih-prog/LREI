@@ -93,8 +93,12 @@ def capture_pinned_candidate(
     """
     if re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None:
         raise OfficialCsvAuditError("expected candidate SHA-256 must be 64 lowercase hex characters")
+    max_candidate_bytes = 8 * 1024 * 1024
+    # Bound disk reads before loading untrusted candidate bytes into memory.
+    if not 0 < candidate_path.stat().st_size <= max_candidate_bytes:
+        raise OfficialCsvAuditError("candidate CSV must contain 1–8 MiB of bytes")
     raw = candidate_path.read_bytes()
-    if not 0 < len(raw) <= 8 * 1024 * 1024:
+    if not 0 < len(raw) <= max_candidate_bytes:
         raise OfficialCsvAuditError("candidate CSV must contain 1–8 MiB of bytes")
     if hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise OfficialCsvAuditError("candidate CSV SHA-256 differs from expected snapshot")

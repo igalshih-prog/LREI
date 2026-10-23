@@ -150,12 +150,16 @@ jobs:
               stream.write("\n")
           print(json.dumps(manifest, sort_keys=True))
           PY
-      - name: Fetch original first-party HTTPS response once and compare ALL candidate draw rows
-        run: >-
-          python -m lrei.lottery.operator_full_window_capture
-          --historical-csv candidate/data/lottery.csv
-          --report audit-evidence/operator-full-window-report.json
-          --failure-report audit-evidence/operator-full-window-failure.json
+      - name: Fetch first-party response against candidate bytes pinned to input manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA="$(python -c 'import json, pathlib; print(json.loads(pathlib.Path("audit-evidence/candidate-input-manifest.json").read_text(encoding="utf-8"))["candidate_csv_sha256"])')"
+          python -m lrei.lottery.operator_full_window_capture \
+            --historical-csv candidate/data/lottery.csv \
+            --expected-candidate-sha256 "$EXPECTED_SHA" \
+            --report audit-evidence/operator-full-window-report.json \
+            --failure-report audit-evidence/operator-full-window-failure.json
       - name: Retain success hash or explicit non-attesting failure artifact
         if: always()
         uses: actions/upload-artifact@v4

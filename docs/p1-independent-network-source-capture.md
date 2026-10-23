@@ -84,8 +84,10 @@ A failed command may exit with code 2. Save its JSON output and the exit code, w
 Run the trusted checker from the `main` checkout (it makes its **own first-party HTTPS request**):
 
 ```powershell
-.\.venv\Scripts\python.exe -m lrei.lottery.operator_full_window_capture --historical-csv ..\LREI-candidate\data\lottery.csv --report audit-evidence\operator-full-window-report.json --failure-report audit-evidence\operator-full-window-failure.json
+.\.venv\Scripts\python.exe -m lrei.lottery.operator_full_window_capture --historical-csv ..\LREI-candidate\data\lottery.csv --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\operator-full-window-report.json --failure-report audit-evidence\operator-full-window-failure.json
 ```
+
+The pinned candidate SHA-256 must match the input manifest produced above. The checker makes a private frozen snapshot of those bytes, parses and compares that snapshot, and refuses a success report if the original CSV changes while the HTTPS request is in flight. A checksum match is **not** proof of first-party source provenance.
 
 The exact source endpoint is `https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx`. The verifier accepts only first-party HTTPS URLs, uses standard certificate verification and compares **the full candidate draw window**. Never use a third-party download instead, bypass a failed comparison, or merge the candidate because local download succeeded.
 

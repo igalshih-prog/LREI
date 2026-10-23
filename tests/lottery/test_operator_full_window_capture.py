@@ -207,3 +207,120 @@ def test_mismatch_failure_artifact_never_claims_verified_source(tmp_path, monkey
     assert result["failure_code"] == "full_window_capture_rejected"
     assert result["source_provenance_verified"] is False
     assert result["dataset_promotion_approved"] is False
+
+
+def local_candidate_csv(tmp_path):
+    path = tmp_path / "candidate.csv"
+    path.write_text(
+        "draw_id\tnumbers\tdate\tstrong_number\n"
+        "8000\t1,4,7,10,13,16\t01-01-26\t1\n"
+        "8001\t2,5,8,11,14,17\t03-01-26\t2\n"
+        "8002\t3,6,9,12,15,18\t05-01-26\t3\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_pinned_candidate_uses_exact_file_bytes_and_retains_no_approval(tmp_path, monkeypatch):
+    import hashlib
+    candidate = local_candidate_csv(tmp_path)
+    expected = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    calls = fake_capture(monkeypatch)
+    report = module.capture_pinned_candidate(candidate, expected_sha256=expected)
+    assert len(calls) == 1
+    assert report["candidate_snapshot_sha256"] == expected
+    assert report["candidate_snapshot_bytes"] == len(candidate.read_bytes())
+    assert report["candidate_snapshot_pinned_for_comparison"] is True
+    assert report["dataset_promotion_approved"] is False
+    assert report["historical_download_provenance_of_user_upload_proven"] is False
+
+
+def test_pinned_candidate_wrong_sha_refused_before_network(tmp_path, monkeypatch):
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    with pytest.raises(OfficialCsvAuditError, match="differs from expected"):
+        module.capture_pinned_candidate(candidate, expected_sha256="0" * 64)
+    assert calls == []
+
+
+
+@pytest.mark.parametrize("bad_digest", [
+    "",
+    "ABCDEF" + "0" * 58,
+    "0" * 63,
+    "0" * 65,
+    "g" * 64,
+])
+def test_pinned_candidate_rejects_malformed_digest_before_network(
+    tmp_path, monkeypatch, bad_digest
+):
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    with pytest.raises(OfficialCsvAuditError, match="64 lowercase hex"):
+        module.capture_pinned_candidate(candidate, expected_sha256=bad_digest)
+    assert calls == []
+
+
+def test_pinned_candidate_changes_during_network_capture_refused(tmp_path, monkeypatch):
+    import hashlib
+    candidate = local_candidate_csv(tmp_path)
+    expected = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    calls = []
+
+    def change_source_file_mid_capture():
+        calls.append(True)
+        candidate.write_text("replaced locally while network request ran\n", encoding="utf-8")
+        return raw(), SOURCE_URL, "text/csv"
+
+    monkeypatch.setattr(module, "download_operator_csv", change_source_file_mid_capture)
+    with pytest.raises(OfficialCsvAuditError, match="changed during operator source capture"):
+        module.capture_pinned_candidate(candidate, expected_sha256=expected)
+    assert len(calls) == 1
+
+
+def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
+    tmp_path, monkeypatch
+):
+    import hashlib
+    candidate = local_candidate_csv(tmp_path)
+    expected = hashlib.sha256(candidate.read_bytes()).hexdigest()
+
+    def change_candidate():
+        candidate.write_text("replaced while fetching\n", encoding="utf-8")
+        return raw(), SOURCE_URL, "text/csv"
+
+    monkeypatch.setattr(module, "download_operator_csv", change_candidate)
+    success = tmp_path / "success.json"
+    failure = tmp_path / "failure.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "operator_full_window_capture",
+            "--historical-csv", str(candidate),
+            "--report", str(success),
+            "--failure-report", str(failure),
+            "--expected-candidate-sha256", expected,
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        module.main()
+    assert exc.value.code == 2
+    assert not success.exists()
+    rejected = json.loads(failure.read_text(encoding="utf-8"))
+    assert rejected["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
+    assert rejected["failure_code"] == "candidate_changed_during_capture"
+    assert rejected["source_provenance_verified"] is False
+    assert rejected["dataset_promotion_approved"] is False
+
+
+
+def test_pinned_capture_refuses_oversize_sparse_candidate_before_network(
+    tmp_path, monkeypatch
+):
+    candidate = tmp_path / "oversize.csv"
+    with candidate.open("wb") as stream:
+        stream.truncate(8 * 1024 * 1024 + 1)
+    calls = fake_capture(monkeypatch)
+    with pytest.raises(OfficialCsvAuditError, match="1–8 MiB"):
+        module.capture_pinned_candidate(candidate, expected_sha256="0" * 64)
+    assert calls == []

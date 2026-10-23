@@ -55,6 +55,27 @@ def test_calendar_age_boundary_cannot_be_bypassed(date, age, status, ready):
     assert report["data_recency_ok"] is ready
 
 
+
+@pytest.mark.parametrize("utc_instant,draw_date,israel_day,offset_hours", [
+    (datetime(2026, 1, 10, 23, 30, tzinfo=timezone.utc), "07-01-26", "2026-01-11", 2),
+    (datetime(2026, 7, 10, 21, 30, tzinfo=timezone.utc), "07-07-26", "2026-07-11", 3),
+])
+def test_freshness_respects_both_israel_standard_and_summer_midnight(
+    utc_instant, draw_date, israel_day, offset_hours
+):
+    from zoneinfo import ZoneInfo
+
+    local = utc_instant.astimezone(ZoneInfo("Asia/Jerusalem"))
+    assert local.utcoffset() == timedelta(hours=offset_hours)
+    assert local.date().isoformat() == israel_day
+    report = inspect_freshness(History(date=draw_date), checked_at=utc_instant)
+    assert report["today_israel"] == israel_day
+    assert report["age_days"] == 4
+    assert report["data_recency_ok"] is True
+    assert report["operator_source_provenance_verified"] is False
+    assert report["authorized_for_financial_prediction"] is False
+
+
 def test_old_main_dataset_explicitly_red_under_a_frozen_reference_clock():
     report = inspect_freshness(
         History("3973", "10-10-26"),

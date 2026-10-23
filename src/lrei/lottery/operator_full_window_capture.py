@@ -127,6 +127,13 @@ def _failure_code(stage: str, exc: Exception) -> str:
         return "candidate_load_failed"
     if stage == "save_success_report":
         return "success_report_write_failed"
+    if stage == "pinned_candidate_capture" and isinstance(exc, OfficialCsvAuditError):
+        if str(exc) == "candidate CSV changed during operator source capture":
+            return "candidate_changed_during_capture"
+        if str(exc) == "candidate CSV SHA-256 differs from expected snapshot":
+            return "candidate_checksum_mismatch"
+        if str(exc) == "candidate CSV must contain 1–8 MiB of bytes":
+            return "candidate_size_rejected"
     if isinstance(exc, OfficialCsvAuditError) and "first-party CSV download unavailable" in str(exc):
         if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
             return "first_party_download_timeout"

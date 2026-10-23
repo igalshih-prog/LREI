@@ -9,7 +9,10 @@ changes the candidate historical dataset.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -79,6 +82,41 @@ def capture_full_window(
     }
 
 
+
+def capture_pinned_candidate(
+    candidate_path: Path, *, expected_sha256: str,
+) -> dict[str, Any]:
+    """Compare one immutable candidate snapshot with a live first-party fetch.
+
+    The expected checksum is a caller-provided INPUT INTEGRITY guard, not
+    evidence of official source provenance or any kind of dataset approval.
+    """
+    if re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None:
+        raise OfficialCsvAuditError("expected candidate SHA-256 must be 64 lowercase hex characters")
+    raw = candidate_path.read_bytes()
+    if not 0 < len(raw) <= 8 * 1024 * 1024:
+        raise OfficialCsvAuditError("candidate CSV must contain 1–8 MiB of bytes")
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise OfficialCsvAuditError("candidate CSV SHA-256 differs from expected snapshot")
+
+    # Parse and compare a private frozen copy, not a file which could be
+    # replaced between checksum validation and network response.
+    with tempfile.TemporaryDirectory(prefix="lrei-pinned-candidate-") as tmp:
+        snapshot = Path(tmp) / "lottery.csv"
+        snapshot.write_bytes(raw)
+        historical = CsvDatasetLoader().load(snapshot)
+        report = capture_full_window(historical)
+
+    # If the original file changed while the official response was fetched,
+    # refuse the report instead of silently accepting mutable local data.
+    if candidate_path.read_bytes() != raw:
+        raise OfficialCsvAuditError("candidate CSV changed during operator source capture")
+    report["candidate_snapshot_sha256"] = expected_sha256
+    report["candidate_snapshot_bytes"] = len(raw)
+    report["candidate_snapshot_pinned_for_comparison"] = True
+    return report
+
+
 def _failure_code(stage: str, exc: Exception) -> str:
     """Return an allowlisted diagnosis; never store raw exception text in artifacts."""
     if stage == "load_candidate":
@@ -119,14 +157,26 @@ def main() -> None:
     parser.add_argument("--historical-csv", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--failure-report", type=Path)
+    parser.add_argument(
+        "--expected-candidate-sha256",
+        help="Optional pinned candidate checksum; required by independent-network procedure.",
+    )
     args = parser.parse_args()
     if args.failure_report is not None and args.failure_report == args.report:
         parser.error("--failure-report must differ from --report")
     stage = "load_candidate"
     try:
-        historical = CsvDatasetLoader().load(args.historical_csv)
-        stage = "operator_capture_and_compare"
-        report = capture_full_window(historical)
+        if args.expected_candidate_sha256 is not None:
+            # Check the expected digest before initiating a network request.
+            stage = "pinned_candidate_capture"
+            report = capture_pinned_candidate(
+                args.historical_csv, expected_sha256=args.expected_candidate_sha256,
+            )
+        else:
+            # Backward-compatible manual CI behavior; input manifest is separate.
+            historical = CsvDatasetLoader().load(args.historical_csv)
+            stage = "operator_capture_and_compare"
+            report = capture_full_window(historical)
         stage = "save_success_report"
         args.report.parent.mkdir(parents=True, exist_ok=True)
         with args.report.open("x", encoding="utf-8") as stream:

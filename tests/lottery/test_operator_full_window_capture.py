@@ -290,6 +290,7 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
     assert not success.exists()
     rejected = json.loads(failure.read_text(encoding="utf-8"))
     assert rejected["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
+    assert rejected["failure_code"] == "candidate_changed_during_capture"
     assert rejected["source_provenance_verified"] is False
     assert rejected["dataset_promotion_approved"] is False
 

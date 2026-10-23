@@ -97,6 +97,35 @@ The exact source endpoint is `https://www.pais.co.il/Lotto/lotto_resultsDownload
 
 Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
 
+## Preserve independent-network evidence (PowerShell)
+
+Use the same trusted Python executable described above. Save the diagnostic output
+and exit code before running the capture; do not copy a green status from the
+GitHub code checks into a source-attestation report.
+
+```powershell
+$python = ".\\.venv\\Scripts\\python.exe"
+& $python -m lrei.lottery.operator_https_diagnostic 1> audit-evidence\\operator-network-diagnostic.json 2> audit-evidence\\operator-network-stderr.txt
+$diagnosticExit = $LASTEXITCODE
+"diagnostic_exit_code=$diagnosticExit" | Set-Content -Encoding ascii audit-evidence\\operator-network-exit.txt
+
+& $python -m lrei.lottery.operator_full_window_capture --historical-csv ..\\LREI-candidate\\data\\lottery.csv --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\\operator-full-window-report.json --failure-report audit-evidence\\operator-full-window-failure.json 1> audit-evidence\\capture-stdout.txt 2> audit-evidence\\capture-stderr.txt
+$captureExit = $LASTEXITCODE
+"capture_exit_code=$captureExit" | Set-Content -Encoding ascii audit-evidence\\operator-capture-exit.txt
+```
+
+Capture errors and nonzero exit codes are meaningful evidence. Do not rerun into
+the same report paths: successful and failure reports are intentionally created
+without overwriting existing evidence. Use a new empty evidence directory for
+each further attempt. Retain the input manifest, exact candidate commit and hash,
+network diagnostic, both exit codes, stdout/stderr and either the success report
+or the explicit refusal artifact. Review sensitive logs before sharing; never
+publish ID documents, credentials, authentication tokens or private network data.
+
+A successful *diagnostic* still does not authenticate results. Even a successful
+full-window report does not automatically approve the dataset or change the
+freshness gate, which remains tied to the actual Israel-local date.
+
 ## Decision gate
 
 1. A reproducible full-window match is necessary for source corroboration, not sufficient for promotion.

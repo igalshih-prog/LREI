@@ -5,6 +5,7 @@ No synthetic bytes are labeled as a real operator download or draw protocol.
 
 from datetime import datetime, timezone
 import json
+import urllib.request
 from types import SimpleNamespace
 
 import pytest
@@ -114,14 +115,52 @@ def test_direct_download_rejects_external_redirect(monkeypatch):
         def read(self, count):
             raise AssertionError("must reject redirect before reading data")
 
-    def fake_urlopen(request, *, timeout, context):
-        assert request.full_url == OFFICIAL_CSV_URL
-        assert timeout > 0 and context is not None
-        return FakeResponse()
+    def fake_build_opener(*handlers):
+        from lrei.lottery.official_draw_source import _PaisOnlyRedirectHandler
+        assert any(isinstance(handler, _PaisOnlyRedirectHandler) for handler in handlers)
+        assert any(isinstance(handler, urllib.request.HTTPSHandler) for handler in handlers)
 
-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+        class FakeOpener:
+            def open(self, request, *, timeout):
+                assert request.full_url == OFFICIAL_CSV_URL
+                assert timeout > 0
+                return FakeResponse()
+
+        return FakeOpener()
+
+    monkeypatch.setattr("urllib.request.build_opener", fake_build_opener)
     with pytest.raises(OfficialCsvAuditError, match="first-party"):
         download_operator_csv()
+
+
+@pytest.mark.parametrize("unsafe_redirect", [
+    "https://evil.invalid/redirect-back-to-pais",
+    "http://www.pais.co.il/Lotto/export.csv",
+    "https://www.pais.co.il.evil.invalid/export.csv",
+    "https://user@www.pais.co.il/Lotto/export.csv",
+    "https://www.pais.co.il:8443/Lotto/export.csv",
+])
+def test_each_intermediate_redirect_must_be_first_party_https(unsafe_redirect):
+    from lrei.lottery.official_draw_source import _PaisOnlyRedirectHandler
+
+    handler = _PaisOnlyRedirectHandler()
+    source = urllib.request.Request(OFFICIAL_CSV_URL)
+    # This runs before urllib could follow the next HTTP 302 Location.
+    with pytest.raises(OfficialCsvAuditError, match="first-party"):
+        handler.redirect_request(source, None, 302, "Found", {}, unsafe_redirect)
+
+
+@pytest.mark.parametrize("safe_redirect", [
+    "https://pais.co.il/Lotto/export.csv",
+    "https://www.pais.co.il/Lotto/export.csv",
+])
+def test_verified_first_party_https_redirects_still_work(safe_redirect):
+    from lrei.lottery.official_draw_source import _PaisOnlyRedirectHandler
+
+    handler = _PaisOnlyRedirectHandler()
+    source = urllib.request.Request(OFFICIAL_CSV_URL)
+    redirected = handler.redirect_request(source, None, 302, "Found", {}, safe_redirect)
+    assert redirected.full_url == safe_redirect
 
 
 def test_offline_cli_produces_unverified_report_without_network(tmp_path, monkeypatch):

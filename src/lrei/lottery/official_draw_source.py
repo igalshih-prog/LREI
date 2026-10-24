@@ -44,6 +44,18 @@ def _safe_official_url(url: str) -> None:
         raise OfficialCsvAuditError("source must use a first-party HTTPS Pais host")
 
 
+class _PaisOnlyRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse cross-domain and HTTPS-to-HTTP redirects at *every* hop.
+
+    Inspecting only response.geturl() is insufficient: an untrusted
+    intermediate redirect could return to a first-party final URL.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _safe_official_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def download_operator_csv(url: str = OFFICIAL_CSV_URL) -> tuple[bytes, str, str]:
     """Make one TLS-verified first-party request; never turn off SSL verification."""
     _safe_official_url(url)
@@ -51,9 +63,13 @@ def download_operator_csv(url: str = OFFICIAL_CSV_URL) -> tuple[bytes, str, str]
         url, headers={"User-Agent": "LREI-source-audit/1.0"}
     )
     try:
-        with urllib.request.urlopen(
-            request, timeout=25, context=ssl.create_default_context()
-        ) as response:
+        # The custom handler checks each redirect BEFORE urllib follows it.
+        # HTTPSHandler retains the platform's verified TLS trust policy.
+        opener = urllib.request.build_opener(
+            _PaisOnlyRedirectHandler(),
+            urllib.request.HTTPSHandler(context=ssl.create_default_context()),
+        )
+        with opener.open(request, timeout=25) as response:
             final_url = response.geturl()
             _safe_official_url(final_url)
             raw = response.read(MAX_SOURCE_BYTES + 1)

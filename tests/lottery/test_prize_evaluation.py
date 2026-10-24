@@ -151,3 +151,22 @@ def test_portfolio_rejects_missing_draw_strong_before_scoring_tickets():
     )
     with pytest.raises(ValueError, match="Draw strong number"):
         evaluate_portfolio_prizes(tickets, _draw(TICKET_NUMBERS, strong=None))
+
+
+@pytest.mark.parametrize("bad_numbers", [None, 123, True, "123456", {"1": 1}])
+def test_malformed_ticket_main_container_fails_closed(bad_numbers):
+    ticket = RecommendedTicket(numbers=bad_numbers, strong_number=7)
+    with pytest.raises(ValueError, match="Ticket main numbers"):
+        evaluate_ticket_prize(ticket, _draw(TICKET_NUMBERS))
+
+
+@pytest.mark.parametrize("bad_numbers", [None, 123, True, "123456", {"1": 1}])
+def test_malformed_draw_main_container_fails_closed(bad_numbers):
+    ticket = RecommendedTicket(numbers=TICKET_NUMBERS, strong_number=7)
+    with pytest.raises(ValueError, match="Draw main numbers"):
+        evaluate_ticket_prize(ticket, _draw(bad_numbers))
+
+
+def test_malformed_draw_refused_even_for_empty_portfolio():
+    with pytest.raises(ValueError, match="Draw main numbers"):
+        evaluate_portfolio_prizes((), _draw(None))

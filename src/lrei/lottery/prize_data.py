@@ -66,21 +66,25 @@ def _validate_tiers(tiers: Any, game: str) -> None:
 
 
 def _valid_source(url: Any, draw_id: int) -> bool:
+    """Treat malformed or ambiguous source URLs as unverified, never crash."""
     if not isinstance(url, str):
         return False
-    parsed = urlsplit(url)
-    if parsed.scheme != "https" or parsed.username or parsed.password or parsed.fragment:
-        return False
     try:
-        if parsed.port is not None:
+        parsed = urlsplit(url)
+        if (
+            parsed.scheme != "https"
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.fragment
+            or parsed.port is not None
+            or parsed.hostname not in {"pais.co.il", "www.pais.co.il"}
+            or parsed.path.lower() != "/lotto/currentlotto.aspx"
+        ):
             return False
+        qs = parse_qs(parsed.query, keep_blank_values=True)
     except ValueError:
+        # urlsplit/hostname/port reject malformed IPv6 brackets and ports.
         return False
-    if parsed.hostname not in {"pais.co.il", "www.pais.co.il"}:
-        return False
-    if parsed.path.lower() != "/lotto/currentlotto.aspx":
-        return False
-    qs = parse_qs(parsed.query, keep_blank_values=True)
     return qs == {"lotteryId": [str(draw_id)]}
 
 

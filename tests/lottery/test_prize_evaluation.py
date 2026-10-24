@@ -164,9 +164,9 @@ def test_malformed_ticket_main_container_fails_closed(bad_numbers):
 def test_malformed_draw_main_container_fails_closed(bad_numbers):
     ticket = RecommendedTicket(numbers=TICKET_NUMBERS, strong_number=7)
     with pytest.raises(ValueError, match="Draw main numbers"):
-        evaluate_ticket_prize(ticket, _draw(bad_numbers))
+        evaluate_ticket_prize(ticket, LotteryDrawRecord(draw_id="synthetic", numbers=bad_numbers, strong_number=7))
 
 
 def test_malformed_draw_refused_even_for_empty_portfolio():
     with pytest.raises(ValueError, match="Draw main numbers"):
-        evaluate_portfolio_prizes((), _draw(None))
+        evaluate_portfolio_prizes((), LotteryDrawRecord(draw_id="synthetic", numbers=None, strong_number=7))

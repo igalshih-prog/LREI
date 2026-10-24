@@ -51,6 +51,8 @@ class PortfolioPrizeResult:
 
 
 def _validate_main_numbers(numbers: tuple[int, ...], label: str) -> None:
+    if not isinstance(numbers, (tuple, list)):
+        raise ValueError(f"{label} main numbers must be a six-number sequence")
     if len(numbers) != 6:
         raise ValueError(f"{label} must contain exactly six main numbers")
     if any(type(number) is not int for number in numbers):
@@ -73,7 +75,7 @@ def _validate_complete_draw(draw: LotteryDrawRecord) -> None:
     but treating that omission as a non-strong match would silently demote
     otherwise winning tickets into an incorrect payout tier.
     """
-    _validate_main_numbers(tuple(draw.numbers), "Draw")
+    _validate_main_numbers(draw.numbers, "Draw")
     if type(draw.strong_number) is not int or not 1 <= draw.strong_number <= 7:
         raise ValueError("Draw strong number must be an integer between 1 and 7")
 
@@ -88,7 +90,7 @@ def evaluate_ticket_prize(
     the published 5/4/3-main-match and strong-number prize table.
     Fewer than three main-number matches is not a prize, even if strong matches.
     """
-    _validate_main_numbers(tuple(ticket.numbers), "Ticket")
+    _validate_main_numbers(ticket.numbers, "Ticket")
     _validate_complete_draw(draw)
     _validate_strong_number(ticket.strong_number, "Ticket")
 

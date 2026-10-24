@@ -80,6 +80,22 @@ def test_invalid_metadata_rejected(field, value):
         validate_prize_observation(record)
 
 
+
+@pytest.mark.parametrize("source_url", [
+    "https://[broken/lotto/currentlotto.aspx?lotteryId=3950",
+    "https://www.pais.co.il:invalid/lotto/currentlotto.aspx?lotteryId=3950",
+    "https://www.pais.co.il:65536/lotto/currentlotto.aspx?lotteryId=3950",
+    "https://[::1]/lotto/currentlotto.aspx?lotteryId=3950",
+    "https://www.pais.co.il\\\\@evil.invalid/lotto/currentlotto.aspx?lotteryId=3950",
+])
+def test_malformed_or_ambiguous_source_url_fails_closed(source_url):
+    record = draw_record()
+    record["source_url"] = source_url
+    with pytest.raises(PrizeDataError, match="requires matching pais.co.il"):
+        validate_prize_observation(record)
+
+
+
 def test_games_must_include_16_distinct_tier_rows():
     record = draw_record()
     del record["games"]["double"]

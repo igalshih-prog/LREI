@@ -52,6 +52,17 @@ def test_audit_does_not_pretend_six_observations_are_twenty():
     assert summary["p3_economic_readiness"]["data_readiness_ok"] is False
     assert summary["p3_economic_readiness"]["source_authenticity_verified"] is False
     assert "missing_16_tier_prize_tables" in summary["p3_economic_readiness"]["blocking_reasons"]
+    readiness = summary["ev_prerequisites"]
+    assert readiness["status"] == "BLOCKED_MISSING_EVIDENCE"
+    assert readiness["decision"] == "NO PLAY"
+    assert readiness["monetary_ev_ils"] is None
+    assert readiness["financial_play_authorized"] is False
+    assert set(readiness["missing_requirements"]) == {
+        "operator_draw_source_verified", "draw_freshness_verified",
+        "operator_prize_tiers_verified", "all_eight_tiers_regular_and_double",
+        "ticket_cost_rule_verified", "tax_rule_verified",
+        "co_winner_model_validated",
+    }
 
 
 def test_payout_reconciliation_does_not_mislabel_extra_as_lotto():
@@ -87,6 +98,33 @@ def change_manifest(path, fn):
     doc = json.loads(path.read_text(encoding="utf-8"))
     fn(doc)
     path.write_text(json.dumps(doc), encoding="utf-8")
+
+
+def test_complete_synthetic_declared_window_only_clears_shape_coverage(tmp_path):
+    # Shrink a *test-only* manifest to the six transcribed draws. This is NOT
+    # permission to redefine the real 20-draw audit window or assert source.
+    directory, manifest = sandbox(tmp_path)
+    change_manifest(manifest, lambda doc: doc.update(window_end_draw_id=3954))
+    report = audit_prize_series(directory, manifest, historic())
+    assert report["series_complete"] is True
+    ev = report["ev_prerequisites"]
+    assert "all_eight_tiers_regular_and_double" not in ev["missing_requirements"]
+    assert len(ev["missing_requirements"]) == 6
+    assert ev["decision"] == "NO PLAY"
+    assert ev["monetary_ev_ils"] is None
+    assert ev["financial_play_authorized"] is False
+
+
+def test_partially_missing_declared_window_keeps_shape_blocker(tmp_path):
+    directory, manifest = sandbox(tmp_path)
+    (directory / "3954.json").unlink()
+    change_manifest(manifest, lambda doc: doc.update(
+        sources=[s for s in doc["sources"] if s["draw_id"] != 3954],
+        window_end_draw_id=3954,
+    ))
+    report = audit_prize_series(directory, manifest, historic())
+    assert "all_eight_tiers_regular_and_double" in report["ev_prerequisites"]["missing_requirements"]
+    assert report["ev_prerequisites"]["decision"] == "NO PLAY"
 
 
 def test_duplicate_source_audit_cannot_pass(tmp_path):

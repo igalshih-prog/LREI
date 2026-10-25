@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .dataset import LotteryDataset
+from .ev_readiness import EVReadinessEvidence, assess_ev_readiness
 from .prize_data import (
     GAME_TYPES,
     PrizeDataError,
@@ -176,8 +177,16 @@ def audit_prize_series(
             "operator_total_minus_lotto_sum_ils": reported - regular - double if reported is not None else None,
             "observation_sha256": canonical_sha256(observation),
         }
+    # Coverage is checked from the complete declared audit window, not a
+    # self-reported flag. All other EV prerequisites remain unavailable: this
+    # informational archive does not establish source provenance, fresh draws,
+    # legally binding payouts, tax, costs, or validated co-winner behavior.
+    ev_readiness = assess_ev_readiness(EVReadinessEvidence(
+        all_eight_tiers_regular_and_double=bool(observations) and not missing,
+    ))
     return {
         "audit_schema_version": 1,
+        "ev_prerequisites": ev_readiness,
         "window_start_draw_id": first,
         "window_end_draw_id": last,
         "expected_draws": last - first + 1,

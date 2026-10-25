@@ -82,15 +82,11 @@ official operator publication, human review, or authorization to use the data.
 .\.venv\Scripts\python.exe -m lrei.lottery.operator_https_diagnostic
 ```
 
-A failed command may exit with code 2. Save its JSON output and the exit code, without interpreting a successful DNS lookup as a successful HTTPS download. IPv6 may not be available in the environment. Windows Git can convert LF to CRLF; the setup forces `core.autocrlf=false` **before** either checkout, as confirmed necessary by [failed Windows run #40220038806](https://github.com/igalshih-prog/LREI/actions/runs/40220038806). If the pinned bytes still disagree, stop and inspect the checkout rather than bypass the digest.
+This standalone diagnostic invocation is illustrative; when collecting evidence, run only the comprehensive block below, which already captures this diagnostic and its exit code. A failed command may exit with code 2. Save its JSON output and the exit code, without interpreting a successful DNS lookup as a successful HTTPS download. IPv6 may not be available in the environment. Windows Git can convert LF to CRLF; the setup forces `core.autocrlf=false` **before** either checkout, as confirmed necessary by [failed Windows run #40220038806](https://github.com/igalshih-prog/LREI/actions/runs/40220038806). If the pinned bytes still disagree, stop and inspect the checkout rather than bypass the digest.
 
 ## Controlled official-URL capture against the candidate
 
-Run the trusted checker from the `main` checkout (it makes its **own first-party HTTPS request**):
-
-```powershell
-.\.venv\Scripts\python.exe -m lrei.lottery.operator_full_window_capture --historical-csv ..\LREI-candidate\data\lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\operator-full-window-report.json --failure-report audit-evidence\operator-full-window-failure.json
-```
+Run the **single, complete** PowerShell block under **Preserve independent-network evidence** below from the trusted `main` checkout, after the offline manifest succeeds. It executes the trusted `lrei.lottery.operator_full_window_capture` checker exactly once and saves both its native exit code and either a success report or an explicit refusal. Do **not** run a standalone capture first and then the preservation block: the report files are opened in exclusive-create mode and a second attempt with identical output paths will fail rather than overwrite the first evidence.
 
 The pinned candidate SHA-256 must match the input manifest produced above. The checker makes a private frozen snapshot of those bytes, parses and compares that snapshot, and refuses a success report if the original CSV changes while the HTTPS request is in flight. A checksum match is **not** proof of first-party source provenance.
 

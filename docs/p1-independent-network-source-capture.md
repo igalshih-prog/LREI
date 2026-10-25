@@ -4,7 +4,7 @@
 
 ## Why this procedure exists
 
-In GitHub Actions workflow run [#39828460962](https://github.com/igalshih-prog/LREI/actions/runs/39828460962), DNS for `www.pais.co.il` succeeded but TCP/443 to the selected IPv4 address timed out. The original HTTPS CSV download independently timed out. The same outcome does **not** prove that the operator blocked GitHub's IP ranges. Re-running unchanged CI from the same network does not establish source provenance.
+In GitHub Actions workflow run [#39828460962](https://github.com/igalshih-prog/LREI/actions/runs/39828460962), DNS for `www.pais.co.il` succeeded but TCP/443 timed out. An additional [Windows-hosted attempt #40220138736](https://github.com/igalshih-prog/LREI/actions/runs/40220138736) on 25 Oct 2026 pinned the candidate CSV hash successfully, then DNS succeeded while TCP/443 and the direct first-party download timed out. Its [real refusal/diagnostic artifact](https://github.com/igalshih-prog/LREI/actions/runs/40220138736/artifacts/12608447480) contains no source-attestation report. These failures **do not prove** the operator blocked GitHub's IP ranges. More GitHub-hosted re-runs do not establish source provenance.
 
 This is a **separate network-path experiment**: run the repository's already trusted first-party HTTPS downloader from a personally controlled Windows machine/network. Do not download a CSV from search mirrors, screenshots, email attachments or any third-party domain and relabel it as operator evidence.
 
@@ -21,7 +21,7 @@ This is a **separate network-path experiment**: run the repository's already tru
 From PowerShell in a directory you control:
 
 ```powershell
-git clone https://github.com/igalshih-prog/LREI.git
+git clone -c core.autocrlf=false https://github.com/igalshih-prog/LREI.git
 Set-Location LREI
 # Preserve raw committed candidate CSV bytes on Windows (avoid checkout CRLF conversion).
 git config core.autocrlf false
@@ -30,7 +30,7 @@ git checkout main
 git pull --ff-only origin main
 
 # Create a SEPARATE detached data checkout; do not execute its Python files.
-git worktree add --detach ..\LREI-candidate origin/data/lotto-3976-user-upload-quarantine-20261020
+git worktree add --detach ..\LREI-candidate 83285d80fed17fae87a39ab13fe83b087aeb0593
 
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
@@ -45,11 +45,16 @@ git -C ..\LREI-candidate rev-parse HEAD
 Get-FileHash ..\LREI-candidate\data\lottery.csv -Algorithm SHA256
 ```
 
-At the original 2026-10-22 audit, the candidate was commit
-`5cd4db461ef061e62729e04ed990f9f106ab2574` and its CSV SHA-256 was
-`76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56`.
-These are **historical comparison fingerprints**, not official provenance attestations.
-If hashes differ, record the difference and do not attribute results to the earlier candidate.
+**Current quarantined candidate snapshot (25 Oct 2026):** PR #44 commit
+`83285d80fed17fae87a39ab13fe83b087aeb0593`, latest candidate draw #3978 (24 Oct 2026),
+1,146 rows (#2833–#3978), CSV SHA-256
+`1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5` (38,999 bytes). Verify the exact candidate commit and hash
+**before contacting** the operator. Do not silently substitute the previous
+#3976 candidate. This hash is an **integrity guard, not provenance proof**.
+
+Earlier 22 Oct 2026 snapshot: commit `5cd4db461ef061e62729e04ed990f9f106ab2574`,
+SHA-256 `76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56`, through draw #3976. It remains a **historical
+comparison fingerprint only**, not the current target.
 
 ## Offline input manifest (before any network request)
 
@@ -58,11 +63,11 @@ modified candidate working file, an unexpected candidate commit/hash, or local
 changes to trusted lottery source code. It compares the on-disk CSV with the
 **committed Git blob** and never contacts the operator.
 
-For the previously quarantined PR #44 snapshot, run this command from the
+For the current pinned PR #44 snapshot, run this command from the
 trusted `LREI` directory before running any HTTPS probe:
 
 ```powershell
-.\.venv\Scripts\python.exe -m lrei.lottery.local_audit_manifest --trusted-repo . --candidate-repo ..\LREI-candidate --expected-candidate-commit 5cd4db461ef061e62729e04ed990f9f106ab2574 --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\local-input-manifest.json
+.\.venv\Scripts\python.exe -m lrei.lottery.local_audit_manifest --trusted-repo . --candidate-repo ..\LREI-candidate --expected-candidate-commit 83285d80fed17fae87a39ab13fe83b087aeb0593 --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\local-input-manifest.json
 ```
 
 The command returns **exit 2** rather than creating an approval report if the
@@ -77,14 +82,14 @@ official operator publication, human review, or authorization to use the data.
 .\.venv\Scripts\python.exe -m lrei.lottery.operator_https_diagnostic
 ```
 
-A failed command may exit with code 2. Save its JSON output and the exit code, without interpreting a successful DNS lookup as a successful HTTPS download. IPv6 may not be available in the environment.
+A failed command may exit with code 2. Save its JSON output and the exit code, without interpreting a successful DNS lookup as a successful HTTPS download. IPv6 may not be available in the environment. Windows Git can convert LF to CRLF; the setup forces `core.autocrlf=false` **before** either checkout, as confirmed necessary by [failed Windows run #40220038806](https://github.com/igalshih-prog/LREI/actions/runs/40220038806). If the pinned bytes still disagree, stop and inspect the checkout rather than bypass the digest.
 
 ## Controlled official-URL capture against the candidate
 
 Run the trusted checker from the `main` checkout (it makes its **own first-party HTTPS request**):
 
 ```powershell
-.\.venv\Scripts\python.exe -m lrei.lottery.operator_full_window_capture --historical-csv ..\LREI-candidate\data\lottery.csv --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\operator-full-window-report.json --failure-report audit-evidence\operator-full-window-failure.json
+.\.venv\Scripts\python.exe -m lrei.lottery.operator_full_window_capture --historical-csv ..\LREI-candidate\data\lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\operator-full-window-report.json --failure-report audit-evidence\operator-full-window-failure.json
 ```
 
 The pinned candidate SHA-256 must match the input manifest produced above. The checker makes a private frozen snapshot of those bytes, parses and compares that snapshot, and refuses a success report if the original CSV changes while the HTTPS request is in flight. A checksum match is **not** proof of first-party source provenance.
@@ -95,7 +100,7 @@ The exact source endpoint is `https://www.pais.co.il/Lotto/lotto_resultsDownload
 - **Exit 2 and failure JSON:** refused/unsupported; no source attestation. Preserve the files and do not merge.
 - **No JSON:** check the CLI error and record why even a failure artifact could not be produced. Do not generate fake success evidence.
 
-Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
+After the capture, accept only an actual `capture_exit_code=0` **and** a real `operator-full-window-report.json` with last ID **3978**, 1,146 compared rows, zero mismatches, and `dataset_promotion_approved=false` for **research corroboration only**. A workflow or diagnostic success flag alone is not evidence of a downloaded operator CSV. Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
 
 ## Preserve independent-network evidence (PowerShell)
 
@@ -109,7 +114,7 @@ $python = ".\\.venv\\Scripts\\python.exe"
 $diagnosticExit = $LASTEXITCODE
 "diagnostic_exit_code=$diagnosticExit" | Set-Content -Encoding ascii audit-evidence\\operator-network-exit.txt
 
-& $python -m lrei.lottery.operator_full_window_capture --historical-csv ..\\LREI-candidate\\data\\lottery.csv --expected-candidate-sha256 76527a113d094362cb5595e0cf4719a8bcb6c3f16a988cd75e5ca0e418342b56 --report audit-evidence\\operator-full-window-report.json --failure-report audit-evidence\\operator-full-window-failure.json 1> audit-evidence\\capture-stdout.txt 2> audit-evidence\\capture-stderr.txt
+& $python -m lrei.lottery.operator_full_window_capture --historical-csv ..\\LREI-candidate\\data\\lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\\operator-full-window-report.json --failure-report audit-evidence\\operator-full-window-failure.json 1> audit-evidence\\capture-stdout.txt 2> audit-evidence\\capture-stderr.txt
 $captureExit = $LASTEXITCODE
 "capture_exit_code=$captureExit" | Set-Content -Encoding ascii audit-evidence\\operator-capture-exit.txt
 ```

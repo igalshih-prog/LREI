@@ -1,0 +1,87 @@
+# P1 network-path experiment only. This workflow NEVER changes approved data.
+# A green workflow means an attempt/artifact was produced, NOT a verified source.
+name: P1 Windows operator source attempt (NON-ATTESTING)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/p1-windows-source-attempt.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-independent-path:
+    name: Windows first-party HTTPS attempt (review evidence; NO PLAY)
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout trusted main verification code, not PR code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted
+          persist-credentials: false
+      - name: Checkout exact quarantined candidate commit DATA ONLY
+        uses: actions/checkout@v4
+        with:
+          ref: 83285d80fed17fae87a39ab13fe83b087aeb0593
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pin candidate bytes and code commit before any operator request
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path audit-evidence | Out-Null
+          $expected = '1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5'
+          $actual = (Get-FileHash -LiteralPath 'candidate/data/lottery.csv' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -cne $expected) { throw "Quarantined candidate SHA256 mismatch. Refusing." }
+          $trusted = (git -C trusted rev-parse HEAD).Trim()
+          $candidate = (git -C candidate rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $candidate -cne '83285d80fed17fae87a39ab13fe83b087aeb0593') {
+            throw "Unexpected checkout. Refusing."
+          }
+          $manifest = [ordered]@{
+            schema_version = 1
+            status = 'PINNED_INPUTS_ONLY_NO_SOURCE_ATTESTATION'
+            candidate_sha256 = $actual
+            candidate_commit = $candidate
+            trusted_code_commit = $trusted
+            candidate_file = 'candidate/data/lottery.csv'
+            windows_runner_attempt = $true
+            dataset_promotion_approved = $false
+            operator_source_provenance_verified = $false
+            financial_play_authorized = $false
+          }
+          $manifest | ConvertTo-Json -Depth 3 | Set-Content -Encoding utf8 'audit-evidence/inputs.json'
+      - name: Install code from trusted main checkout only
+        shell: pwsh
+        run: python -m pip install -e ./trusted
+      - name: Diagnose first-party DNS, TCP and TLS from Windows runner
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          python -m lrei.lottery.operator_https_diagnostic 1> audit-evidence/network-stdout.json 2> audit-evidence/network-stderr.txt
+          $result = $LASTEXITCODE
+          "diagnostic_exit_code=$result" | Set-Content -Encoding ascii 'audit-evidence/network-exit.txt'
+          if ($result -ne 0) { exit 2 }
+      - name: Attempt TLS-verified full-window match, never approve or auto-merge
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          python -m lrei.lottery.operator_full_window_capture --historical-csv candidate/data/lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence/full-window-match.json --failure-report audit-evidence/full-window-refusal.json 1> audit-evidence/capture-stdout.txt 2> audit-evidence/capture-stderr.txt
+          $result = $LASTEXITCODE
+          "capture_exit_code=$result" | Set-Content -Encoding ascii 'audit-evidence/capture-exit.txt'
+          if ($result -ne 0) { exit 2 }
+      - name: Preserve real results and refusals (never uploaded source CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-lotto-operator-attempt-3978
+          path: audit-evidence/
+          if-no-files-found: warn
+          retention-days: 30

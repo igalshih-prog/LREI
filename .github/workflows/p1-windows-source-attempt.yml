@@ -18,6 +18,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 12
     steps:
+      - name: Disable Git Windows CRLF conversion before any checkout
+        shell: pwsh
+        run: git config --global core.autocrlf false
       - name: Checkout trusted main verification code, not PR code
         uses: actions/checkout@v4
         with:
@@ -39,6 +42,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path audit-evidence | Out-Null
           $expected = '1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5'
           $actual = (Get-FileHash -LiteralPath 'candidate/data/lottery.csv' -Algorithm SHA256).Hash.ToLowerInvariant()
+          "candidate_sha256_actual=$actual" | Set-Content -Encoding ascii 'audit-evidence/input-checksums.txt'
+          "candidate_sha256_expected=$expected" | Add-Content -Encoding ascii 'audit-evidence/input-checksums.txt'
           if ($actual -cne $expected) { throw "Quarantined candidate SHA256 mismatch. Refusing." }
           $trusted = (git -C trusted rev-parse HEAD).Trim()
           $candidate = (git -C candidate rev-parse HEAD).Trim()

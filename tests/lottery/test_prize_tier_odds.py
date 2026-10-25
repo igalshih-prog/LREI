@@ -44,3 +44,45 @@ def test_exact_probabilities_are_stable_immutable_rationals():
     first[1] = Fraction(0)
     assert exact_single_line_tier_probabilities()[1] == Fraction(1, TOTAL_OUTCOMES)
     assert all(isinstance(v, Fraction) for v in exact_single_line_tier_probabilities().values())
+
+
+def test_exact_combinatorial_tiers_agree_with_real_prize_evaluator():
+    """Cross-check two independently implemented P3 mechanisms.
+
+    For each possible main match count, a representative synthetic draw
+    should map to the same strong/non-strong tier used by the exact
+    combinatorial distribution. No real lottery outcomes are read.
+    """
+    from lrei.lottery.dataset import LotteryDrawRecord
+    from lrei.lottery.prize_evaluation import evaluate_ticket_prize
+    from lrei.lottery.recommendation import RecommendedTicket
+
+    ticket = RecommendedTicket(numbers=(1, 2, 3, 4, 5, 6), strong_number=7)
+    probs = exact_single_line_tier_probabilities()
+    for matches in range(7):
+        numbers = (*range(1, matches + 1), *range(7, 13 - matches))
+        assert len(numbers) == 6
+        for strong in (7, 1):
+            draw = LotteryDrawRecord(
+                draw_id="synthetic-only", numbers=numbers, strong_number=strong
+            )
+            outcome = evaluate_ticket_prize(ticket, draw)
+            assert outcome.main_matches == matches
+            assert outcome.strong_match is (strong == 7)
+            if matches < 3:
+                assert outcome.prize_tier is None
+            else:
+                expected = 1 + 2 * (6 - matches) + (strong != 7)
+                assert outcome.prize_tier == expected
+                assert probs[expected] > 0
+
+
+def test_exact_tier_distribution_yields_theoretical_any_prize_probability():
+    """Single-line win probability is a sum of disjoint tier probabilities."""
+    tiers = exact_single_line_tier_probabilities()
+    expected = Fraction(
+        sum(main_match_outcomes(k) for k in range(3, 7)),
+        TOTAL_MAIN_OUTCOMES,
+    )
+    assert sum(tiers.values(), Fraction(0)) == expected
+    assert 0 < expected < 1

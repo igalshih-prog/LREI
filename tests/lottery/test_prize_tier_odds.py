@@ -86,3 +86,39 @@ def test_exact_tier_distribution_yields_theoretical_any_prize_probability():
     )
     assert sum(tiers.values(), Fraction(0)) == expected
     assert 0 < expected < 1
+
+
+@pytest.mark.parametrize("ticket_strong", range(1, 8))
+def test_all_seven_strong_draw_outcomes_preserve_tier_partition(ticket_strong):
+    """Guard every strong-number position, not just representative 1 and 7.
+
+    Each fixed 6/37 line faces seven equiprobable strong outcomes. Exactly
+    one must map to the odd-numbered strong tier and six to the adjacent tier.
+    This is an exhaustive synthetic check over all legal strong choices.
+    """
+    from lrei.lottery.dataset import LotteryDrawRecord
+    from lrei.lottery.prize_evaluation import evaluate_ticket_prize
+    from lrei.lottery.recommendation import RecommendedTicket
+
+    ticket = RecommendedTicket(numbers=(1, 2, 3, 4, 5, 6), strong_number=ticket_strong)
+    odds = exact_single_line_tier_probabilities()
+    for matches in range(7):
+        numbers = (*range(1, matches + 1), *range(7, 13 - matches))
+        resulting_tiers = [
+            evaluate_ticket_prize(
+                ticket,
+                LotteryDrawRecord(
+                    draw_id="synthetic-strong-partition",
+                    numbers=numbers,
+                    strong_number=draw_strong,
+                ),
+            ).prize_tier
+            for draw_strong in range(1, 8)
+        ]
+        if matches < 3:
+            assert resulting_tiers == [None] * 7
+        else:
+            tier = 1 + 2 * (6 - matches)
+            assert resulting_tiers.count(tier) == 1
+            assert resulting_tiers.count(tier + 1) == 6
+            assert odds[tier + 1] == 6 * odds[tier]

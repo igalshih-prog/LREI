@@ -5,6 +5,7 @@ import tempfile
 import streamlit as st
 
 from lrei.lottery.dataset import CsvDatasetLoader
+from lrei.lottery.dataset_freshness import inspect_freshness
 from lrei.lottery.elite import EliteProRecommendationEngine
 from lrei.lottery.recommendation import RecommendationEngine
 from lrei.lottery.portfolio_coverage import portfolio_coverage
@@ -138,6 +139,30 @@ else:
         f"משתמש בנתוני ההגרלות הקיימים — "
         f"{len(dataset)} הגרלות."
     )
+
+# A valid user upload is never proof of first-party provenance. This UI
+# runs research-only, regardless of draw-date freshness or green code CI.
+research_warning = (
+    "⚠️ NO PLAY — מחקר וניסוי על נייר בלבד. "
+    "הקובץ שמוצג כאן לא עבר אימות מקור רשמי ופרוטוקולים מחייבים; "
+    "בדיקות קוד תקינות ותאריך הגרלה עדכני אינם אישור להימור או יתרון חיזוי."
+)
+try:
+    readiness = inspect_freshness(dataset)
+except ValueError:
+    research_warning += " לא ניתן לאמת את תאריך ההגרלה האחרונה בקובץ."
+else:
+    if readiness["status"] == "stale_dataset":
+        research_warning += (
+            f" ההגרלה האחרונה בקובץ: {readiness['latest_draw_id']} "
+            f"({readiness['latest_draw_date_israel']}), "
+            f"לפני {readiness['age_days']} ימים — מעבר למגבלת "
+            f"{readiness['max_age_days']} ימים."
+        )
+    elif readiness["status"] == "future_dated_dataset":
+        research_warning += " נמצא תאריך הגרלה עתידי בקובץ; הנתונים אינם מאושרים."
+
+st.warning(research_warning)
 
 st.divider()
 

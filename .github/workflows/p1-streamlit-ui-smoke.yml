@@ -32,5 +32,5 @@ jobs:
           python-version: "3.11"
       - name: Install actual Streamlit UI and pytest
         run: python -m pip install -e '.[ui]' pytest
-      - name: Execute app startup and mode render interactions
-        run: python -m pytest -q tests/ui/test_streamlit_app_smoke.py
+      - name: Exercise startup, mode changes and real Smart 5+ generation (paper only)
+        run: python -m pytest -q tests/ui

@@ -102,7 +102,7 @@ def test_real_browser_upload_generate_and_download(tmp_path: Path) -> None:
                     seen: set[tuple[int, ...]] = set()
                     for idx, line in enumerate(lines, 1):
                         match = re.fullmatch(
-                            r"טור ([0-9]{2}): ((?:[0-9]{2} - ){5}[0-9]{2}) \\| ⭐ Strong: ([1-7])",
+                            r"טור ([0-9]{2}): ((?:[0-9]{2} - ){5}[0-9]{2}) \| ⭐ Strong: ([1-7])",
                             line.strip(),
                         )
                         assert match is not None, line
@@ -123,7 +123,7 @@ def test_real_browser_upload_generate_and_download(tmp_path: Path) -> None:
                     assert len(output) == 14
                     for idx, line in enumerate(output, 1):
                         assert re.fullmatch(
-                            rf"Ticket {idx:02d}: (?:[0-9]{{2}} - ){{5}}[0-9]{{2}} \\| Strong: [1-7]",
+                            rf"Ticket {idx:02d}: (?:[0-9]{{2}} - ){{5}}[0-9]{{2}} \| Strong: [1-7]",
                             line,
                         ), line
                     # File reflects the just-rendered tickets exactly.

@@ -2,6 +2,10 @@
 
 ## Lottery Recommendation & Evaluation Intelligence
 
+> **RESEARCH ONLY — NO PLAY.** This is an experimental historical-analysis and *paper-only* 14-line portfolio evaluation toolkit, **not a proven winning-number predictor or financially approved betting system**. The checked-in draw archive is currently stale and lacks authenticated first-party provenance, full prize-tier tables and verified profitability evidence. Green code CI does **not** satisfy these data gates.
+>
+> **[מחקר LREI — תיק מסירה בעברית (26.10.2026)](docs/RESEARCH_CHECKPOINT_2026-10-26_HE.md)** · [Live master plan / open evidence gates](https://github.com/igalshih-prog/LREI/issues/7). The historic GitHub tag `v1.0.0` exists already; Python package metadata is still **0.1.0 Alpha**. No new official research release is implied by this note.
+
 LREI is a Python-based lottery recommendation and evaluation system.
 
 The project analyzes historical lottery draws, scores numbers using multiple historical signals, generates lottery tickets, applies portfolio optimization, and evaluates results with chronological backtesting against random baselines.

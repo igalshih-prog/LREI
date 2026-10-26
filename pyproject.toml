@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "lrei"
 version = "0.1.0"
-description = "A production-ready foundation for LREI services and command-line tools."
+description = "Research-only lottery analysis and paper portfolio evaluation; NO PLAY."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -32,8 +32,8 @@ dependencies = [
 lrei = "lrei.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/your-org/lrei"
-Repository = "https://github.com/your-org/lrei"
+Homepage = "https://github.com/igalshih-prog/LREI"
+Repository = "https://github.com/igalshih-prog/LREI"
 
 [project.optional-dependencies]
 ui = [

@@ -114,18 +114,22 @@ def capture_pinned_candidate(
     if hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise OfficialCsvAuditError("candidate CSV SHA-256 differs from expected snapshot")
 
-    # Parse and compare a private frozen copy, not a file which could be
-    # replaced between checksum validation and network response.
+    # The raw HTTPS response is staged privately until both the all-row match
+    # and the *original* candidate immutability check have succeeded. A changed
+    # candidate must not leave behind final-path evidence from a refused audit.
     with tempfile.TemporaryDirectory(prefix="lrei-pinned-candidate-") as tmp:
         snapshot = Path(tmp) / "lottery.csv"
         snapshot.write_bytes(raw)
         historical = CsvDatasetLoader().load(snapshot)
-        report = capture_full_window(historical, raw_copy=raw_copy)
-
-    # If the original file changed while the official response was fetched,
-    # refuse the report instead of silently accepting mutable local data.
-    if candidate_path.read_bytes() != raw:
-        raise OfficialCsvAuditError("candidate CSV changed during operator source capture")
+        staged_copy = Path(tmp) / "operator-response.csv" if raw_copy is not None else None
+        report = capture_full_window(historical, raw_copy=staged_copy)
+        if candidate_path.read_bytes() != raw:
+            raise OfficialCsvAuditError("candidate CSV changed during operator source capture")
+        if raw_copy is not None:
+            assert staged_copy is not None
+            raw_copy.parent.mkdir(parents=True, exist_ok=True)
+            with raw_copy.open("xb") as stream:
+                stream.write(staged_copy.read_bytes())
     report["candidate_snapshot_sha256"] = expected_sha256
     report["candidate_snapshot_bytes"] = len(raw)
     report["candidate_snapshot_pinned_for_comparison"] = True

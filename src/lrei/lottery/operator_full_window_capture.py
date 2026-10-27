@@ -30,6 +30,7 @@ def capture_full_window(
     historical: LotteryDataset,
     *,
     captured_at_utc: datetime | None = None,
+    raw_copy: Path | None = None,
 ) -> dict[str, Any]:
     """Download ONCE and verify every candidate draw against those same bytes.
 
@@ -53,6 +54,14 @@ def capture_full_window(
         or compared["compared_draw_count"] != compared["window_draw_count"]
     ):
         raise OfficialCsvAuditError("candidate archive did not match entire source window")
+
+    # Store the exact checked HTTPS response for private audit, never overwrite.
+    # Bad or incomplete window comparisons cannot produce a retained raw copy.
+    if raw_copy is not None:
+        raw_copy.parent.mkdir(parents=True, exist_ok=True)
+        with raw_copy.open("xb") as stream:
+            stream.write(raw)
+
     return {
         "schema_version": 1,
         "status": "first_party_https_full_window_match_HUMAN_REVIEW_REQUIRED",
@@ -73,6 +82,7 @@ def capture_full_window(
         "mismatched_or_missing_draw_count": 0,
         "candidate_history_verified_against_this_response": True,
         "original_response_bytes_published": False,
+        "original_response_bytes_retained_locally": raw_copy is not None,
         "historical_download_provenance_of_user_upload_proven": False,
         "legally_binding_commission_protocol_verified": False,
         "dataset_promotion_approved": False,
@@ -85,6 +95,7 @@ def capture_full_window(
 
 def capture_pinned_candidate(
     candidate_path: Path, *, expected_sha256: str,
+    raw_copy: Path | None = None,
 ) -> dict[str, Any]:
     """Compare one immutable candidate snapshot with a live first-party fetch.
 
@@ -109,7 +120,7 @@ def capture_pinned_candidate(
         snapshot = Path(tmp) / "lottery.csv"
         snapshot.write_bytes(raw)
         historical = CsvDatasetLoader().load(snapshot)
-        report = capture_full_window(historical)
+        report = capture_full_window(historical, raw_copy=raw_copy)
 
     # If the original file changed while the official response was fetched,
     # refuse the report instead of silently accepting mutable local data.
@@ -168,6 +179,7 @@ def main() -> None:
     parser.add_argument("--historical-csv", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--failure-report", type=Path)
+    parser.add_argument("--raw-copy", type=Path, help="Private original response bytes, never overwritten.")
     parser.add_argument(
         "--expected-candidate-sha256",
         help="Optional pinned candidate checksum; required by independent-network procedure.",
@@ -175,6 +187,14 @@ def main() -> None:
     args = parser.parse_args()
     if args.failure_report is not None and args.failure_report == args.report:
         parser.error("--failure-report must differ from --report")
+    if args.raw_copy is not None:
+        reserved = [args.report]
+        if args.failure_report is not None:
+            reserved.append(args.failure_report)
+        if args.raw_copy.resolve() in {p.resolve() for p in reserved}:
+            parser.error("--raw-copy must differ from report paths")
+        if args.raw_copy.exists():
+            parser.exit(2, "Refusing to overwrite existing raw evidence file.\n")
     stage = "load_candidate"
     try:
         if args.expected_candidate_sha256 is not None:
@@ -182,12 +202,13 @@ def main() -> None:
             stage = "pinned_candidate_capture"
             report = capture_pinned_candidate(
                 args.historical_csv, expected_sha256=args.expected_candidate_sha256,
+                raw_copy=args.raw_copy,
             )
         else:
             # Backward-compatible manual CI behavior; input manifest is separate.
             historical = CsvDatasetLoader().load(args.historical_csv)
             stage = "operator_capture_and_compare"
-            report = capture_full_window(historical)
+            report = capture_full_window(historical, raw_copy=args.raw_copy)
         stage = "save_success_report"
         args.report.parent.mkdir(parents=True, exist_ok=True)
         with args.report.open("x", encoding="utf-8") as stream:

@@ -119,7 +119,7 @@ $python = ".\\.venv\\Scripts\\python.exe"
 $diagnosticExit = $LASTEXITCODE
 "diagnostic_exit_code=$diagnosticExit" | Set-Content -Encoding ascii audit-evidence\\operator-network-exit.txt
 
-& $python -m lrei.lottery.operator_full_window_capture --historical-csv ..\\LREI-candidate\\data\\lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\\operator-full-window-report.json --failure-report audit-evidence\\operator-full-window-failure.json 1> audit-evidence\\capture-stdout.txt 2> audit-evidence\\capture-stderr.txt
+& $python -m lrei.lottery.operator_full_window_capture --historical-csv ..\\LREI-candidate\\data\\lottery.csv --expected-candidate-sha256 1ef641629969d3bb490c2fb0f08dc725c2af21055ec264a4fba789d86fbf8fd5 --report audit-evidence\\operator-full-window-report.json --failure-report audit-evidence\\operator-full-window-failure.json --raw-copy audit-evidence\\operator-source-original.csv 1> audit-evidence\\capture-stdout.txt 2> audit-evidence\\capture-stderr.txt
 $captureExit = $LASTEXITCODE
 "capture_exit_code=$captureExit" | Set-Content -Encoding ascii audit-evidence\\operator-capture-exit.txt
 ```
@@ -128,8 +128,14 @@ Capture errors and nonzero exit codes are meaningful evidence. Do not rerun into
 the same report paths: successful and failure reports are intentionally created
 without overwriting existing evidence. Use a new empty evidence directory for
 each further attempt. Retain the input manifest, exact candidate commit and hash,
-network diagnostic, both exit codes, stdout/stderr and either the success report
-or the explicit refusal artifact. Review sensitive logs before sharing; never
+network diagnostic, both exit codes, stdout/stderr, the **private** original
+`operator-source-original.csv` (created only after a full-window match), and
+either the success report or the refusal artifact. Independently hash the saved
+raw file and require it to equal the success report's
+`raw_operator_response_sha256`. The raw file must **not be committed** to GitHub.
+A successful live capture corroborates only that response at the capture time;
+it does **not** prove that an older uploaded file came from the operator or
+that any binding draw protocols were reviewed. Review sensitive logs before sharing; never
 publish ID documents, credentials, authentication tokens or private network data.
 
 A successful *diagnostic* still does not authenticate results. Even a successful

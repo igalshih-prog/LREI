@@ -273,9 +273,13 @@ def test_pinned_candidate_changes_during_network_capture_refused(tmp_path, monke
         return raw(), SOURCE_URL, "text/csv"
 
     monkeypatch.setattr(module, "download_operator_csv", change_source_file_mid_capture)
+    output = tmp_path / "refused-response.csv"
     with pytest.raises(OfficialCsvAuditError, match="changed during operator source capture"):
-        module.capture_pinned_candidate(candidate, expected_sha256=expected)
+        module.capture_pinned_candidate(
+            candidate, expected_sha256=expected, raw_copy=output,
+        )
     assert len(calls) == 1
+    assert not output.exists()
 
 
 def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
@@ -292,6 +296,7 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
     monkeypatch.setattr(module, "download_operator_csv", change_candidate)
     success = tmp_path / "success.json"
     failure = tmp_path / "failure.json"
+    output = tmp_path / "refused-response.csv"
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -300,12 +305,14 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
             "--report", str(success),
             "--failure-report", str(failure),
             "--expected-candidate-sha256", expected,
+            "--raw-copy", str(output),
         ],
     )
     with pytest.raises(SystemExit) as exc:
         module.main()
     assert exc.value.code == 2
     assert not success.exists()
+    assert not output.exists()
     rejected = json.loads(failure.read_text(encoding="utf-8"))
     assert rejected["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
     assert rejected["failure_code"] == "candidate_changed_during_capture"
@@ -324,3 +331,88 @@ def test_pinned_capture_refuses_oversize_sparse_candidate_before_network(
     with pytest.raises(OfficialCsvAuditError, match="1–8 MiB"):
         module.capture_pinned_candidate(candidate, expected_sha256="0" * 64)
     assert calls == []
+
+
+def test_cli_raw_response_copy_is_exact_and_cannot_be_overwritten(tmp_path, monkeypatch):
+    import hashlib
+
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    report_path = tmp_path / "evidence" / "success.json"
+    raw_path = tmp_path / "evidence" / "operator-source-original.csv"
+    monkeypatch.setattr(
+        "sys.argv", [
+            "operator_full_window_capture", "--historical-csv", str(candidate),
+            "--report", str(report_path), "--raw-copy", str(raw_path),
+        ],
+    )
+    module.main()
+    assert calls == [True]
+    assert raw_path.read_bytes() == raw()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["raw_operator_response_sha256"] == hashlib.sha256(raw()).hexdigest()
+    assert report["original_response_bytes_retained_locally"] is True
+    assert report["original_response_bytes_published"] is False
+    assert report["dataset_promotion_approved"] is False
+
+    with pytest.raises(SystemExit) as again:
+        module.main()
+    assert again.value.code == 2
+    assert calls == [True]
+    assert raw_path.read_bytes() == raw()
+
+
+def test_cli_refuses_raw_path_alias_to_report_before_network(tmp_path, monkeypatch):
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    collision = tmp_path / "report.json"
+    monkeypatch.setattr(
+        "sys.argv", [
+            "operator_full_window_capture", "--historical-csv", str(candidate),
+            "--report", str(collision), "--raw-copy", str(collision),
+        ],
+    )
+    with pytest.raises(SystemExit) as refused:
+        module.main()
+    assert refused.value.code == 2
+    assert calls == []
+    assert not collision.exists()
+
+
+def test_mismatched_source_does_not_write_raw_copy(tmp_path, monkeypatch):
+    candidate = local_candidate_csv(tmp_path)
+    fake_capture(monkeypatch, raw([ROWS[0], ROWS[2]]))
+    result = tmp_path / "success.json"
+    failure = tmp_path / "failure.json"
+    raw_path = tmp_path / "operator-source-original.csv"
+    monkeypatch.setattr(
+        "sys.argv", [
+            "operator_full_window_capture", "--historical-csv", str(candidate),
+            "--report", str(result), "--failure-report", str(failure),
+            "--raw-copy", str(raw_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as refused:
+        module.main()
+    assert refused.value.code == 2
+    assert not raw_path.exists()
+    assert not result.exists()
+    assert json.loads(failure.read_text(encoding="utf-8"))["dataset_promotion_approved"] is False
+
+
+def test_pinned_capture_private_raw_retention_is_not_upload_origin_proof(tmp_path, monkeypatch):
+    import hashlib
+
+    candidate = local_candidate_csv(tmp_path)
+    calls = fake_capture(monkeypatch)
+    raw_path = tmp_path / "operator.csv"
+    report = module.capture_pinned_candidate(
+        candidate,
+        expected_sha256=hashlib.sha256(candidate.read_bytes()).hexdigest(),
+        raw_copy=raw_path,
+    )
+    assert calls == [True]
+    assert raw_path.read_bytes() == raw()
+    assert report["original_response_bytes_retained_locally"] is True
+    assert report["historical_download_provenance_of_user_upload_proven"] is False
+    assert report["dataset_promotion_approved"] is False

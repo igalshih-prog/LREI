@@ -12,10 +12,14 @@ The percentages are described by the operator as **approximate**.
 - Special boosted draw **#3953**: 2.7%, 2.4%, 3.21%, 6.45%, 10.5%.
   Source: 5 August 2026 draw-specific notice
   https://www.pais.co.il/news/news.aspx?newsId=3133 .
-- The *only* eligible JSON observations are existing
-  `data/prize_observations/3949.json`–`3954.json` with matching
-  eighth-tier amounts and an explicit notice for #3953. All other draws
-  and unreviewed rules fail closed.
+- The *only* eligible JSON observations are exact matches to the six
+  checked-in `data/prize_observations/3949.json`–`3954.json` records, with
+  matching eighth-tier amounts and an explicit notice for #3953. The tool
+  compares a canonical digest of the caller-provided record against the
+  matching **local repository fixture** and refuses modified counts or
+  payouts. It also refuses use when those repository fixtures are missing.
+  This is local content identity, **not official-source attestation**.
+  All other draws and unreviewed rules fail closed.
 
 | Draw | Regime | Median of five approximate indicators, NIS |
 |---|---|---:|

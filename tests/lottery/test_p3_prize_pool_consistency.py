@@ -88,3 +88,25 @@ def test_bonus_draw_third_tier_arithmetic_is_not_sales():
     assert third["implied_receipts_indicator_ils"] == 36754667
     assert result["reviewed_rule_regime"] == "bonus_150pct"
     assert result["indicator_is_operator_verified_sales"] is False
+
+
+def test_structurally_valid_winner_count_edit_is_refused():
+    record = observation(3954)
+    record["games"]["regular"][2]["winning_entries"] += 1
+    with pytest.raises(PrizeDataError, match="differs from reviewed repository fixture"):
+        prize_pool_consistency(record)
+
+
+def test_structurally_valid_payout_edit_is_refused():
+    record = observation(3954)
+    record["games"]["double"][2]["payout_per_winning_entry_ils"] += 2
+    with pytest.raises(PrizeDataError, match="differs from reviewed repository fixture"):
+        prize_pool_consistency(record)
+
+
+def test_missing_reviewed_fixture_fails_closed(monkeypatch, tmp_path):
+    from lrei.lottery import p3_prize_pool_consistency as module
+
+    monkeypatch.setattr(module, "OBSERVATION_ROOT", tmp_path / "missing")
+    with pytest.raises(PrizeDataError, match="invalid or unreadable"):
+        module.prize_pool_consistency(observation(3954))

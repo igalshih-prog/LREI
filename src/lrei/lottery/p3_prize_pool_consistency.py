@@ -6,9 +6,13 @@ player combinations, source provenance or monetary expected value.
 from __future__ import annotations
 
 from fractions import Fraction
+from pathlib import Path
 from typing import Any
 
-from .prize_data import PrizeDataError, validate_prize_observation
+from .prize_data import (
+    PrizeDataError, canonical_sha256, load_observation,
+    validate_prize_observation,
+)
 
 # Strict allowlist, never generalize the 2026 draw-specific regimes to
 # unreviewed rows. Details and operator notice URLs in accompanying docs.
@@ -29,6 +33,9 @@ RATES = {
     ),
 }
 EIGHTH_TIER_PAYOUTS = {"normal": (10, 20), "bonus_150pct": (15, 30)}
+# Fail closed if the research repository's original six fixtures are absent.
+# We do not trust caller-provided data merely because its draw ID is known.
+OBSERVATION_ROOT = Path(__file__).resolve().parents[3] / "data" / "prize_observations"
 
 
 def prize_pool_consistency(observation: Any) -> dict[str, Any]:
@@ -58,6 +65,13 @@ def prize_pool_consistency(observation: Any) -> dict[str, Any]:
     )
     if eighth != EIGHTH_TIER_PAYOUTS[regime]:
         raise PrizeDataError("tier-eight payments contradict reviewed regime")
+
+    # Enforce the documented six-fixture scope, not merely their draw IDs.
+    # Schema-valid but altered payout/count data must not produce indicators.
+    # This establishes local fixture equality only, NOT official provenance.
+    original = load_observation(OBSERVATION_ROOT / f"{draw}.json")
+    if canonical_sha256(row) != canonical_sha256(original):
+        raise PrizeDataError("prize observation differs from reviewed repository fixture")
 
     indicators: list[dict[str, Any]] = []
     for idx, rate in zip(range(2, 7), RATES[regime]):

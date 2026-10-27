@@ -25,9 +25,18 @@ git clone -c core.autocrlf=false https://github.com/igalshih-prog/LREI.git
 Set-Location LREI
 # Preserve raw committed candidate CSV bytes on Windows (avoid checkout CRLF conversion).
 git config core.autocrlf false
-git fetch origin main data/lotto-3976-user-upload-quarantine-20261020
+# Fetch the current quarantined PR #44 HEAD explicitly, not an obsolete
+# #3976 data branch. The ref is for obtaining candidate BYTES only.
+git fetch origin main
+git fetch origin +refs/pull/44/head:refs/remotes/origin/pr-44-source-candidate
 git checkout main
 git pull --ff-only origin main
+
+# Refuse an unexpected PR revision: this procedure is pinned to one commit.
+$candidateHead = git rev-parse refs/remotes/origin/pr-44-source-candidate
+if ($LASTEXITCODE -ne 0 -or $candidateHead -ne "83285d80fed17fae87a39ab13fe83b087aeb0593") {
+    throw "PR #44 changed; STOP and re-review commit, CSV hash and source policy."
+}
 
 # Create a SEPARATE detached data checkout; do not execute its Python files.
 git worktree add --detach ..\LREI-candidate 83285d80fed17fae87a39ab13fe83b087aeb0593

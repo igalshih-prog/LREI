@@ -273,9 +273,13 @@ def test_pinned_candidate_changes_during_network_capture_refused(tmp_path, monke
         return raw(), SOURCE_URL, "text/csv"
 
     monkeypatch.setattr(module, "download_operator_csv", change_source_file_mid_capture)
+    output = tmp_path / "refused-response.csv"
     with pytest.raises(OfficialCsvAuditError, match="changed during operator source capture"):
-        module.capture_pinned_candidate(candidate, expected_sha256=expected)
+        module.capture_pinned_candidate(
+            candidate, expected_sha256=expected, raw_copy=output,
+        )
     assert len(calls) == 1
+    assert not output.exists()
 
 
 def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
@@ -292,6 +296,7 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
     monkeypatch.setattr(module, "download_operator_csv", change_candidate)
     success = tmp_path / "success.json"
     failure = tmp_path / "failure.json"
+    output = tmp_path / "refused-response.csv"
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -300,12 +305,14 @@ def test_pinned_cli_does_not_emit_success_if_candidate_modified_mid_capture(
             "--report", str(success),
             "--failure-report", str(failure),
             "--expected-candidate-sha256", expected,
+            "--raw-copy", str(output),
         ],
     )
     with pytest.raises(SystemExit) as exc:
         module.main()
     assert exc.value.code == 2
     assert not success.exists()
+    assert not output.exists()
     rejected = json.loads(failure.read_text(encoding="utf-8"))
     assert rejected["status"] == "capture_refused_NO_SOURCE_ATTESTATION"
     assert rejected["failure_code"] == "candidate_changed_during_capture"

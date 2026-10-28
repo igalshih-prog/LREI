@@ -75,6 +75,9 @@ def reconcile_uploaded_archive(
 
     first_id, last_id = next(iter(expected)), next(reversed(expected))
     observed: dict[int, tuple[str, tuple[int, ...], int]] = {}
+    # Historic draw numbers in the 1960s can be numerically larger than
+    # current IDs, so date must ALSO be current before declaring a later draw.
+    newer_source_ids: set[int] = set()
     source_records = 0
     try:
         reader = csv.reader(io.StringIO(decoded, newline=""), strict=True)
@@ -89,6 +92,17 @@ def reconcile_uploaded_archive(
                 raise OfficialCsvAuditError(f"archive line {line_no}: invalid ID or column count")
             draw_id = int(row[0].strip())
             if draw_id not in expected:
+                if draw_id > last_id:
+                    try:
+                        outside_date = datetime.strptime(
+                            row[1].strip(), "%d/%m/%Y"
+                        ).date()
+                    except ValueError as exc:
+                        raise OfficialCsvAuditError(
+                            f"archive line {line_no}: invalid date for higher draw ID"
+                        ) from exc
+                    if outside_date >= previous_date:
+                        newer_source_ids.add(draw_id)
                 continue
             if draw_id in observed:
                 raise OfficialCsvAuditError(f"duplicate draw {draw_id} in supplied archive")
@@ -129,6 +143,10 @@ def reconcile_uploaded_archive(
         "raw_source_sha256": hashlib.sha256(raw).hexdigest(),
         "raw_source_bytes": len(raw),
         "source_record_count": source_records,
+        "source_newer_draw_count": len(newer_source_ids),
+        "source_latest_newer_draw_id": (
+            max(newer_source_ids) if newer_source_ids else None
+        ),
         "window_first_draw_id": first_id,
         "window_last_draw_id": last_id,
         "window_draw_count": len(expected),

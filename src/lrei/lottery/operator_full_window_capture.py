@@ -84,6 +84,8 @@ def capture_full_window(
         "window_first_draw_id": compared["window_first_draw_id"],
         "window_last_draw_id": compared["window_last_draw_id"],
         "source_record_count": compared["source_record_count"],
+        "source_newer_draw_count": compared["source_newer_draw_count"],
+        "source_latest_newer_draw_id": compared["source_latest_newer_draw_id"],
         "window_draw_count": compared["window_draw_count"],
         "compared_draw_count": compared["compared_draw_count"],
         "mismatched_or_missing_draw_count": 0,

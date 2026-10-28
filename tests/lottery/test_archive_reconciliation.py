@@ -118,7 +118,7 @@ def test_older_1968_rules_not_retroactively_rejected():
 
 
 def test_newer_draw_is_reported_offline_even_when_all_expected_rows_match():
-    newer = "3975,16/10/2026,02,06,08,12,19,33,3,0,0,\\n"
+    newer = "3975,16/10/2026,02,06,08,12,19,33,3,0,0,\n"
     result = _audit(_raw([newer, ROW_3974, ROW_3973, ROW_3972, OLD_ROW]))
     assert result["compared_draw_count"] == 3
     assert result["mismatched_or_missing_draw_count"] == 0
@@ -128,7 +128,7 @@ def test_newer_draw_is_reported_offline_even_when_all_expected_rows_match():
 
 
 def test_new_draw_same_day_is_still_detected():
-    new = "3975,13/10/2026,02,06,08,12,19,33,3,0,0,\\n"
+    new = "3975,13/10/2026,02,06,08,12,19,33,3,0,0,\n"
     result = _audit(_raw([new, ROW_3974, ROW_3973, ROW_3972]))
     assert result["source_newer_draw_count"] == 1
 

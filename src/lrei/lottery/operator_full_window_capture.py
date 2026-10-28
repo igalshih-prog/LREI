@@ -49,6 +49,13 @@ def capture_full_window(
     compared = reconcile_uploaded_archive(
         raw, historical, reviewed_at_utc=captured,
     )
+    # A window can match perfectly while still being out-of-date, because
+    # source CSVs also contain newer rows outside the candidate window.
+    # Refuse such an outdated candidate before saving final raw evidence.
+    if compared["source_newer_draw_count"]:
+        raise OfficialCsvAuditError(
+            "operator archive contains newer draw than pinned candidate"
+        )
     if (
         compared["mismatched_or_missing_draw_count"] != 0
         or compared["compared_draw_count"] != compared["window_draw_count"]
@@ -77,6 +84,8 @@ def capture_full_window(
         "window_first_draw_id": compared["window_first_draw_id"],
         "window_last_draw_id": compared["window_last_draw_id"],
         "source_record_count": compared["source_record_count"],
+        "source_newer_draw_count": compared["source_newer_draw_count"],
+        "source_latest_newer_draw_id": compared["source_latest_newer_draw_id"],
         "window_draw_count": compared["window_draw_count"],
         "compared_draw_count": compared["compared_draw_count"],
         "mismatched_or_missing_draw_count": 0,
@@ -149,6 +158,11 @@ def _failure_code(stage: str, exc: Exception) -> str:
             return "candidate_checksum_mismatch"
         if str(exc) == "candidate CSV must contain 1–8 MiB of bytes":
             return "candidate_size_rejected"
+    if (
+        isinstance(exc, OfficialCsvAuditError)
+        and str(exc) == "operator archive contains newer draw than pinned candidate"
+    ):
+        return "candidate_stale_vs_operator_source"
     if isinstance(exc, OfficialCsvAuditError) and "first-party CSV download unavailable" in str(exc):
         if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
             return "first_party_download_timeout"

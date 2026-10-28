@@ -46,6 +46,8 @@ def test_full_window_reconciles_without_attributing_source_origin():
     raw = _raw()
     report = _audit(raw)
     assert report["source_record_count"] == 4
+    assert report["source_newer_draw_count"] == 0
+    assert report["source_latest_newer_draw_id"] is None
     assert report["window_first_draw_id"] == 3972
     assert report["window_last_draw_id"] == 3974
     assert report["window_draw_count"] == 3
@@ -113,3 +115,25 @@ def test_older_1968_rules_not_retroactively_rejected():
     result = _audit(raw)
     assert result["compared_draw_count"] == 3
     assert result["source_record_count"] == 4
+
+
+def test_newer_draw_is_reported_offline_even_when_all_expected_rows_match():
+    newer = "3975,16/10/2026,02,06,08,12,19,33,3,0,0,\n"
+    result = _audit(_raw([newer, ROW_3974, ROW_3973, ROW_3972, OLD_ROW]))
+    assert result["compared_draw_count"] == 3
+    assert result["mismatched_or_missing_draw_count"] == 0
+    assert result["source_newer_draw_count"] == 1
+    assert result["source_latest_newer_draw_id"] == 3975
+    assert result["download_origin_independently_verified"] is False
+
+
+def test_new_draw_same_day_is_still_detected():
+    new = "3975,13/10/2026,02,06,08,12,19,33,3,0,0,\n"
+    result = _audit(_raw([new, ROW_3974, ROW_3973, ROW_3972]))
+    assert result["source_newer_draw_count"] == 1
+
+
+def test_1968_legacy_id_numerically_above_current_is_not_a_new_draw():
+    result = _audit(_raw([OLD_ROW, ROW_3972, ROW_3973, ROW_3974]))
+    assert result["source_newer_draw_count"] == 0
+    assert result["source_latest_newer_draw_id"] is None

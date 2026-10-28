@@ -2,6 +2,17 @@
 
 **Status: diagnostic/research only. NO PLAY.** This procedure does not approve dataset promotion or prove that any user-uploaded historical file originally came from the operator. Official results may require legally binding draw protocols and human review.
 
+**28 October 2026 freshness warning:** the pinned historical PR #44 comparison
+snapshot stops at draw **#3978**, while a further draw **#3979** dated
+27 October has been reported by secondary sources. The exact-commit/hash
+commands in this guide reproduce the **older candidate only**; they do
+not constitute a current up-to-date dataset certification. The checker
+now explicitly rejects a pinned candidate if its freshly downloaded
+operator CSV contains later current-format draw IDs/dates, even if all
+older rows compare perfectly. Obtain a freshly reviewed replacement
+candidate using trusted operator bytes before asserting recency.
+Do not quietly substitute third-party download content or remove this gate.
+
 ## Why this procedure exists
 
 In GitHub Actions workflow run [#39828460962](https://github.com/igalshih-prog/LREI/actions/runs/39828460962), DNS for `www.pais.co.il` succeeded but TCP/443 timed out. An additional [Windows-hosted attempt #40220138736](https://github.com/igalshih-prog/LREI/actions/runs/40220138736) on 25 Oct 2026 pinned the candidate CSV hash successfully, then DNS succeeded while TCP/443 and the direct first-party download timed out. Its [real refusal/diagnostic artifact](https://github.com/igalshih-prog/LREI/actions/runs/40220138736/artifacts/12608447480) contains no source-attestation report. These failures **do not prove** the operator blocked GitHub's IP ranges. More GitHub-hosted re-runs do not establish source provenance.
@@ -105,7 +116,15 @@ The exact source endpoint is `https://www.pais.co.il/Lotto/lotto_resultsDownload
 - **Exit 2 and failure JSON:** refused/unsupported; no source attestation. Preserve the files and do not merge.
 - **No JSON:** check the CLI error and record why even a failure artifact could not be produced. Do not generate fake success evidence.
 
-After the capture, accept only an actual `capture_exit_code=0` **and** a real `operator-full-window-report.json` with last ID **3978**, 1,146 compared rows, zero mismatches, and `dataset_promotion_approved=false` for **research corroboration only**. A workflow or diagnostic success flag alone is not evidence of a downloaded operator CSV. Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
+For historical reproducibility, the pinned PR #44 snapshot still expects
+last ID **3978** and 1,146 compared rows. However, if the live operator
+response includes a later current-format draw (for example #3979),
+the checker MUST refuse with `candidate_stale_vs_operator_source`,
+exit 2, and no success or raw-copy artifact. **Do not interpret a match to
+older rows as an up-to-date source window**. For a newly reviewed candidate,
+accept only an actual `capture_exit_code=0`, an equal source/candidate
+latest draw, zero mismatches and `dataset_promotion_approved=false`
+for **research corroboration only**. A workflow or diagnostic success flag alone is not evidence of a downloaded operator CSV. Keep the log, offline input manifest, candidate CSV SHA-256, checker version, and any subsequent JSON artifacts together. Do not publish ID documents or credentials.
 
 ## Preserve independent-network evidence (PowerShell)
 

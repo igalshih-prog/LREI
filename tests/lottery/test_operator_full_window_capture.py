@@ -48,6 +48,7 @@ def test_one_tls_operator_capture_completes_all_rows_but_does_not_approve_releas
     report = module.capture_full_window(history(), captured_at_utc=AT)
     assert len(calls) == 1
     assert report["source_record_count"] == 3
+    assert report["source_newer_draw_count"] == 0
     assert report["window_first_draw_id"] == 8000
     assert report["window_last_draw_id"] == 8002
     assert report["window_draw_count"] == report["compared_draw_count"] == 3
@@ -415,4 +416,48 @@ def test_pinned_capture_private_raw_retention_is_not_upload_origin_proof(tmp_pat
     assert raw_path.read_bytes() == raw()
     assert report["original_response_bytes_retained_locally"] is True
     assert report["historical_download_provenance_of_user_upload_proven"] is False
+    assert report["dataset_promotion_approved"] is False
+
+
+def test_newer_operator_draw_refuses_seemingly_complete_old_candidate(monkeypatch, tmp_path):
+    newer = "8003,06/01/2026,4,7,10,13,16,19,4"
+    calls = fake_capture(monkeypatch, raw([*ROWS, newer]))
+    private_response = tmp_path / "must-not-exist.csv"
+    with pytest.raises(OfficialCsvAuditError, match="newer draw"):
+        module.capture_full_window(
+            history(), captured_at_utc=AT, raw_copy=private_response
+        )
+    assert calls == [True]
+    assert not private_response.exists()
+
+
+def test_pinned_stale_candidate_exits_two_with_distinct_failure_code(
+    monkeypatch, tmp_path
+):
+    import hashlib
+    newer = "8003,06/01/2026,4,7,10,13,16,19,4"
+    calls = fake_capture(monkeypatch, raw([*ROWS, newer]))
+    candidate = local_candidate_csv(tmp_path)
+    success = tmp_path / "success.json"
+    failure = tmp_path / "failure.json"
+    raw_path = tmp_path / "operator-original.csv"
+    monkeypatch.setattr(
+        "sys.argv", [
+            "operator_full_window_capture",
+            "--historical-csv", str(candidate),
+            "--expected-candidate-sha256",
+            hashlib.sha256(candidate.read_bytes()).hexdigest(),
+            "--report", str(success), "--failure-report", str(failure),
+            "--raw-copy", str(raw_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as refused:
+        module.main()
+    assert refused.value.code == 2
+    assert calls == [True]
+    assert not success.exists()
+    assert not raw_path.exists()
+    report = json.loads(failure.read_text(encoding="utf-8"))
+    assert report["failure_code"] == "candidate_stale_vs_operator_source"
+    assert report["source_provenance_verified"] is False
     assert report["dataset_promotion_approved"] is False

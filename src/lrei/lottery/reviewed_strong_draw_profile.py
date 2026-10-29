@@ -87,10 +87,22 @@ def summarize_conditional_strong_draws(audit: dict[str, Any]) -> dict[str, Any]:
                     or no < 0
                 ):
                     raise ValueError("invalid winning-entry counts")
-                # Require exact count-derived fraction, not a detached figure.
-                expected_rate = yes / (yes + no) if yes + no else None
-                if rate != expected_rate:
-                    raise ValueError("strong fraction disagrees with entry counts")
+                # Require count-derived fraction, denominator and difference.
+                # An edited JSON field must never silently contaminate results.
+                expected_total = yes + no
+                expected_rate = yes / expected_total if expected_total else None
+                expected_difference = (
+                    100 * (expected_rate - 1 / 7)
+                    if expected_rate is not None
+                    else None
+                )
+                if (
+                    cell.get("observed_entries_in_match_class") != expected_total
+                    or rate != expected_rate
+                    or cell.get("difference_from_uniform_percentage_points")
+                    != expected_difference
+                ):
+                    raise ValueError("inconsistent count-derived strong statistics")
                 if rate is not None:
                     buckets[(product, k, strong)].append(rate)
 

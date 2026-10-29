@@ -170,10 +170,51 @@ def summarize_conditional_strong_draws(audit: dict[str, Any]) -> dict[str, Any]:
 
 
 def summarize_reviewed_strong_draws(directory: Path) -> dict[str, Any]:
-    """Read source-gated reviewed files; never touch candidate lottery CSV."""
-    return summarize_conditional_strong_draws(
+    """Read six reviewed source files and retain *descriptive* prize context.
+
+    Advertised first prizes are not ticket sales, payouts, or a calibration
+    denominator. A special-rule notice is a confounder, not model evidence.
+    """
+    result = summarize_conditional_strong_draws(
         audit_reviewed_strong_observations(directory)
     )
+    advertised_by_draw: dict[str, dict[str, Any]] = {}
+    for draw_id in REVIEWED_DRAWS:
+        raw = json.loads((directory / f"{draw_id}.json").read_text("utf-8"))
+        if (
+            not isinstance(raw, dict)
+            or raw.get("draw_id") != draw_id
+            or raw.get("source_status")
+            != "operator_site_display_only_not_binding"
+        ):
+            raise ValueError("reviewed draw context mismatch")
+        prizes = raw.get("advertised_prizes_ils")
+        expected = {
+            "regular_first", "double_first", "regular_second", "double_second"
+        }
+        if (
+            not isinstance(prizes, dict)
+            or set(prizes) != expected
+            or any(
+                type(prizes[key]) is not int or prizes[key] < 0
+                for key in expected
+            )
+        ):
+            raise ValueError("advertised-prize context invalid")
+        notice = raw.get("special_rules_note")
+        if notice is not None and (
+            not isinstance(notice, str) or not notice.strip()
+        ):
+            raise ValueError("special-rule context invalid")
+        advertised_by_draw[str(draw_id)] = {
+            "advertised_regular_first_ils": prizes["regular_first"],
+            "advertised_double_first_ils": prizes["double_first"],
+            "special_prize_rule_notice_present": notice is not None,
+        }
+    result["advertised_prize_context_by_draw"] = advertised_by_draw
+    result["jackpot_and_rule_confounding_not_adjusted"] = True
+    result["advertised_prizes_not_verified_sales_or_realized_payouts"] = True
+    return result
 
 
 def main() -> None:

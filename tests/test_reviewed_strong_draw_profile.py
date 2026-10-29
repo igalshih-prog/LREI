@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 
 import pytest
@@ -142,3 +143,39 @@ def test_corrupted_audit_rejected(mutation: str) -> None:
         audit["draws"][0]["drawn_strong_number"] = True
     with pytest.raises(ValueError):
         summarize_conditional_strong_draws(audit)
+
+
+def test_advertised_prize_context_is_confounded_not_financial_inference() -> None:
+    report = summarize_reviewed_strong_draws(DATA)
+    context = report["advertised_prize_context_by_draw"]
+    assert context["3951"]["advertised_regular_first_ils"] == 35_000_000
+    assert context["3952"]["advertised_regular_first_ils"] == 40_000_000
+    assert context["3953"]["advertised_regular_first_ils"] == 40_000_000
+    assert context["3954"]["advertised_regular_first_ils"] == 5_000_000
+    assert context["3953"]["special_prize_rule_notice_present"] is True
+    assert context["3954"]["special_prize_rule_notice_present"] is False
+    assert report["jackpot_and_rule_confounding_not_adjusted"] is True
+    assert report["advertised_prizes_not_verified_sales_or_realized_payouts"] is True
+    assert report["authorized_for_play"] is False
+
+
+@pytest.mark.parametrize("mutation", ["prize", "notice", "source", "draw_id"])
+def test_corrupted_advertised_context_fails_closed(
+    tmp_path: Path, mutation: str
+) -> None:
+    for draw_id in range(3949, 3955):
+        data = json.loads((DATA / f"{draw_id}.json").read_text("utf-8"))
+        if draw_id == 3952:
+            if mutation == "prize":
+                data["advertised_prizes_ils"]["regular_first"] = True
+            elif mutation == "notice":
+                data["special_rules_note"] = 16
+            elif mutation == "source":
+                data["source_status"] = "unverified_mirror"
+            else:
+                data["draw_id"] = 3953
+        (tmp_path / f"{draw_id}.json").write_text(
+            json.dumps(data), encoding="utf-8"
+        )
+    with pytest.raises(ValueError):
+        summarize_reviewed_strong_draws(tmp_path)

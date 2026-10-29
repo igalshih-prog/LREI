@@ -14,7 +14,7 @@ Date: 2026-10-29. **Status: exploratory / NO PLAY.** This is an operationalizati
 
 Fix the realized draw's six main numbers and strong number. Under the strict *independent, uniform* strong-choice null, among entries with exactly `k` main-number matches, the fraction also having the strong number is
 
-`p_k = W[k+strong] / (W[k+strong] + W[k]) = 1/7`, for `k in {3,4,5,6}`.
+`observed_fraction_k = W[k+strong] / (W[k+strong] + W[k])`, while `P(strong match | exactly k main matches) = 1/7` **under the uniform-independent null**, for `k in {3,4,5,6}`. The observed fraction need not equal 1/7 in a realized draw.
 
 This cancels the total entry denominator **as a reference identity**. It does **not** cancel possible manual choice biases, duplicated tickets, conditional main/strong correlations, product effects, source errors, and dependence between entries. Sampling-based confidence intervals would require assumptions about these mechanisms that we have **not validated**, so the first-stage audit displays descriptive fractions only, with no significance or winner-popularity ranking.
 

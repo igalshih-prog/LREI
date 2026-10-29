@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "protocol_id": "p3-strong-choice-forward-screen-v1",
+  "protocol_date_israel": "2026-10-29",
+  "status": "protocol_frozen_for_future_screening_NOT_REGISTERED_INDEPENDENTLY",
+  "historical_analysis": {
+    "exploratory_reviewed_draw_ids": [
+      3949,
+      3950,
+      3951,
+      3952,
+      3953,
+      3954
+    ],
+    "known_historical_result_archive_latest_candidate_draw_id": 3978,
+    "secondary_reported_draw_already_public_before_freeze": 3979,
+    "hypothesis_selected_with_knowledge_of_2026_exploratory_results": true
+  },
+  "forward_entry_gate": {
+    "minimum_draw_id": 3980,
+    "minimum_draw_date_israel": "2026-10-30",
+    "human_independent_source_review_required": true,
+    "raw_first_party_source_sha256_required": true,
+    "official_binding_protocol_review_required": true,
+    "source_validation_implemented_by_this_protocol": false
+  },
+  "primary_descriptive_endpoint": {
+    "product": "regular",
+    "main_matches_exactly": 3,
+    "drawn_strong_comparison": [
+      4,
+      1
+    ],
+    "direction": "strong_4_greater_than_strong_1",
+    "statistic": "difference_of_unweighted_per_draw_strong_match_fraction_means",
+    "group_minimum_unique_draws": 20,
+    "uniform_independent_reference_strong_fraction": 0.14285714285714285,
+    "include_all_eligible_valid_draws": true,
+    "missing_prize_tiers_not_imputed": true
+  },
+  "secondary_exploratory_only": {
+    "products": [
+      "regular",
+      "double"
+    ],
+    "exact_main_matches": [
+      3,
+      4,
+      5
+    ],
+    "strong_numbers": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "jackpot_regime_stratification_only_if_sufficient_source_verified_data": true
+  },
+  "required_research_caveats": {
+    "draws_may_be_time_correlated": true,
+    "regular_double_entry_independence_not_proven": true,
+    "player_choice_distribution_unknown": true,
+    "manual_vs_machine_entry_share_unknown": true,
+    "hypothesis_from_historical_and_inspected_2026_data": true,
+    "not_proof_of_prize_sharing_advantage": true
+  },
+  "claims_authorized": {
+    "statistical_significance": false,
+    "player_popularity_verified": false,
+    "source_provenance_verified": false,
+    "expected_value_verified": false,
+    "authorized_for_play": false
+  }
+}

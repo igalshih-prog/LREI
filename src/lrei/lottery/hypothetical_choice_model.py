@@ -122,7 +122,7 @@ def hypothetical_player_mix_profile(
             ),
         }
     return {
-        "status": "hypothetical_unnormalized_player_behavior_sensitivity_only",
+        "status": "hypothetical_player_behavior_sensitivity_only",
         "assumed_manual_fraction_all_entries": float(fraction),
         "tier_probability_profile": cells,
         "source_data_used_for_fitting": False,

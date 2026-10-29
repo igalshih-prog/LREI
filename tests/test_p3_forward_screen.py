@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -32,7 +33,9 @@ def _synthetic(draw_id: int = 3980, strong: int = 4) -> dict:
     """FAKE fixture for testing validation only, NEVER research evidence."""
     return {
         "draw_id": draw_id,
-        "draw_date": "2026-10-31",
+        "draw_date": (
+            date(2026, 10, 31) + timedelta(days=draw_id - 3980)
+        ).isoformat(),
         "main_numbers": [1, 4, 8, 17, 22, 35],
         "strong_number": strong,
         "source_status": "operator_site_display_only_not_binding",
@@ -114,7 +117,7 @@ def test_prior_inspected_real_draw_is_not_a_prospective_observation() -> None:
     [
         "old_id", "old_date", "reordered", "duplicate", "bad_strong",
         "bad_main", "duplicate_main", "forged_source", "bad_url",
-        "missing_product", "missing_tier", "duplicate_tier",
+        "missing_product", "missing_tier", "duplicate_tier", "duplicate_date",
         "negative_winners", "bool_winners",
     ],
 )
@@ -145,6 +148,8 @@ def test_corrupted_or_leaky_synthetic_records_rejected(change: str) -> None:
         first["games"]["double"].pop()
     elif change == "duplicate_tier":
         first["games"]["double"][0]["tier"] = "3"
+    elif change == "duplicate_date":
+        records[1]["draw_date"] = first["draw_date"]
     elif change == "negative_winners":
         first["games"]["regular"][0]["winning_entries"] = -4
     elif change == "bool_winners":

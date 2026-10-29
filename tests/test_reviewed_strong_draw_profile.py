@@ -92,6 +92,8 @@ def test_zero_denominator_does_not_turn_into_zero_fraction() -> None:
     cell["strong_winning_entries"] = 0
     cell["without_strong_winning_entries"] = 0
     cell["observed_strong_fraction"] = None
+    cell["observed_entries_in_match_class"] = 0
+    cell["difference_from_uniform_percentage_points"] = None
     summary = summarize_conditional_strong_draws(audit)
     assert summary["per_draw_unweighted_means_by_product_k_and_strong"][
         "regular"
@@ -101,7 +103,8 @@ def test_zero_denominator_does_not_turn_into_zero_fraction() -> None:
 @pytest.mark.parametrize(
     "mutation",
     ["top_status", "source", "authorization", "missing", "duplicate",
-     "date", "fraction", "negative", "missing_product", "bad_strong"],
+     "date", "fraction", "negative", "denominator", "difference",
+     "missing_product", "bad_strong"],
 )
 def test_corrupted_audit_rejected(mutation: str) -> None:
     audit = audit_reviewed_strong_observations(DATA)
@@ -125,6 +128,14 @@ def test_corrupted_audit_rejected(mutation: str) -> None:
         audit["draws"][0]["by_product_and_main_matches"]["regular"]["3"][
             "strong_winning_entries"
         ] = -1
+    elif mutation == "denominator":
+        audit["draws"][0]["by_product_and_main_matches"]["regular"]["3"][
+            "observed_entries_in_match_class"
+        ] = 0
+    elif mutation == "difference":
+        audit["draws"][0]["by_product_and_main_matches"]["regular"]["3"][
+            "difference_from_uniform_percentage_points"
+        ] = 900
     elif mutation == "missing_product":
         del audit["draws"][0]["by_product_and_main_matches"]["double"]
     else:

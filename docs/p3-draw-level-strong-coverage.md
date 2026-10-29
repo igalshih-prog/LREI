@@ -44,6 +44,21 @@ For strong **4** compared with the four draws with strong **6 or 7**, the explor
 | 3 | +1.08 | +1.00 |
 | 4 | +1.99 | +1.00 |
 
+## Existing advertised-prize and special-regime confounders
+
+The same six operator-display observations also contain **advertised** top-prize figures (not actual sales, payouts, or the number of manual tickets). They vary substantially:
+
+| Draw | Drawn strong | Advertised regular first prize (ILS) | Special rule noted |
+| ---: | ---: | ---: | :--- |
+| 3949 | 6 | 30,000,000 | no |
+| 3950 | 7 | 32,000,000 | no |
+| 3951 | 4 | 35,000,000 | no |
+| 3952 | 4 | 40,000,000 | no |
+| 3953 | 7 | 40,000,000 | **yes**: secondary-prize allocation notice |
+| 3954 | 6 | 5,000,000 | no |
+
+This difference in jackpot regimes may itself affect participation and selected-number distributions, as the historical paper suggests; the announced secondary-prize regime for #3953 adds a further contextual distinction. Six observational draws cannot statistically separate a strong-number preference from jackpot participation, payout-regime, temporal, or selection effects. The read-only report explicitly exposes the numbers and flags **`jackpot_and_rule_confounding_not_adjusted=true`**. No model coefficients are fitted and no relative profitability is inferred.
+
 These contrasts arose from **already inspected data** and are NOT preregistered, statistically significant, independently reproduced, or evidence that a particular choice will earn more money. Regular and Double winners are not guaranteed to be independent groups. Other strong numbers and participation dynamics are unobserved here, and winner-entry counts may include duplicates. If the operator-display pages change, an independently archived original would be necessary for source comparison.
 
 ## Enforced data-coverage and reporting gates

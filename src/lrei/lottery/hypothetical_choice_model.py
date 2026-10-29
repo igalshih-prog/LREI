@@ -13,7 +13,7 @@ No crowd parameters, entry volumes or EV are estimated from source data.
 from __future__ import annotations
 
 from math import fsum, isfinite
-from typing import Sequence
+from typing import Any, Sequence
 
 from .uniform_tier_reference import uniform_tier_probability
 
@@ -91,7 +91,7 @@ def hypothetical_player_mix_profile(
     winning_main: Sequence[int],
     winning_strong: int,
     assumed_manual_fraction_all_entries: float,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     """Convex mix of uniform and hypothetical product-weighted manual entry laws.
 
     Unlike the k-match stratum share in conditional_strong_audit, this

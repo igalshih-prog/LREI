@@ -35,11 +35,15 @@ def _required_protocol(protocol: dict[str, Any]) -> tuple[int, date, int]:
     if (
         protocol.get("schema_version") != 1
         or protocol.get("protocol_id") != _PROTOCOL
+        or protocol.get("protocol_date_israel") != "2026-10-29"
+        or protocol.get("status")
+        != "protocol_frozen_for_future_screening_NOT_REGISTERED_INDEPENDENTLY"
         or not isinstance(gate, dict)
         or not isinstance(endpoint, dict)
         or not isinstance(old, dict)
         or not isinstance(claims, dict)
         or old.get("exploratory_reviewed_draw_ids") != list(REVIEWED_DRAWS)
+        or old.get("secondary_reported_draw_already_public_before_freeze") != 3979
         or old.get("hypothesis_selected_with_knowledge_of_2026_exploratory_results")
         is not True
         or gate.get("minimum_draw_id") != 3980
@@ -53,6 +57,11 @@ def _required_protocol(protocol: dict[str, Any]) -> tuple[int, date, int]:
         or endpoint.get("drawn_strong_comparison") != [4, 1]
         or endpoint.get("group_minimum_unique_draws") != 20
         or endpoint.get("direction") != "strong_4_greater_than_strong_1"
+        or endpoint.get("statistic")
+        != "difference_of_unweighted_per_draw_strong_match_fraction_means"
+        or endpoint.get("include_all_eligible_valid_draws") is not True
+        or endpoint.get("missing_prize_tiers_not_imputed") is not True
+        or endpoint.get("uniform_independent_reference_strong_fraction") != 1 / 7
         or any(claims.get(key) is not False for key in (
             "statistical_significance",
             "player_popularity_verified",
@@ -150,13 +159,17 @@ def screen_future_draws(
     seen: set[int] = set()
     counts = {str(i): 0 for i in range(1, 8)}
     last_id = min_id - 1
+    last_date: str | None = None
     for record in records:
         strong = _screen_draw(record, min_id, min_date)
         draw_id = record["draw_id"]
         if draw_id in seen or draw_id <= last_id:
             raise ValueError("duplicate or out-of-order prospective draw ID")
+        if last_date is not None and record["draw_date"] <= last_date:
+            raise ValueError("duplicate or out-of-order prospective draw date")
         seen.add(draw_id)
         last_id = draw_id
+        last_date = record["draw_date"]
         counts[str(strong)] += 1
     return {
         "schema_version": 1,

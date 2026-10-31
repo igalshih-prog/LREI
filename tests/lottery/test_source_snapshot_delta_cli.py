@@ -59,7 +59,10 @@ def test_cli_reject_bad_expected_pin_without_success_report(tmp_path):
 
 def test_cli_rejects_sparse_oversized_previous_source_before_full_read(tmp_path):
     # A sparse file makes the 8 MiB boundary inexpensive to test on CI.
-    _, report, cmd, env = _run(tmp_path, ROW_2834)
+    initial, report, cmd, env = _run(tmp_path, ROW_2834)
+    assert initial.returncode == 0
+    assert report.is_file()
+    report.unlink()  # The helper's initial clean comparison created this report.
     prior = tmp_path / "old.csv"
     with prior.open("wb") as out:
         out.seek(8 * 1024 * 1024)
@@ -71,7 +74,10 @@ def test_cli_rejects_sparse_oversized_previous_source_before_full_read(tmp_path)
 
 
 def test_cli_rejects_sparse_oversized_current_source_before_full_read(tmp_path):
-    _, report, cmd, env = _run(tmp_path, ROW_2834)
+    initial, report, cmd, env = _run(tmp_path, ROW_2834)
+    assert initial.returncode == 0
+    assert report.is_file()
+    report.unlink()  # Test the oversized attempt with a fresh report path.
     current = tmp_path / "new.csv"
     with current.open("wb") as out:
         out.seek(8 * 1024 * 1024)

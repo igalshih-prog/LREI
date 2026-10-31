@@ -132,6 +132,23 @@ def compare_snapshots(
     }
 
 
+
+def read_source_bounded(path: Path) -> bytes:
+    """Refuse an oversized local file *before* allocating its full contents.
+
+    A second length guard on the bounded read covers a file growing after
+    stat(): the CLI never uses unrestricted Path.read_bytes on source input.
+    """
+    size = path.stat().st_size
+    if not 0 < size <= MAX_BYTES:
+        raise SourceSnapshotError("source file size must be between 1 byte and 8 MiB")
+    with path.open("rb") as stream:
+        raw = stream.read(MAX_BYTES + 1)
+    if not 0 < len(raw) <= MAX_BYTES:
+        raise SourceSnapshotError("source bytes changed or exceed the 8 MiB cap")
+    return raw
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Compare two local first-party-style archives offline; does NOT authenticate source"
@@ -143,7 +160,7 @@ def main() -> None:
     args = parser.parse_args()
     try:
         report = compare_snapshots(
-            args.previous_source.read_bytes(), args.current_source.read_bytes(),
+            read_source_bounded(args.previous_source), read_source_bounded(args.current_source),
             expected_previous_sha256=args.expected_previous_sha256,
         )
         args.report.parent.mkdir(parents=True, exist_ok=True)

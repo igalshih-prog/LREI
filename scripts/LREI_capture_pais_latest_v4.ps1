@@ -97,6 +97,35 @@ function Read-CurrentEra([byte[]]$contentBytes) {
     }
 }
 
+# Pure comparison used by both the live diagnostic and synthetic Windows CI.
+# Reports only differences; it NEVER approves, promotes or rewrites a dataset.
+function Compare-CurrentEraSnapshots([object]$previous, [object]$current) {
+    $differences = @()
+    foreach ($id in $previous.Ids) {
+        if (-not $current.Map.ContainsKey($id) -or $current.Map[$id] -cne $previous.Map[$id]) {
+            $differences += [int]$id
+        }
+    }
+    $added = @()
+    if ($differences.Count -gt 0) {
+        $status = 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW'
+    } elseif ($current.LatestId -lt $previous.LatestId) {
+        $status = 'SOURCE_OLDER_THAN_PRIOR_CAPTURE_STOP_REVIEW'
+    } else {
+        $added = @($current.Ids | Where-Object { $_ -gt $previous.LatestId })
+        if ($added.Count -gt 0) {
+            $status = 'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW'
+        } else {
+            $status = 'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW'
+        }
+    }
+    return [pscustomobject]@{
+        Status = $status
+        HistoricalDifferences = [int[]]@($differences)
+        AddedDrawIds = [int[]]@($added)
+    }
+}
+
 # Bound re-reading of an older (possibly user-specified) capture as strictly as
 # the new HTTPS response. Do not trust its file size or hash without re-checking
 # the exact bytes that are subsequently parsed and compared.
@@ -302,26 +331,10 @@ try {
             $previous = Read-CurrentEra $priorBytes
             $report.prior_capture_latest_draw_id = $previous.LatestId
             $report.checked_prior_draw_rows = $previous.ModernCount
-            $differences = @()
-            foreach ($id in $previous.Ids) {
-                if (-not $parsed.Map.ContainsKey($id) -or $parsed.Map[$id] -cne $previous.Map[$id]) {
-                    $differences += [int]$id
-                }
-            }
-            $report.historical_differences = @($differences)
-            if ($differences.Count -gt 0) {
-                $report.status = 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW'
-            } elseif ($parsed.LatestId -lt $previous.LatestId) {
-                $report.status = 'SOURCE_OLDER_THAN_PRIOR_CAPTURE_STOP_REVIEW'
-            } else {
-                $newIds = @($parsed.Ids | Where-Object { $_ -gt $previous.LatestId })
-                $report.added_draw_ids = $newIds
-                if ($newIds.Count -gt 0) {
-                    $report.status = 'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW'
-                } else {
-                    $report.status = 'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW'
-                }
-            }
+            $comparison = Compare-CurrentEraSnapshots $previous $parsed
+            $report.historical_differences = @($comparison.HistoricalDifferences)
+            $report.added_draw_ids = @($comparison.AddedDrawIds)
+            $report.status = $comparison.Status
         }
         break
     }

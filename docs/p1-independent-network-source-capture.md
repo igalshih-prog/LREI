@@ -32,6 +32,24 @@ Do not quietly substitute third-party download content or remove this gate.
 
 ---
 
+## 1 November 2026 — version-controlled rolling Windows helper (PR #95)
+
+The latest maintained helper is now **`scripts/LREI_capture_pais_latest_v4.ps1`**. Use the file from a reviewed/merged **trusted `main` checkout**, not from an unreviewed PR, unknown email or local mirror. Its companion offline-only Windows test is `tests/windows/test_capture_pais_offline.ps1`, executed by `P1 Windows Offline Source Capture Tests`. The test checks PowerShell parsing, content validation, historic record exclusion and baseline integrity **without** contacting the real operator; it cannot prove live connectivity, authorization or draw authenticity.
+
+After PR #95 is approved and merged, from your locally cloned `LREI` directory, with `main` updated, run:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File ".\scripts\LREI_capture_pais_latest_v4.ps1"
+```
+
+The script creates a unique private `Downloads\LREI-source-*` directory with `capture-report.json` and, **only after an HTTP 200 response with enough bytes**, `operator-source-original.csv`. It attempts to select the latest previously retained first-party capture as a baseline, requiring accepted status, HTTPS final URL, normal TLS validation and matching SHA-256; the preserved 30 Oct v1 report status `HTTPS_SOURCE_CONTENT_MATCH_REQUIRES_HUMAN_REVIEW` is supported. You may supply `-PreviousCaptureCsv "C:\full\path\operator-source-original.csv"` for an explicit baseline; the associated report is still mandatory. Any missing/changed historic results must stop automatic acceptance. Never post private raw captures publicly, overwrite the original response or infer official draw-protocol approval from these reports.
+
+The `-OfflineTestFunctionsOnly` switch is **reserved for offline unit tests**: it does not fetch a result. The newest source helper is a diagnostic only: no change to `data/lottery.csv`, no automatic data promotion and **NO PLAY**. Even when its Windows CI is green, the real next capture remains unverified until a new successful first-party response and human review exist.
+
+---
+
 ## Why this procedure exists
 
 In GitHub Actions workflow run [#39828460962](https://github.com/igalshih-prog/LREI/actions/runs/39828460962), DNS for `www.pais.co.il` succeeded but TCP/443 timed out. An additional [Windows-hosted attempt #40220138736](https://github.com/igalshih-prog/LREI/actions/runs/40220138736) on 25 Oct 2026 pinned the candidate CSV hash successfully, then DNS succeeded while TCP/443 and the direct first-party download timed out. Its [real refusal/diagnostic artifact](https://github.com/igalshih-prog/LREI/actions/runs/40220138736/artifacts/12608447480) contains no source-attestation report. These failures **do not prove** the operator blocked GitHub's IP ranges. More GitHub-hosted re-runs do not establish source provenance.

@@ -66,6 +66,15 @@ try {
     $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
     Assert-True (Test-BaselineEvidence $source) 'accept pinned non-promoting metadata'
     Assert-True ((Select-Baseline '' $root) -eq $source) 'select accepted private baseline'
+    # The real 30 October report uses this legacy v1 status and identical fields.
+    $prior.status = 'HTTPS_SOURCE_CONTENT_MATCH_REQUIRES_HUMAN_REVIEW'
+    $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+    Assert-True (Test-BaselineEvidence $source) 'accept safely pinned v1 capture-report schema'
+    $prior.status = 'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW'
+    $prior.final_response_url = 'https://example.com/forged.csv'
+    $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+    Assert-True (-not (Test-BaselineEvidence $source)) 'reject forged off-domain prior URL'
+    $prior.final_response_url = 'https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx'
     $prior.status = 'SOURCE_REJECTED_OR_DOWNLOAD_FAILED'
     $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
     Assert-True (-not (Test-BaselineEvidence $source)) 'reject failed capture baseline'

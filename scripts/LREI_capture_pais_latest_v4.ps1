@@ -23,6 +23,32 @@ function Assert-FirstPartyUri([Uri]$uri) {
     }
 }
 
+# Use the operator's Israel-local calendar, never the computer's local timezone.
+# This is a content-age diagnostic, NOT evidence of draw or protocol authenticity.
+function Get-IsraelToday {
+    $zone = [System.TimeZoneInfo]::FindSystemTimeZoneById('Israel Standard Time')
+    return [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $zone).Date
+}
+
+function Test-SourceContentAge([DateTime]$latestDate, [DateTime]$todayIsrael) {
+    $days = ($todayIsrael.Date - $latestDate.Date).Days
+    return [pscustomobject]@{
+        AgeDays = [int]$days
+        MeetsFourDayLimit = ($days -ge 0 -and $days -le 4)
+    }
+}
+
+# Historical revisions always take precedence over age diagnostics.
+function Get-SourceReviewStatus([string]$contentStatus, [bool]$meetsFourDayLimit) {
+    if (-not $meetsFourDayLimit -and $contentStatus -in @(
+        'VALID_FIRST_PARTY_CONTENT_NO_PRIOR_CAPTURE_REVIEW_REQUIRED',
+        'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW',
+        'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW')) {
+        return 'STALE_SOURCE_CONTENT_STOP_REVIEW'
+    }
+    return $contentStatus
+}
+
 function Read-CurrentEra([byte[]]$contentBytes) {
     if ($contentBytes.Length -lt 10000 -or $contentBytes.Length -gt 8388608) {
         throw 'Unexpected operator archive size (must be between 10 KiB and 8 MiB).'
@@ -42,6 +68,7 @@ function Read-CurrentEra([byte[]]$contentBytes) {
     $records = @{}
     $archiveRowCount = 0
     $cutoff = [DateTime]::ParseExact('10/10/2016','dd/MM/yyyy',[System.Globalization.CultureInfo]::InvariantCulture)
+    $todayIsrael = Get-IsraelToday
     foreach ($line in $lines | Select-Object -Skip 1) {
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
         $archiveRowCount++
@@ -57,7 +84,7 @@ function Read-CurrentEra([byte[]]$contentBytes) {
         }
         # Critical guard: legacy 1960s draw IDs can be numerically larger than modern IDs.
         if ($drawId -lt 2833 -or $drawDate -lt $cutoff) { continue }
-        if ($drawDate.Date -gt ([DateTime]::Now.Date.AddDays(1))) {
+        if ($drawDate.Date -gt $todayIsrael) {
             throw ('Future-dated archive draw not accepted: ' + $drawId)
         }
         $nums = @()
@@ -230,6 +257,9 @@ $report = [ordered]@{
     modern_era_draw_count = $null
     modern_era_latest_draw_id = $null
     modern_era_latest_draw_date = $null
+    source_age_days_israel = $null
+    source_recency_max_age_days = 4
+    source_recency_ok = $false
     prior_capture_found = ($previousCsv -ne '')
     prior_capture_sha256 = $null
     prior_capture_latest_draw_id = $null
@@ -317,6 +347,11 @@ try {
         $report.modern_era_draw_count = $parsed.ModernCount
         $report.modern_era_latest_draw_id = $parsed.LatestId
         $report.modern_era_latest_draw_date = $parsed.LatestDate
+        $lastDate = [DateTime]::ParseExact($parsed.LatestDate, 'yyyy-MM-dd',
+            [System.Globalization.CultureInfo]::InvariantCulture)
+        $age = Test-SourceContentAge $lastDate (Get-IsraelToday)
+        $report.source_age_days_israel = $age.AgeDays
+        $report.source_recency_ok = $age.MeetsFourDayLimit
 
         if ($previousCsv -eq '') {
             $report.status = 'VALID_FIRST_PARTY_CONTENT_NO_PRIOR_CAPTURE_REVIEW_REQUIRED'
@@ -336,6 +371,7 @@ try {
             $report.added_draw_ids = @($comparison.AddedDrawIds)
             $report.status = $comparison.Status
         }
+        $report.status = Get-SourceReviewStatus $report.status $age.MeetsFourDayLimit
         break
     }
 }
@@ -353,6 +389,7 @@ Write-Host ('Evidence directory: ' + $folder)
 Write-Host ('Report JSON: ' + $reportPath)
 Write-Host ('Latest source draw: ' + $report.modern_era_latest_draw_id + ' (' + $report.modern_era_latest_draw_date + ')')
 Write-Host ('Source SHA-256: ' + $report.raw_response_sha256)
+Write-Host ('Israel-local content age: ' + $report.source_age_days_israel + ' days (limit: 4; pass: ' + $report.source_recency_ok + ')')
 Write-Host ('Added draw IDs since prior captured source: ' + (@($report.added_draw_ids) -join ', '))
 if ($null -ne $report.error) { Write-Warning $report.error }
 Write-Host 'Keep operator-source-original.csv PRIVATE. Share only capture-report.json for initial review.'

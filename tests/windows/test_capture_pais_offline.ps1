@@ -43,6 +43,31 @@ Assert-Refuses { Assert-FirstPartyUri ([Uri]'https://example.com/lotto.csv') } '
 Assert-Refuses { Assert-FirstPartyUri ([Uri]'http://www.pais.co.il/Lotto/lotto_resultsDownload.aspx') } 'insecure redirect'
 Assert-FirstPartyUri ([Uri]'https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx')
 
+# Deterministic four-day content-age boundary checks in Israel-local dates.
+# All dates below are fixtures, independent of the CI runner's timezone.
+$referenceIsraelDate = [DateTime]::ParseExact('2026-11-01', 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+foreach ($case in @(
+    [pscustomobject]@{ Age = 0; Expected = $true }
+    [pscustomobject]@{ Age = 4; Expected = $true }
+    [pscustomobject]@{ Age = 5; Expected = $false }
+    [pscustomobject]@{ Age = 22; Expected = $false }
+    [pscustomobject]@{ Age = -1; Expected = $false }
+)) {
+    $result = Test-SourceContentAge ($referenceIsraelDate.AddDays(-$case.Age)) $referenceIsraelDate
+    Assert-True ($result.AgeDays -eq $case.Age) ('Israel age count ' + $case.Age)
+    Assert-True ($result.MeetsFourDayLimit -eq $case.Expected) ('Israel four-day limit ' + $case.Age)
+}
+foreach ($status in @(
+    'VALID_FIRST_PARTY_CONTENT_NO_PRIOR_CAPTURE_REVIEW_REQUIRED',
+    'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW',
+    'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW'
+)) {
+    Assert-True ((Get-SourceReviewStatus $status $false) -eq 'STALE_SOURCE_CONTENT_STOP_REVIEW') ('stale source refused: ' + $status)
+    Assert-True ((Get-SourceReviewStatus $status $true) -eq $status) ('fresh source stays review-only: ' + $status)
+}
+Assert-True ((Get-SourceReviewStatus 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW' $false) -eq 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW') 'historical tampering refusal takes precedence'
+Assert-True ((Get-SourceReviewStatus 'SOURCE_OLDER_THAN_PRIOR_CAPTURE_STOP_REVIEW' $false) -eq 'SOURCE_OLDER_THAN_PRIOR_CAPTURE_STOP_REVIEW') 'old source refusal takes precedence'
+
 # Exercise the SAME history-comparison function used by the live diagnostic.
 # All fixtures below are synthetic. No real draw #3980 is asserted or retrieved.
 $same = Compare-CurrentEraSnapshots $parsed $parsed
@@ -117,6 +142,9 @@ try {
     $prior.status = 'SOURCE_REJECTED_OR_DOWNLOAD_FAILED'
     $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
     Assert-True (-not (Test-BaselineEvidence $source)) 'reject failed capture baseline'
+    $prior.status = 'STALE_SOURCE_CONTENT_STOP_REVIEW'
+    $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+    Assert-True (-not (Test-BaselineEvidence $source)) 'do not auto-select stale source report as trusted baseline'
     $prior.status = 'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW'
     $prior.raw_response_sha256 = ('0' * 64)
     $prior | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8

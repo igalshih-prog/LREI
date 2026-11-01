@@ -50,6 +50,27 @@ The `-OfflineTestFunctionsOnly` switch is **reserved for offline unit tests**: i
 
 ---
 
+## 1 November 2026 — local four-day source-age refusal (pending CI review)
+
+The Windows v4 helper is also required to check the most recent parsed draw date
+against **the calendar date in Israel**, not the computer's configured timezone.
+The report records `source_age_days_israel`, `source_recency_max_age_days=4`,
+and `source_recency_ok`. A source with an age of **five or more days** must
+return `STALE_SOURCE_CONTENT_STOP_REVIEW` and exit 2 even if its original
+HTTPS download, CSV structure and historical overlap are otherwise valid.
+A future-dated source must also be refused. The existing historic-revision
+refusals take precedence and remain actionable; never silently overwrite
+prior draws. Synthetic offline tests cover ages 0, 4, 5, 22 and -1.
+
+This is **not** a fix for the scheduled `main` freshness failure: approved
+`main` still ends at draw #3973 (10 October), and source age cannot become
+green until authenticated newer results are reviewed and approved. A Windows
+source report that passes the age rule is still **REVIEW ONLY / NO PLAY**:
+live provenance, committee-approved protocols and dataset-promotion permission
+are separate gates. Keep any local `operator-source-original.csv` private.
+
+---
+
 ## Why this procedure exists
 
 In GitHub Actions workflow run [#39828460962](https://github.com/igalshih-prog/LREI/actions/runs/39828460962), DNS for `www.pais.co.il` succeeded but TCP/443 timed out. An additional [Windows-hosted attempt #40220138736](https://github.com/igalshih-prog/LREI/actions/runs/40220138736) on 25 Oct 2026 pinned the candidate CSV hash successfully, then DNS succeeded while TCP/443 and the direct first-party download timed out. Its [real refusal/diagnostic artifact](https://github.com/igalshih-prog/LREI/actions/runs/40220138736/artifacts/12608447480) contains no source-attestation report. These failures **do not prove** the operator blocked GitHub's IP ranges. More GitHub-hosted re-runs do not establish source provenance.

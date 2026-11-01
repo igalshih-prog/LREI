@@ -38,6 +38,17 @@ function Test-SourceContentAge([DateTime]$latestDate, [DateTime]$todayIsrael) {
     }
 }
 
+# Historical revisions always take precedence over age diagnostics.
+function Get-SourceReviewStatus([string]$contentStatus, [bool]$meetsFourDayLimit) {
+    if (-not $meetsFourDayLimit -and $contentStatus -in @(
+        'VALID_FIRST_PARTY_CONTENT_NO_PRIOR_CAPTURE_REVIEW_REQUIRED',
+        'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW',
+        'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW')) {
+        return 'STALE_SOURCE_CONTENT_STOP_REVIEW'
+    }
+    return $contentStatus
+}
+
 function Read-CurrentEra([byte[]]$contentBytes) {
     if ($contentBytes.Length -lt 10000 -or $contentBytes.Length -gt 8388608) {
         throw 'Unexpected operator archive size (must be between 10 KiB and 8 MiB).'
@@ -360,14 +371,7 @@ try {
             $report.added_draw_ids = @($comparison.AddedDrawIds)
             $report.status = $comparison.Status
         }
-        # Keep historic-change refusals as the stronger cause, but refuse stale
-        # sources even when they have a perfectly matching past or valid CSV.
-        if (-not $age.MeetsFourDayLimit -and $report.status -in @(
-            'VALID_FIRST_PARTY_CONTENT_NO_PRIOR_CAPTURE_REVIEW_REQUIRED',
-            'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW',
-            'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW')) {
-            $report.status = 'STALE_SOURCE_CONTENT_STOP_REVIEW'
-        }
+        $report.status = Get-SourceReviewStatus $report.status $age.MeetsFourDayLimit
         break
     }
 }

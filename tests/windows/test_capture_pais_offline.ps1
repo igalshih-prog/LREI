@@ -43,6 +43,45 @@ Assert-Refuses { Assert-FirstPartyUri ([Uri]'https://example.com/lotto.csv') } '
 Assert-Refuses { Assert-FirstPartyUri ([Uri]'http://www.pais.co.il/Lotto/lotto_resultsDownload.aspx') } 'insecure redirect'
 Assert-FirstPartyUri ([Uri]'https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx')
 
+# Exercise the SAME history-comparison function used by the live diagnostic.
+# All fixtures below are synthetic. No real draw #3980 is asserted or retrieved.
+$same = Compare-CurrentEraSnapshots $parsed $parsed
+Assert-True ($same.Status -eq 'NO_NEW_DRAW_ROWS_REQUIRES_FRESHNESS_REVIEW') 'same source is review-only'
+Assert-True (@($same.HistoricalDifferences).Count -eq 0) 'same source has no revisions'
+Assert-True (@($same.AddedDrawIds).Count -eq 0) 'same source has no new rows'
+
+$nextDate = $start.AddDays(1147).ToString('dd/MM/yyyy')
+$oneMoreCsv = $csv + ('3980,{0},01,02,03,04,05,06,3,0,0,' -f $nextDate) + $crlf
+$oneMore = Read-CurrentEra ($enc.GetBytes($oneMoreCsv))
+$append = Compare-CurrentEraSnapshots $parsed $oneMore
+Assert-True ($append.Status -eq 'NEW_DRAW_ROWS_MATCH_PRIOR_HISTORY_REQUIRES_HUMAN_REVIEW') 'synthetic append requires human review'
+Assert-True (@($append.AddedDrawIds).Count -eq 1 -and $append.AddedDrawIds[0] -eq 3980) 'only synthetic next ID added'
+Assert-True (@($append.HistoricalDifferences).Count -eq 0) 'no historic edits in synthetic append'
+
+$older = Compare-CurrentEraSnapshots $oneMore $parsed
+Assert-True ($older.Status -eq 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW') 'older source refused as missing an earlier known row'
+Assert-True (@($older.HistoricalDifferences).Count -eq 1 -and $older.HistoricalDifferences[0] -eq 3980) 'precise missing synthetic ID'
+
+$changeDate = $start.AddDays(500).ToString('dd/MM/yyyy')
+$originalRow = ('3333,{0},01,02,03,04,05,06,3,0,0,' -f $changeDate)
+Assert-True ($csv.Contains($originalRow)) 'target synthetic historic row exists'
+$changedRows = @(
+    [pscustomobject]@{ Name = 'main number'; Replacement = ('3333,{0},01,02,03,04,05,07,3,0,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'strong number'; Replacement = ('3333,{0},01,02,03,04,05,06,4,0,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'jackpot winner count'; Replacement = ('3333,{0},01,02,03,04,05,06,3,1,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'double jackpot winner count'; Replacement = ('3333,{0},01,02,03,04,05,06,3,0,1,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'draw date'; Replacement = ('3333,{0},01,02,03,04,05,06,3,0,0,' -f ($start.AddDays(501).ToString('dd/MM/yyyy'))) }
+)
+foreach ($change in $changedRows) {
+    $revisedCsv = $csv.Replace($originalRow, $change.Replacement)
+    Assert-True ($revisedCsv -cne $csv) ('fixture changes ' + $change.Name)
+    $revised = Read-CurrentEra ($enc.GetBytes($revisedCsv))
+    $comparison = Compare-CurrentEraSnapshots $parsed $revised
+    Assert-True ($comparison.Status -eq 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW') ('historic ' + $change.Name + ' refuses')
+    Assert-True (@($comparison.HistoricalDifferences).Count -eq 1 -and $comparison.HistoricalDifferences[0] -eq 3333) ('pinpoint historic ' + $change.Name)
+    Assert-True (@($comparison.AddedDrawIds).Count -eq 0) ('historic ' + $change.Name + ' does not masquerade as new draw')
+}
+
 $root = Join-Path ([System.IO.Path]::GetTempPath()) ('LREI-win-offline-' + [guid]::NewGuid().ToString('N'))
 $folder = Join-Path $root 'LREI-source-20261030-175209'
 New-Item -ItemType Directory -Path $folder -Force | Out-Null

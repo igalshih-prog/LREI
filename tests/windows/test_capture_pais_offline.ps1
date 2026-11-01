@@ -66,20 +66,20 @@ $changeDate = $start.AddDays(500).ToString('dd/MM/yyyy')
 $originalRow = ('3333,{0},01,02,03,04,05,06,3,0,0,' -f $changeDate)
 Assert-True ($csv.Contains($originalRow)) 'target synthetic historic row exists'
 $changedRows = @(
-    @('main number', ('3333,{0},01,02,03,04,05,07,3,0,0,' -f $changeDate)),
-    @('strong number', ('3333,{0},01,02,03,04,05,06,4,0,0,' -f $changeDate)),
-    @('jackpot winner count', ('3333,{0},01,02,03,04,05,06,3,1,0,' -f $changeDate)),
-    @('double jackpot winner count', ('3333,{0},01,02,03,04,05,06,3,0,1,' -f $changeDate)),
-    @('draw date', ('3333,{0},01,02,03,04,05,06,3,0,0,' -f $start.AddDays(501).ToString('dd/MM/yyyy')))
+    [pscustomobject]@{ Name = 'main number'; Replacement = ('3333,{0},01,02,03,04,05,07,3,0,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'strong number'; Replacement = ('3333,{0},01,02,03,04,05,06,4,0,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'jackpot winner count'; Replacement = ('3333,{0},01,02,03,04,05,06,3,1,0,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'double jackpot winner count'; Replacement = ('3333,{0},01,02,03,04,05,06,3,0,1,' -f $changeDate) }
+    [pscustomobject]@{ Name = 'draw date'; Replacement = ('3333,{0},01,02,03,04,05,06,3,0,0,' -f ($start.AddDays(501).ToString('dd/MM/yyyy'))) }
 )
 foreach ($change in $changedRows) {
-    $revisedCsv = $csv.Replace($originalRow, $change[1])
-    Assert-True ($revisedCsv -cne $csv) ('fixture changes ' + $change[0])
+    $revisedCsv = $csv.Replace($originalRow, $change.Replacement)
+    Assert-True ($revisedCsv -cne $csv) ('fixture changes ' + $change.Name)
     $revised = Read-CurrentEra ($enc.GetBytes($revisedCsv))
     $comparison = Compare-CurrentEraSnapshots $parsed $revised
-    Assert-True ($comparison.Status -eq 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW') ('historic ' + $change[0] + ' refuses')
-    Assert-True (@($comparison.HistoricalDifferences).Count -eq 1 -and $comparison.HistoricalDifferences[0] -eq 3333) ('pinpoint historic ' + $change[0])
-    Assert-True (@($comparison.AddedDrawIds).Count -eq 0) ('historic ' + $change[0] + ' does not masquerade as new draw')
+    Assert-True ($comparison.Status -eq 'HISTORICAL_REVISIONS_OR_MISSING_DRAWS_STOP_REVIEW') ('historic ' + $change.Name + ' refuses')
+    Assert-True (@($comparison.HistoricalDifferences).Count -eq 1 -and $comparison.HistoricalDifferences[0] -eq 3333) ('pinpoint historic ' + $change.Name)
+    Assert-True (@($comparison.AddedDrawIds).Count -eq 0) ('historic ' + $change.Name + ' does not masquerade as new draw')
 }
 
 $root = Join-Path ([System.IO.Path]::GetTempPath()) ('LREI-win-offline-' + [guid]::NewGuid().ToString('N'))

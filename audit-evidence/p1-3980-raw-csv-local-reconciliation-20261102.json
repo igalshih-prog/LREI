@@ -60,5 +60,19 @@
     "candidate_eligible_for_main_merge": false,
     "financial_or_predictive_advantage_established": false
   },
-  "note": "Digest equality proves equality to these uploaded bytes and repository content; it does not prove who served or signed the bytes. Keep raw CSV private. Do not merge draft PR #44."
+  "note": "Digest equality proves equality to these uploaded bytes and repository content; it does not prove who served or signed the bytes. Keep raw CSV private. Do not merge draft PR #44.",
+  "capture_script_reproducibility": {
+    "source_repository": "igalshih-prog/LREI",
+    "source_commit": "7e3eacb3e76fcc06b0e6ba4e02cd6fec4274992c",
+    "source_path": "scripts/LREI_capture_pais_latest_v4.ps1",
+    "git_blob_sha1": "d64ed42f4a9a8d639bb24dec030b58e2005976d2",
+    "source_encoding": "UTF-8 with BOM",
+    "source_git_checkout_line_endings": "CRLF (Windows)",
+    "git_repository_source_sha256_lf": "680cfb1dc5e8556ebf6ae048a9ab9d3225051afb80c36b8f818e73f407f19b44",
+    "checkout_reconstructed_bytes": 20402,
+    "checkout_reconstructed_sha256": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
+    "user_capture_report_script_sha256": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
+    "hashes_match": true,
+    "limits": "Matches submitted report's script fingerprint to a reproducible Windows-format checkout; does not prove execution, network authenticity, signed draw protocol or human approval."
+  }
 }

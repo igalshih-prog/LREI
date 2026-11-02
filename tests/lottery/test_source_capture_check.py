@@ -112,6 +112,17 @@ def test_capture_date_is_not_generated_by_the_tool():
             _audit(capture=bad)
 
 
+def test_capture_date_uses_israel_local_calendar_day():
+    # 2026-07-28 00:30 Israel daylight time is 2026-07-27 21:30 UTC.
+    # A genuine post-draw capture on the local draw date must not be
+    # rejected merely because UTC is still on the previous calendar day.
+    report = _audit(capture="2026-07-27T21:30:00Z")
+    assert report["matched_payout_rows"] == 16
+    # 23:59 UTC on July 26 is still July 27 in Israel, before the draw date.
+    with pytest.raises(PrizeDataError, match="predate"):
+        _audit(capture="2026-07-26T23:59:00Z")
+
+
 def test_wrong_content_type_and_non_utf8_rejected():
     with pytest.raises(PrizeDataError, match="only locally saved"):
         _audit(mode="application/pdf")

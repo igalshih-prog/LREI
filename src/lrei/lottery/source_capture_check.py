@@ -23,6 +23,7 @@ import re
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from .prize_data import (
@@ -135,7 +136,7 @@ def inspect_captured_operator_page(
     except ValueError as exc:
         raise PrizeDataError("invalid UTC capture time") from exc
     date_part = observation["draw_date"]
-    if capture_time.date().isoformat() < date_part:
+    if capture_time.astimezone(ZoneInfo("Asia/Jerusalem")).date().isoformat() < date_part:
         raise PrizeDataError("a capture cannot predate the drawing")
     text = _flat_text(raw, content_type)
     headings = _OFFICIAL_HEADING.findall(text)

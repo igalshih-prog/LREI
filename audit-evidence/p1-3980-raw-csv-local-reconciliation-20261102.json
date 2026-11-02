@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "review_date_israel": "2026-11-02",
+  "status": "USER_UPLOADED_RAW_BYTES_RECONCILED__PROVENANCE_AND_PROMOTION_UNVERIFIED",
+  "research_only_no_play": true,
+  "review_scope": "Offline inspection of user-uploaded raw CSV bytes; GitHub main and PR #44 file content fetched separately",
+  "captured_source_reported_by_user": {
+    "capture_at_utc": "2026-11-01T19:35:00Z",
+    "reported_final_https_url": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "reported_http_status": 200,
+    "reported_tls_validation_disabled": false,
+    "independently_verified_network_provenance": false
+  },
+  "raw_upload_verified_locally": {
+    "sha256": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "bytes": 183730,
+    "text_encoding": "windows-1255",
+    "parsed_archive_rows": 4556,
+    "header_fields_including_trailing_empty": 12,
+    "sha256_matches_user_capture_report": true
+  },
+  "modern_window_from_raw_upload": {
+    "first_draw_id": 2833,
+    "last_draw_id": 3980,
+    "draw_count": 1148,
+    "no_missing_draw_ids": true,
+    "no_duplicate_draw_ids": true,
+    "chronological_dates": true,
+    "six_distinct_main_numbers_in_1_to_37": true,
+    "strong_number_in_1_to_7": true,
+    "canonical_format": "draw_id|YYYY-MM-DD|six_ASC_sorted_2_digit_comma_numbers|strong_number followed by LF, in ascending draw_id",
+    "canonical_sha256": "c28e0c5c4a6babb833fad91359538aec0a2cf33b71ccd858d056c461b845651c"
+  },
+  "main_approved_overlap": {
+    "main_sha_at_review": "f6424682bb48c8a909f1fc4714364d9ea5fd9a1a",
+    "first_draw_id": 2833,
+    "last_draw_id": 3973,
+    "compared_rows": 1141,
+    "canonical_sha256_from_raw_upload": "da3b082eec809b3788a870ac6f57284098109bacd761e9aee30aa1594534869b",
+    "canonical_sha256_from_github_main": "da3b082eec809b3788a870ac6f57284098109bacd761e9aee30aa1594534869b",
+    "all_rows_match": true
+  },
+  "draft_candidate_reconciliation": {
+    "pull_request": 44,
+    "remains_draft": true,
+    "previous_last_draw_id": 3979,
+    "previous_rows": 1147,
+    "previous_candidate_raw_sha256": "6843c2e21dc261a00c6bd323638c637bc6a117a6ad5dc1f7bcc303939227ed63",
+    "previous_candidate_reconstructed_from_uploaded_raw_sha256": "6843c2e21dc261a00c6bd323638c637bc6a117a6ad5dc1f7bcc303939227ed63",
+    "only_appended_row": "3980\t01,03,16,21,32,36\t31-10-26\t1",
+    "candidate_after_append_rows": 1148,
+    "candidate_after_append_sha256": "892475f96bb9dbfa4a84c48000d042a317b81b9768fd0ef64ffdb804979c47fc",
+    "appended_draw_is_source_claim_not_signed_result": true
+  },
+  "approval_gates": {
+    "binding_operator_draw_protocol_reviewed": false,
+    "network_origin_cryptographically_attested": false,
+    "permission_and_usage_rights_reviewed": false,
+    "independent_human_dataset_promotion_approved": false,
+    "candidate_eligible_for_main_merge": false,
+    "financial_or_predictive_advantage_established": false
+  },
+  "note": "Digest equality proves equality to these uploaded bytes and repository content; it does not prove who served or signed the bytes. Keep raw CSV private. Do not merge draft PR #44."
+}

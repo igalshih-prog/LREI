@@ -110,6 +110,22 @@ def test_no_backdating_or_timezone_naive_audit_timestamp():
         )
 
 
+
+def test_archive_review_uses_israel_local_date_across_utc_midnight():
+    # Oct 13 00:30 in Israel (UTC+3) is Oct 12 21:30 UTC.
+    result = reconcile_uploaded_archive(
+        _raw(), _historical(),
+        reviewed_at_utc=datetime(2026, 10, 12, 21, 30, tzinfo=timezone.utc),
+    )
+    assert result["compared_draw_count"] == 3
+    # Oct 12 23:30 Israel time is still before the local draw date.
+    with pytest.raises(OfficialCsvAuditError, match="cannot predate"):
+        reconcile_uploaded_archive(
+            _raw(), _historical(),
+            reviewed_at_utc=datetime(2026, 10, 12, 20, 30, tzinfo=timezone.utc),
+        )
+
+
 def test_older_1968_rules_not_retroactively_rejected():
     raw = _raw([OLD_ROW, ROW_3972, ROW_3973, ROW_3974])
     result = _audit(raw)

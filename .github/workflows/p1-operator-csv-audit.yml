@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      # A data-only or P1 evidence change must run the offline integrity gate.
+      - data/lottery.csv
+      - audit-evidence/p1-*.json
       - src/lrei/lottery/local_audit_manifest.py
       - src/lrei/lottery/operator_https_diagnostic.py
       - src/lrei/lottery/official_draw_source.py
@@ -50,6 +53,27 @@ jobs:
           tests/lottery/test_official_draw_source.py
           tests/lottery/test_archive_reconciliation.py
           tests/lottery/test_operator_full_window_capture.py
+      - name: Check checked-out draw IDs and historical data structure (not source attestation)
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lrei.lottery.dataset import CsvDatasetLoader
+
+          # Only structural integrity: never infer HTTPS origin or approval.
+          draws = tuple(CsvDatasetLoader().load(Path("data/lottery.csv")))
+          ids = []
+          for draw in draws:
+              if not draw.draw_id.isascii() or not draw.draw_id.isdecimal():
+                  raise SystemExit("dataset contains nonnumeric draw IDs")
+              ids.append(int(draw.draw_id))
+          if any(b != a + 1 for a, b in zip(ids, ids[1:])):
+              raise SystemExit("dataset draw IDs are not strictly consecutive")
+          print(
+              f"PASS: {len(ids)} locally checked rows from #{ids[0]} to #{ids[-1]}. "
+              "NO source provenance or dataset-promotion approval asserted."
+          )
+          PY
 
   manual-first-party-connectivity-diagnostic:
     # Diagnostic-only: does not download results or attest their authenticity.

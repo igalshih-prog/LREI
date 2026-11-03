@@ -98,5 +98,23 @@
       "no_duplicate_draw_ids_across_archive": true
     },
     "limitation": "A byte-for-byte predecessor hash match is offline content continuity, not independent proof of serving host, live HTTPS execution, committee protocol or permission to promote data."
+  },
+  "ci_gate_review_after_pr102": {
+    "reviewed_on_israel_date": "2026-11-03",
+    "trusted_main_workflow_commit": "cbeeebd15d81159fe2927700e1683cffd77d87a0",
+    "trusted_main_merged_pr": 102,
+    "workflow_file": ".github/workflows/p1-operator-csv-audit.yml",
+    "workflow_paths_verified_in_trusted_main": [
+      "data/lottery.csv",
+      "audit-evidence/p1-*.json"
+    ],
+    "new_offline_structural_check_requires_consecutive_numeric_draw_ids": true,
+    "new_offline_structural_check_uses_csv_dataset_loader": true,
+    "reason_for_evidence_update": "Trigger and observe this dedicated offline data-and-evidence CI check on quarantined PR #44 after PR #102 merged.",
+    "no_changes_to_candidate_draw_data": true,
+    "do_not_assume_check_passed_until_exact_head_ci_verified": true,
+    "source_authentication_or_legal_protocol_proved": false,
+    "automatic_data_promotion_permitted": false,
+    "research_only_no_play": true
   }
 }

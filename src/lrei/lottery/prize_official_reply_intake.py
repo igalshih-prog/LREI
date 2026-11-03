@@ -17,8 +17,9 @@ import hashlib
 import io
 import json
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from .dataset import CsvDatasetLoader, LotteryDataset, parse_draw_date
@@ -46,15 +47,18 @@ def _parse_number(raw: Any, *, key: str, maximum: int) -> int:
     return number
 
 
-def _timestamp(text: Any) -> None:
+def _timestamp(text: Any) -> date:
     if not isinstance(text, str) or not re.fullmatch(
         r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", text
     ):
         raise PrizeDataError("received-at must be explicit UTC YYYY-MM-DDTHH:MM:SSZ")
     try:
-        datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        captured_utc = datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     except ValueError as exc:
         raise PrizeDataError("invalid received-at UTC timestamp") from exc
+    # An operator draw date is Israel-local; preserve strict UTC input syntax.
+    # Calendar validation never establishes actual source authenticity.
+    return captured_utc.astimezone(ZoneInfo("Asia/Jerusalem")).date()
 
 
 def quarantine_official_payout_csv(
@@ -69,7 +73,7 @@ def quarantine_official_payout_csv(
     about its original sender or the correctness of its monetary values.
     The returned rows are *not* validated operator observations.
     """
-    _timestamp(received_at_utc)
+    received_day_israel = _timestamp(received_at_utc)
     if not isinstance(raw_bytes, bytes) or not 0 < len(raw_bytes) <= MAX_BYTES:
         raise PrizeDataError("reply CSV must contain between 1 and 2 MiB of bytes")
     try:
@@ -121,7 +125,7 @@ def quarantine_official_payout_csv(
         archive_date = parse_draw_date(reference[expected_id].date).isoformat()
         if draw_date != archive_date:
             raise PrizeDataError(f"row {row_no}: draw date disagrees with independent archive")
-        if draw_date > received_at_utc[:10]:
+        if draw_date > received_day_israel.isoformat():
             raise PrizeDataError("source cannot predate the historical draw")
         count = _parse_number(
             winners, key=f"row {row_no} winning_entries", maximum=MAX_WINNING_ENTRIES
@@ -185,7 +189,7 @@ def quarantine_partial_payout_csv(
     groups must be ascending and complete. The original strict 224-row
     importer remains unchanged.
     """
-    _timestamp(received_at_utc)
+    received_day_israel = _timestamp(received_at_utc)
     if not isinstance(raw_bytes, bytes) or not 0 < len(raw_bytes) <= MAX_BYTES:
         raise PrizeDataError("partial reply CSV must contain between 1 and 2 MiB of bytes")
     try:
@@ -235,7 +239,7 @@ def quarantine_partial_payout_csv(
         if archive is None:
             raise PrizeDataError("partial reply missing draw in historical archive")
         correct_date = parse_draw_date(archive.date).isoformat()
-        if correct_date > received_at_utc[:10]:
+        if correct_date > received_day_israel.isoformat():
             raise PrizeDataError("partial reply cannot precede its draw")
         group = rows[block:block + per_draw]
         winners_total = 0

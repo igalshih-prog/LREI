@@ -18,6 +18,7 @@ import json
 import re
 from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from .dataset import CsvDatasetLoader, LotteryDataset, parse_draw_date
@@ -41,7 +42,9 @@ def _capture_utc(when: Any, *, earliest: date) -> None:
         timestamp = datetime.strptime(when, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     except ValueError as exc:
         raise PrizeDataError("capture timestamp is not a valid UTC instant") from exc
-    if timestamp.date() < earliest:
+    # Lottery draw dates refer to Israel's local calendar day, not UTC.
+    # This calendar-only gate is NOT evidence that a draw actually occurred.
+    if timestamp.astimezone(ZoneInfo("Asia/Jerusalem")).date() < earliest:
         raise PrizeDataError("capture date cannot precede the draw")
 
 

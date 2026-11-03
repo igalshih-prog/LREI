@@ -19,6 +19,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit
 
 from .dataset import CsvDatasetLoader, LotteryDataset, parse_draw_date
@@ -183,7 +184,9 @@ def inspect_official_csv(
     if captured.tzinfo is None or captured.utcoffset() is None:
         raise OfficialCsvAuditError("capture time must include a timezone")
     captured = captured.astimezone(timezone.utc)
-    if captured.date() < date:
+    # A capture just after midnight in Israel can be on the prior UTC date.
+    # This is a calendar-day guard, not proof of capture after the draw time.
+    if captured.astimezone(ZoneInfo("Asia/Jerusalem")).date() < date:
         raise OfficialCsvAuditError("source capture cannot predate the draw")
     return {
         "schema_version": 1,

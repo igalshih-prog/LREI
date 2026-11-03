@@ -16,6 +16,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from .dataset import CsvDatasetLoader, LotteryDataset, parse_draw_date
 from .official_draw_source import MAX_SOURCE_BYTES, OfficialCsvAuditError
@@ -134,7 +135,9 @@ def reconcile_uploaded_archive(
     if reviewed.tzinfo is None or reviewed.utcoffset() is None:
         raise OfficialCsvAuditError("reviewed_at_utc must be timezone-aware")
     reviewed = reviewed.astimezone(timezone.utc)
-    if reviewed.date() < previous_date:
+    # The authoritative draw date is local to Israel, not the UTC date.
+    # This enforces only the calendar day, not an actual post-draw timestamp.
+    if reviewed.astimezone(ZoneInfo("Asia/Jerusalem")).date() < previous_date:
         raise OfficialCsvAuditError("audit cannot predate the latest draw")
     return {
         "schema_version": 1,

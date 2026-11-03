@@ -92,6 +92,23 @@ def test_future_dated_capture_rejected():
         )
 
 
+
+def test_official_capture_uses_israel_local_date_across_utc_midnight():
+    # Oct 13 00:30 in Israel (UTC+3) is Oct 12 21:30 UTC.
+    report = inspect_official_csv(
+        raw_csv(), history(), expected_draw_id=3974,
+        captured_at_utc=datetime(2026, 10, 12, 21, 30, tzinfo=timezone.utc),
+    )
+    assert report["verified_against_local_candidate"] is True
+    assert report["legally_binding_protocol_verified"] is False
+    # Oct 12 23:30 local is still earlier than the draw's calendar date.
+    with pytest.raises(OfficialCsvAuditError, match="cannot predate"):
+        inspect_official_csv(
+            raw_csv(), history(), expected_draw_id=3974,
+            captured_at_utc=datetime(2026, 10, 12, 20, 30, tzinfo=timezone.utc),
+        )
+
+
 def test_wrong_local_history_or_target_id_rejected():
     with pytest.raises(OfficialCsvAuditError, match="disagrees"):
         inspect_official_csv(raw_csv(), history(1), expected_draw_id=3974)

@@ -129,3 +129,16 @@ def test_invalid_utf8_and_unsupported_types_are_rejected():
         extract(b"\xff")
     with pytest.raises(PrizeDataError, match="locally saved"):
         extract(content_type="application/pdf")
+
+def test_israel_local_calendar_boundary_is_used_for_utc_capture_timestamp():
+    """UTC day before Israel's draw day can already be the local draw day.
+
+    This is strictly calendar validation: not proof that the drawing
+    occurred, that the page is authentic, or that any payout is verified.
+    """
+    candidate = extract(dt="2026-07-27T21:30:00Z")  # Israel 28 Jul 00:30 (DST)
+    assert candidate["draw_date"] == "2026-07-28"
+    assert candidate["auto_promoted_to_prize_observations"] is False
+    assert candidate["eligible_for_expected_value"] is False
+    with pytest.raises(PrizeDataError, match="capture date"):
+        extract(dt="2026-07-27T20:30:00Z")  # Israel 27 Jul 23:30

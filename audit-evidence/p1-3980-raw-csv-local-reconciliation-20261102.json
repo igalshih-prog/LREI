@@ -74,5 +74,29 @@
     "user_capture_report_script_sha256": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
     "hashes_match": true,
     "limits": "Matches submitted report's script fingerprint to a reproducible Windows-format checkout; does not prove execution, network authenticity, signed draw protocol or human approval."
+  },
+  "full_archive_raw_byte_continuity": {
+    "verification_scope": "all raw CSV bytes, not merely the 6/37 comparison window",
+    "new_raw_sha256": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "new_raw_size_bytes": 183730,
+    "header_bytes": 79,
+    "one_appended_top_row": "3980,31/10/2026,01,03,16,21,32,36,1,0,0,",
+    "appended_line_length_bytes": 42,
+    "line_ending": "CRLF",
+    "reconstructed_previous_file_bytes": 183688,
+    "reconstructed_previous_file_sha256": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "previous_reported_raw_sha256": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "previous_capture_raw_content_match": true,
+    "previous_archive_rows": 4555,
+    "new_archive_rows": 4556,
+    "untouched_previous_archive_rows": 4555,
+    "header_and_all_preexisting_raw_archive_records_unchanged": true,
+    "source_file_schema_checks": {
+      "all_rows_have_12_fields": true,
+      "all_draw_ids_numeric": true,
+      "all_4556_dates_parse_dd_mm_yyyy": true,
+      "no_duplicate_draw_ids_across_archive": true
+    },
+    "limitation": "A byte-for-byte predecessor hash match is offline content continuity, not independent proof of serving host, live HTTPS execution, committee protocol or permission to promote data."
   }
 }

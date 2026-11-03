@@ -246,3 +246,23 @@ def test_partial_garbled_source_or_invalid_timestamp_rejected():
         )
     with pytest.raises(PrizeDataError, match="UTC"):
         partial(rows()[:16], when="2026-10-14")
+
+def test_full_and_partial_reply_compare_against_israel_calendar_date():
+    """UTC 22 Sep 21:30 is already 23 Sep in Israel (summer UTC+3)."""
+    stamp_on_local_draw_day = "2026-09-22T21:30:00Z"
+    stamp_on_previous_local_day = "2026-09-22T20:30:00Z"
+    complete = check(encode(rows()), stamp=stamp_on_local_draw_day)
+    assert complete["tier_row_count"] == 224
+    assert complete["ready_for_production_prize_observations"] is False
+    assert complete["source_evidence"]["source_authenticity_verified"] is False
+
+    last_draw_only = rows()[-16:]
+    subset = partial(last_draw_only, when=stamp_on_local_draw_day)
+    assert subset["draw_ids_in_reply"] == [3968]
+    assert subset["complete_target_window"] is False
+    assert subset["source_evidence"]["source_authenticity_verified"] is False
+
+    with pytest.raises(PrizeDataError, match="historical draw"):
+        check(encode(rows()), stamp=stamp_on_previous_local_day)
+    with pytest.raises(PrizeDataError, match="precede its draw"):
+        partial(last_draw_only, when=stamp_on_previous_local_day)

@@ -15,15 +15,25 @@ PROTOCOL = ROOT / "research/protocols/p3-strong-choice-forward-screen-v1.json"
 
 
 def load():
-    return json.loads(LEDGER.read_text(encoding="utf-8")), json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    return (
+        json.loads(LEDGER.read_text(encoding="utf-8")),
+        json.loads(PROTOCOL.read_text(encoding="utf-8")),
+    )
 
 
 def test_real_discovery_metadata_is_never_admitted():
     ledger, protocol = load()
     result = summarize_ledger(ledger, protocol)
-    assert result["candidate_draws_tracked"] == 2
-    assert result["last_candidate_draw_id"] == 3981
-    assert result["non_admitted_draws"] == 2
+    n = len(ledger["entries"])
+    # Bootstrap observations must remain, but newly appended candidates are allowed.
+    assert n >= 2
+    assert [item["draw_id"] for item in ledger["entries"][:2]] == [3980, 3981]
+    assert [item["draw_date_israel"] for item in ledger["entries"][:2]] == [
+        "2026-10-31", "2026-11-03",
+    ]
+    assert result["candidate_draws_tracked"] == n
+    assert result["last_candidate_draw_id"] == 3979 + n
+    assert result["non_admitted_draws"] == n
     assert result["independently_admitted_draws"] == 0
     assert result["accepted_primary_group_strong_4"] == 0
     assert result["accepted_primary_group_strong_1"] == 0
@@ -33,10 +43,28 @@ def test_real_discovery_metadata_is_never_admitted():
     assert "reported_strong_number" not in json.dumps(ledger)
 
 
+def test_in_memory_later_candidate_is_allowed_but_never_accepted():
+    # Synthetic metadata-only fixture: not an assertion that a real draw exists.
+    ledger, protocol = load()
+    previous = copy.deepcopy(ledger)
+    future = copy.deepcopy(ledger["entries"][-1])
+    future.update({
+        "draw_id": ledger["entries"][-1]["draw_id"] + 1,
+        "draw_date_israel": "2030-01-01",
+        "source_state": "no_source_found",
+        "evidence_urls": [],
+    })
+    ledger["entries"].append(future)
+    result = summarize_ledger(ledger, protocol, previous)
+    assert result["candidate_draws_tracked"] == len(previous["entries"]) + 1
+    assert result["independently_admitted_draws"] == 0
+    assert result["candidate_outcomes_consumed"] is False
+
+
 def test_append_only_rejects_rewrite_or_deletion():
     ledger, protocol = load()
     previous = copy.deepcopy(ledger)
-    assert summarize_ledger(ledger, protocol, previous)["candidate_draws_tracked"] == 2
+    assert summarize_ledger(ledger, protocol, previous)["candidate_draws_tracked"] >= 2
     edited = copy.deepcopy(ledger)
     edited["entries"][0]["draw_date_israel"] = "2026-11-01"
     with pytest.raises(ValueError, match="append-only"):
@@ -82,7 +110,12 @@ def test_no_self_certification_or_outcome_injection():
 
 def test_insecure_and_credentialed_url_rejected():
     ledger, protocol = load()
-    for bad in ["http://example.org/results", "https://name:pass@example.org/", "file:///tmp/data", "https://example.org:8443/results"]:
+    for bad in [
+        "http://example.org/results",
+        "https://name:pass@example.org/",
+        "file:///tmp/data",
+        "https://example.org:8443/results",
+    ]:
         edited = copy.deepcopy(ledger)
         edited["entries"][1]["evidence_urls"] = [bad]
         with pytest.raises(ValueError, match="HTTPS"):

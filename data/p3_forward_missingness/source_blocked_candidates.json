@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "protocol_id": "p3-strong-choice-forward-screen-v1",
+  "status": "source_blocked_discovery_only",
+  "entries": [
+    {
+      "draw_id": 3980,
+      "draw_date_israel": "2026-10-31",
+      "source_state": "quarantined_upload_and_third_party",
+      "evidence_urls": [
+        "https://github.com/igalshih-prog/LREI/pull/44",
+        "https://www.lottoyashir.co.il/lotto/results"
+      ],
+      "missing_gates": [
+        "new_first_party_raw_bytes_and_tls_review",
+        "binding_draw_protocol_review",
+        "complete_regular_and_double_8_plus_8_prize_tiers",
+        "source_rights_and_independent_human_approval"
+      ],
+      "disposition": "NOT_ADMITTED_SOURCE_GATED"
+    },
+    {
+      "draw_id": 3981,
+      "draw_date_israel": "2026-11-03",
+      "source_state": "third_party_only",
+      "evidence_urls": [
+        "https://israel.lottery-reminder.com/lotto/3981",
+        "https://www.lottoyashir.co.il/lotto/results",
+        "https://www.paisresults.co.il/"
+      ],
+      "missing_gates": [
+        "new_first_party_raw_bytes_and_tls_review",
+        "binding_draw_protocol_review",
+        "complete_regular_and_double_8_plus_8_prize_tiers",
+        "source_rights_and_independent_human_approval"
+      ],
+      "disposition": "NOT_ADMITTED_SOURCE_GATED"
+    }
+  ]
+}

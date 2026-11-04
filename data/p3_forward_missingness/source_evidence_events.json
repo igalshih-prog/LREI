@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "protocol_id": "p3-strong-choice-forward-screen-v1",
+  "status": "source_blocked_evidence_events_only",
+  "events": [
+    {
+      "event_id": "p3e-3981-20261104-capture-delta",
+      "draw_id": 3981,
+      "recorded_date_israel": "2026-11-04",
+      "kind": "user_reported_capture_and_local_delta",
+      "evidence_urls": [
+        "https://github.com/igalshih-prog/LREI/blob/b3a10f11a0fba9d66c548d6ceb74caae669fa88f/audit-evidence/p1-3981-user-windows-https-capture-report-20261104.json",
+        "https://github.com/igalshih-prog/LREI/blob/b3a10f11a0fba9d66c548d6ceb74caae669fa88f/audit-evidence/p1-3981-local-powershell-byte-continuity-20261104.json"
+      ],
+      "missing_gates": [
+        "new_first_party_raw_bytes_and_tls_review",
+        "binding_draw_protocol_review",
+        "complete_regular_and_double_8_plus_8_prize_tiers",
+        "source_rights_and_independent_human_approval"
+      ],
+      "disposition": "QUARANTINED_NOT_ADMITTED",
+      "independently_attested_source": false,
+      "binding_protocol_reviewed": false,
+      "source_rights_reviewed": false,
+      "admitted_as_draw_observation": false,
+      "outcome_values_stored": false
+    }
+  ]
+}

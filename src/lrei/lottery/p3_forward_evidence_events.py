@@ -132,32 +132,13 @@ def summarize_events(
                     and parsed.password is None
                     and parsed.port in (None, 443)
                     and not parsed.query and not parsed.fragment
-                    and len(parts) == 8
-                    and parts[:5] == ["", "igalshih-prog", "LREI", "blob", parts[4]]
+                    and len(parts) == 7
+                    and parts[:4] == ["", "igalshih-prog", "LREI", "blob"]
                     and SHA.fullmatch(parts[4]) is not None
                     and parts[5] == "audit-evidence"
-                    and parts[6] == ""
                 )
             except (ValueError, AttributeError):
                 valid = False
-            # Format is /OWNER/REPO/blob/COMMIT/audit-evidence/FILENAME
-            # -> split gives 7 components, not 8.
-            if not valid:
-                try:
-                    parts = parsed.path.split("/")
-                    valid = (
-                        parsed.scheme == "https"
-                        and parsed.hostname == "github.com"
-                        and parsed.username is None and parsed.password is None
-                        and parsed.port in (None, 443)
-                        and not parsed.query and not parsed.fragment
-                        and len(parts) == 7
-                        and parts[:4] == ["", "igalshih-prog", "LREI", "blob"]
-                        and SHA.fullmatch(parts[4]) is not None
-                        and parts[5] == "audit-evidence"
-                    )
-                except (ValueError, AttributeError):
-                    valid = False
             _check(valid, "evidence must be an immutable GitHub audit-file link")
             git_refs.add(parts[4])
             expected = (

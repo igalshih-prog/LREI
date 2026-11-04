@@ -1,5 +1,32 @@
 # P1 — Independent-network first-party Lotto source capture (Windows)
 
+> **Current action — 4 November 2026 (read this section BEFORE any old pinned instructions below)**
+>
+> [Scheduled Freshness #21](https://github.com/igalshih-prog/LREI/actions/runs/41838221970) failed **as designed** on main `abab992d6f55106f52700f8fcdf1b76764833442`: the approved last draw is **#3973 dated 10 Oct**, hence **25 Israel-local days** old, versus the unchanged **4-day limit**. Its JSON report was uploaded successfully and the failure is **`stale_dataset`**, not a Python, CI or network error. All three separately triggered main code workflows, [Tests #914](https://github.com/igalshih-prog/LREI/actions/runs/41835286773), P1 ledger #173 and Pro random baseline #552, were green. Do **not** turn the scheduled gate green by changing dates, disabling the job, using a shorter CSV, or merging [unverified PR #44](https://github.com/igalshih-prog/LREI/pull/44).
+>
+> Third-party sites report that **draw #3981 took place 3 Nov 2026**, after the quarantined #3980 source snapshot; see [Lottery Reminder](https://israel.lottery-reminder.com/lotto/3981) and [Lotto Ishi](https://lottoishi.co.il/g/lotto-3981/). This is **a source lead only**, not independently captured operator evidence and not a lawful data-promoting artifact. The first-party [official CSV export](https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx) timed out again in the research environment on 4 Nov. No new officially attested bytes, binding protocol or rights grant was obtained.
+>
+> **Single current Windows handoff, using existing trusted `main` script (NOT code from the quarantined PR):** In a PowerShell prompt already located at the root of your own *reviewed* local Git clone, when you choose to perform a new capture:
+>
+> ```powershell
+> git switch main
+> if ($LASTEXITCODE -ne 0) { throw "Cannot select reviewed main" }
+> git pull --ff-only origin main
+> if ($LASTEXITCODE -ne 0) { throw "Cannot fast-forward trusted main" }
+> if (git status --porcelain -- scripts/LREI_capture_pais_latest_v4.ps1) {
+>     throw "Local Windows capture script differs from tracked main"
+> }
+> git rev-parse HEAD
+> powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File ".\scripts\LREI_capture_pais_latest_v4.ps1"
+> ```
+>
+> The script records its *actual* capture time, expected operator host/final URL/redirect chain, HTTP status, raw original SHA-256, chronological overlap with the previous retained first-party capture, new draw IDs and Israeli-date age. It can refuse stale/inconsistent responses without altering approved data. If network access is unavailable, retain the genuine failure report rather than inventing bytes. **Share only the new `capture-report.json` for independent review first**. Keep `operator-source-original.csv` private; any original bytes require a separate deliberate lawful-sharing decision. User-supplied reports and hashes do not independently prove TLS/officiality or legal authority. Committee-approved draw protocol, rights and independent review still prevent promotion. The long SHA-pinned #3978 and #3979 reproductions below are **historical examples only** and must not be run as current evidence or substituted for this rolling command.
+>
+> **RESEARCH ONLY / NO PLAY / NO PREDICTIVE OR FINANCIAL CLAIM.**
+>
+---
+
+
 **Status: diagnostic/research only. NO PLAY.** This procedure does not approve dataset promotion or prove that any user-uploaded historical file originally came from the operator. Official results may require legally binding draw protocols and human review.
 
 **28 October 2026 freshness warning:** the pinned historical PR #44 comparison

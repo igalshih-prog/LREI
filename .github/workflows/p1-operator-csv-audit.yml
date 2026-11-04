@@ -58,6 +58,9 @@ jobs:
       - name: Cross-check quarantined capture/delta metadata (NO source authentication)
         run: |
           python -m pytest -q tests/lottery/test_p1_report_chain_gate.py
+          # Trusted main has no quarantined evidence directory; zero pairs is
+          # explicitly non-attesting, while any present pair must be complete.
+          mkdir -p audit-evidence
           python -m lrei.lottery.p1_report_chain_gate --audit-dir audit-evidence
       - name: Check checked-out draw IDs and historical data structure (not source attestation)
         shell: bash

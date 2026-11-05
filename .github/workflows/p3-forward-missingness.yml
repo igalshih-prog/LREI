@@ -78,22 +78,40 @@ jobs:
             --protocol research/protocols/p3-strong-choice-forward-screen-v1.json
           )
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # The event log has already been bootstrapped on main. Never allow
+            # a missing baseline to be interpreted as an empty event history.
             file='data/p3_forward_missingness/source_evidence_events.json'
-            if git cat-file -e "${BASE_SHA}:${file}" 2>/dev/null; then
-              git show "${BASE_SHA}:${file}" > "${RUNNER_TEMP}/previous-p3-events.json"
-              args+=(--previous-events "${RUNNER_TEMP}/previous-p3-events.json")
-            else
-              # First introduction only: exactly one event, no approval assertion.
-              args+=(--bootstrap-single-event)
-            fi
+            git cat-file -e "${BASE_SHA}:${file}"
+            git show "${BASE_SHA}:${file}" > "${RUNNER_TEMP}/previous-p3-events.json"
+            args+=(--previous-events "${RUNNER_TEMP}/previous-p3-events.json")
           fi
           python -m lrei.lottery.p3_forward_evidence_events "${args[@]}"
 
-      - name: Verify main branch source discovery ledger (not source admission)
+      - name: Verify both P3 histories append-only on main push (not source admission)
         if: github.event_name == 'push'
+        env:
+          PREVIOUS_SHA: ${{ github.event.before }}
         shell: bash
         run: |
           set -euo pipefail
+          # Do not silently accept a missing, malformed or all-zero push base.
+          if [[ ! "${PREVIOUS_SHA}" =~ ^[a-f0-9]{40}$ ]] ||
+             [[ "${PREVIOUS_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "REFUSED: missing previous main commit" >&2
+            exit 2
+          fi
+          original='data/p3_forward_missingness/source_blocked_candidates.json'
+          events='data/p3_forward_missingness/source_evidence_events.json'
+          git cat-file -e "${PREVIOUS_SHA}:${original}"
+          git cat-file -e "${PREVIOUS_SHA}:${events}"
+          git show "${PREVIOUS_SHA}:${original}" > "${RUNNER_TEMP}/previous-discovery.json"
+          git show "${PREVIOUS_SHA}:${events}" > "${RUNNER_TEMP}/previous-evidence-events.json"
           python -m lrei.lottery.p3_forward_missingness \
-            --ledger data/p3_forward_missingness/source_blocked_candidates.json \
+            --ledger "${original}" \
+            --previous-ledger "${RUNNER_TEMP}/previous-discovery.json" \
             --protocol research/protocols/p3-strong-choice-forward-screen-v1.json
+          python -m lrei.lottery.p3_forward_evidence_events \
+            --events "${events}" \
+            --ledger "${original}" \
+            --protocol research/protocols/p3-strong-choice-forward-screen-v1.json \
+            --previous-events "${RUNNER_TEMP}/previous-evidence-events.json"

@@ -10,7 +10,11 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $maxPageBytes = 6MB
-$draws = if ($FullCohort) { @(3955..3968) } else { @(3955) }
+# PowerShell unwraps a one-item array emitted by an if expression. Under
+# StrictMode, the resulting scalar has no .Count property (observed in the
+# successful #3955 pilot at manifest generation). Always retain an array.
+$draws = @(3955)
+if ($FullCohort) { $draws = @(3955..3968) }
 if ($RepoRoot -ne '') {
     $repoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
 }

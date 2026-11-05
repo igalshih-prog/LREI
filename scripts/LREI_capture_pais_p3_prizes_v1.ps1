@@ -161,6 +161,12 @@ foreach ($id in $draws) {
     }
     $records.Add([pscustomobject]$entry)
     Write-Host ('Draw ' + $id + ': ' + $entry.status)
+    # Fail closed on the first capture or parser failure. Do not probe other
+    # pages after a site refusal, timeout, format drift, or parse rejection.
+    if ($entry.status -ne '16_TIERS_QUARANTINED_PENDING_HUMAN_REVIEW') {
+        Write-Host 'Stopping batch after first unsuccessful page; private manifest will still be written.'
+        break
+    }
     # Respect the public site's rate; no retries, no parallel crawling.
     if ($id -ne $draws[-1]) { Start-Sleep -Seconds 3 }
 }

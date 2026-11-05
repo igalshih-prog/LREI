@@ -22,6 +22,12 @@ From the trusted checkout root **on Windows PowerShell 5.1** (verify `git status
 powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File ".\scripts\LREI_capture_pais_p3_prizes_v1.ps1"
 ```
 
+If running a **downloaded pilot file from Downloads** from a PowerShell working directory already at the LREI repository root, use the explicit repository path rather than copying the file into `main/scripts`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\Downloads\LREI_capture_pais_p3_prizes_v1.ps1" -RepoRoot "."
+```
+
 Default is exactly **#3955**; no retries, no third-party redirects, default TLS certificate validation, 30-second timeout, 6-MiB page cap. Save the private directory under `Downloads/LREI-P3-private-*`. It produces private `draw-3955-operator-original.html`, a possibly parsed `draw-3955-quarantine-candidate.json`, parser stderr and `private-capture-manifest.json`. **Only the manifest is suitable for sharing for initial triage**, not the HTML or full tier dataset, unless rights and necessity have been reviewed. A parser failure does **not** infer zeros or silently fill prize tiers; preserve the original HTML locally for a reviewed adapter change.
 
 Only after a clean pilot and a separate check of acceptable use, the optional **full 14-page** run is:

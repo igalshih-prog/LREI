@@ -2,7 +2,8 @@
 # NO DATA PROMOTION, NO PLAY. Raw pages and parsed candidates stay PRIVATE.
 [CmdletBinding()]
 param(
-    [switch]$FullCohort
+    [switch]$FullCohort,
+    [string]$RepoRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,7 +11,12 @@ Set-StrictMode -Version Latest
 
 $maxPageBytes = 6MB
 $draws = if ($FullCohort) { @(3955..3968) } else { @(3955) }
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if ($RepoRoot -ne '') {
+    $repoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
+}
+else {
+    $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+}
 $historyFile = Join-Path $repoRoot 'data\lottery.csv'
 if (-not (Test-Path -LiteralPath $historyFile -PathType Leaf)) {
     throw 'Trusted historical CSV missing. Run from checked-out LREI repository.'

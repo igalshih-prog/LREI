@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Historical CSV has local changes.' }
 
 git fetch origin pull/116/head
 if ($LASTEXITCODE -ne 0) { throw 'Could not fetch PR #116.' }
-$expectedBlob = '6f15344ac7a493d80a842d27e16fa210592cfe73'
+$expectedBlob = '27b1f8ec593e61ed075660df6e4642bb4510329c'
 $remoteBlob = (git rev-parse 'FETCH_HEAD:scripts/LREI_capture_pais_p3_prizes_v1.ps1').Trim()
 if ($LASTEXITCODE -ne 0 -or $remoteBlob -ne $expectedBlob) {
     throw 'PR #116 capture script changed; require fresh review before execution.'
@@ -64,11 +64,21 @@ powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $pilot -RepoRoot $
 
 Default is exactly **#3955**; no retries, no third-party redirects, default TLS certificate validation, 30-second timeout, 6-MiB page cap. Save the private directory under `Downloads/LREI-P3-private-*`. It produces private `draw-3955-operator-original.html`, a possibly parsed `draw-3955-quarantine-candidate.json`, parser stderr and `private-capture-manifest.json`. **Only the manifest is suitable for sharing for initial triage**, not the HTML or full tier dataset, unless rights and necessity have been reviewed. A parser failure does **not** infer zeros or silently fill prize tiers; preserve the original HTML locally for a reviewed adapter change.
 
-Only after a clean pilot and a separate check of acceptable use, the optional **full 14-page** run is:
+### Private remaining 13 draws, with no duplicate #3955
+
+After the #3955 pilot's private original and candidate match (reported source SHA-256 `dfcac287e19499aa2d0104724dc129efea6b35ee90f1a8889e4ba04326970d85`, 138445 bytes, 8+8 tiers), the optional `-RemainingCohort` mode scopes **exactly #3956–#3968 (13 pages, maximum 208 candidate rows)**. It does not request #3955 again. This source hash is a researcher's local integrity checkpoint, **not** network attestation.
+
+**Do not run an extended capture without confirming that your use is personal/non-commercial, compatible with the operator's current terms, and limited to the private review.** The site permits viewing and downloading for personal non-commercial use but does not thereby grant publication, redistribution, bulk dataset-sharing rights, or an approved committee protocol. Abort on a 403/redirect/timeout/parser mismatch; never evade access restrictions.
+
+Use the **reviewed updated PR script** extracted by the Git-blob-pinned steps above (not the earlier 2026-11-05 copy with the pre-manifest `Count` bug). After exact-head CI and local Windows tests have been checked, in the same PowerShell session as the verified `$pilot` and `$repo`:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File ".\scripts\LREI_capture_pais_p3_prizes_v1.ps1" -FullCohort
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $pilot -RepoRoot $repo -RemainingCohort
 ```
+
+This runs at most thirteen fixed operator HTTPS GETs, with 3 seconds between successful pages, no retries and immediate stop at the first failure. Raw HTML and quarantined candidate rows stay privately under `Downloads/LREI-P3-private-*`; share only the sanitized manifest after checking that it contains no private paths. **13 successful captures do not grant permission to import or use 208 values for production/EV.**
+
+The older `-FullCohort` option remains available for a fresh separate study of the entire #3955–#3968 window, but it would redundantly request #3955 here. Do not use both flags together. The `-RemainingCohort` option is the preferred private follow-up in this existing research workflow.
 
 The script uses one public operator URL per draw in ascending order with a fixed 3-second pause, zero parallel fetching, no retries, no changed user-agent secrets and no TLS bypass; it **does not** authenticate the source/session independently, certify a protocol, obtain rights, modify any repository dataset, add an approved observation, change the four-day stale-dataset gate, or authorize a winning/prediction claim. The per-draw private artifacts are never published or sent automatically.
 

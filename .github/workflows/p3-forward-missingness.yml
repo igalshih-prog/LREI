@@ -7,8 +7,6 @@ on:
       - data/p3_forward_missingness/**
       - src/lrei/lottery/p3_forward_evidence_events.py
       - tests/lottery/test_p3_forward_evidence_events.py
-      - src/lrei/lottery/p3_forward_evidence_events.py
-      - tests/lottery/test_p3_forward_evidence_events.py
       - src/lrei/lottery/p3_forward_missingness.py
       - src/lrei/lottery/p3_forward_screen.py
       - tests/lottery/test_p3_forward_missingness.py
@@ -18,6 +16,8 @@ on:
     branches: [main]
     paths:
       - data/p3_forward_missingness/**
+      - src/lrei/lottery/p3_forward_evidence_events.py
+      - tests/lottery/test_p3_forward_evidence_events.py
       - src/lrei/lottery/p3_forward_missingness.py
       - src/lrei/lottery/p3_forward_screen.py
       - tests/lottery/test_p3_forward_missingness.py

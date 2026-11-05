@@ -18,7 +18,7 @@ The trusted `main` code already implements [`lrei.lottery.prize_capture_intake`]
 
 The capture script **does not exist in main yet**: PR #116 remains DRAFT until its exact-head CI and Windows review pass. Therefore **do not run** `main/scripts/LREI_capture_pais_p3_prizes_v1.ps1`, and do not merge the draft just to obtain the file. Use the following explicit **Git-blob-pinned extraction** from the draft. This reads one file, does not check out/switch branches, and refuses a changed script blob before running. Do this only if the official site's current access and personal-use terms allow the intended one-page private retrieval.
 
-Open **Windows PowerShell 5.1** in your existing LREI repository directory (for example `Documents/Co​​dex/LREI`, if that is where your reviewed checkout is). The local `main/data/lottery.csv` must match the pinned historical Git object, and must not contain uncommitted changes:
+Open **Windows PowerShell 5.1** in your existing LREI repository directory (for example `Documents/Codex/LREI`, if that is where your reviewed checkout is). The local `main/data/lottery.csv` must match the pinned historical Git object, and must not contain uncommitted changes:
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -43,7 +43,7 @@ if ($LASTEXITCODE -ne 0 -or $remoteBlob -ne $expectedBlob) {
 $folder = Join-Path (Join-Path $HOME 'Downloads') ('LREI-P3-pilot-reviewed-' + [Guid]::NewGuid().ToString('N').Substring(0,8))
 New-Item -ItemType Directory -Path $folder | Out-Null
 $zip = Join-Path $folder 'script.zip'
-git archive --format=zip --output=\"$zip\" FETCH_HEAD scripts/LREI_capture_pais_p3_prizes_v1.ps1
+git archive --format=zip --output="$zip" FETCH_HEAD scripts/LREI_capture_pais_p3_prizes_v1.ps1
 if ($LASTEXITCODE -ne 0) { throw 'Failed to export script from pinned Git object.' }
 Expand-Archive -LiteralPath $zip -DestinationPath $folder
 $pilot = Join-Path $folder 'scripts\LREI_capture_pais_p3_prizes_v1.ps1'

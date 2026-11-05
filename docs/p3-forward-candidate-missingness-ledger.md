@@ -6,6 +6,24 @@ The JSON file `data/p3_forward_missingness/source_blocked_candidates.json` start
 
 Every entry explicitly retains four *unsatisfied* source gates, including authentic HTTPS raw bytes and metadata, binding draw-protocol review, complete Regular/Double 8+8 tier data, and permission plus independent human review. An accepted state is impossible under this discovery-only schema. This is intentional: neither filling a source URL nor passing CI can certify source provenance. Do not confuse its `independently_admitted_draws: 0` with a statement that zero real draws occurred; it means **none are admissible for this analysis**.
 
+## Dated follow-up evidence events — 4 November 2026
+
+Do **not** rewrite the first-seen `#3981` entry in `source_blocked_candidates.json`: that row is a frozen discovery snapshot, and the ledger's append-only integrity gate intentionally rejects edits. Later user-computer source-report leads belong in the separate append-only `data/p3_forward_missingness/source_evidence_events.json`.
+
+The first event, `p3e-3981-20261104-capture-delta`, links to two **immutable GitHub commit** metadata records in [quarantined PR #44](https://github.com/igalshih-prog/LREI/pull/44): a user-uploaded Windows HTTPS-style capture report and a subsequent local byte-continuity report. These reports state that #3981 (3 November) was newly appended and the earlier archive bytes matched on the user's machine. The original source bytes and independent server/TLS attestation have **not** been re-verified by the event checker, and the website's binding committee protocol has not been reviewed. These are evidence *leads*, not admitted winning numbers or payout amounts.
+
+Verify this supplemental log and its future append-only additions with:
+
+```bash
+python -m lrei.lottery.p3_forward_evidence_events \
+  --events data/p3_forward_missingness/source_evidence_events.json \
+  --ledger data/p3_forward_missingness/source_blocked_candidates.json \
+  --protocol research/protocols/p3-strong-choice-forward-screen-v1.json
+python -m pytest -q tests/lottery/test_p3_forward_evidence_events.py
+```
+
+The PR workflow compares existing events to the previous base-branch file; only the **first-ever** event may use the one-event bootstrap. All events must reference the same immutable GitHub commit for their paired metadata, preserve all four missing research gates and set every authentication/admission/playing claim to **false**. An empty or invalid source-verification path never qualifies a draw for the frozen P3 20+20 future-observation groups. Independent first-party protocol, lawful source-use rights, full Regular/Double prize tiers and human approval are still required before any separate admission decision.
+
 ## Reproduce
 
 ```bash

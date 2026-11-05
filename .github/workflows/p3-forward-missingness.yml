@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - data/p3_forward_missingness/**
+      - src/lrei/lottery/p3_forward_evidence_events.py
+      - tests/lottery/test_p3_forward_evidence_events.py
       - src/lrei/lottery/p3_forward_missingness.py
       - src/lrei/lottery/p3_forward_screen.py
       - tests/lottery/test_p3_forward_missingness.py
@@ -14,6 +16,8 @@ on:
     branches: [main]
     paths:
       - data/p3_forward_missingness/**
+      - src/lrei/lottery/p3_forward_evidence_events.py
+      - tests/lottery/test_p3_forward_evidence_events.py
       - src/lrei/lottery/p3_forward_missingness.py
       - src/lrei/lottery/p3_forward_screen.py
       - tests/lottery/test_p3_forward_missingness.py
@@ -43,8 +47,8 @@ jobs:
 
       - name: Compile and run source-gated regression tests
         run: |
-          python -m compileall -q src/lrei/lottery/p3_forward_missingness.py
-          python -m pytest -q tests/lottery/test_p3_forward_missingness.py
+          python -m compileall -q src/lrei/lottery/p3_forward_missingness.py src/lrei/lottery/p3_forward_evidence_events.py
+          python -m pytest -q tests/lottery/test_p3_forward_missingness.py tests/lottery/test_p3_forward_evidence_events.py
 
       - name: Verify proposed discovery ledger against base branch (append-only)
         if: github.event_name == 'pull_request'
@@ -61,6 +65,29 @@ jobs:
             --ledger "${path}" \
             --previous-ledger "${RUNNER_TEMP}/p3-previous-ledger.json" \
             --protocol research/protocols/p3-strong-choice-forward-screen-v1.json
+
+      - name: Validate append-only source-evidence events (NOT source admission)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --events data/p3_forward_missingness/source_evidence_events.json
+            --ledger data/p3_forward_missingness/source_blocked_candidates.json
+            --protocol research/protocols/p3-strong-choice-forward-screen-v1.json
+          )
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            file='data/p3_forward_missingness/source_evidence_events.json'
+            if git cat-file -e "${BASE_SHA}:${file}" 2>/dev/null; then
+              git show "${BASE_SHA}:${file}" > "${RUNNER_TEMP}/previous-p3-events.json"
+              args+=(--previous-events "${RUNNER_TEMP}/previous-p3-events.json")
+            else
+              # First introduction only: exactly one event, no approval assertion.
+              args+=(--bootstrap-single-event)
+            fi
+          fi
+          python -m lrei.lottery.p3_forward_evidence_events "${args[@]}"
 
       - name: Verify main branch source discovery ledger (not source admission)
         if: github.event_name == 'push'

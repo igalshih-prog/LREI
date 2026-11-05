@@ -15,6 +15,7 @@ def script() -> str:
 def test_exact_fixed_cohort_and_pilot_default():
     src = script()
     assert '[switch]$FullCohort' in src
+    assert "[string]$RepoRoot = ''" in src
     assert '@(3955..3968)' in src and '@(3955)' in src
     assert 'Get-Command py' in src
     assert 'data\\lottery.csv' in src

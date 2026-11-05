@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Historical CSV has local changes.' }
 
 git fetch origin pull/116/head
 if ($LASTEXITCODE -ne 0) { throw 'Could not fetch PR #116.' }
-$expectedBlob = '4e4ca9b7e2483dfd66a55ead53b5de5778f5ef86'
+$expectedBlob = '6f15344ac7a493d80a842d27e16fa210592cfe73'
 $remoteBlob = (git rev-parse 'FETCH_HEAD:scripts/LREI_capture_pais_p3_prizes_v1.ps1').Trim()
 if ($LASTEXITCODE -ne 0 -or $remoteBlob -ne $expectedBlob) {
     throw 'PR #116 capture script changed; require fresh review before execution.'
@@ -72,6 +72,60 @@ powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File ".\scripts\LREI_ca
 
 The script uses one public operator URL per draw in ascending order with a fixed 3-second pause, zero parallel fetching, no retries, no changed user-agent secrets and no TLS bypass; it **does not** authenticate the source/session independently, certify a protocol, obtain rights, modify any repository dataset, add an approved observation, change the four-day stale-dataset gate, or authorize a winning/prediction claim. The per-draw private artifacts are never published or sent automatically.
 
+## Offline recovery after the successful #3955 pilot and pre-manifest Count crash (2026-11-05)
+
+The Windows 5.1 pilot at pinned old HEAD `24707e8` reported `16_TIERS_QUARANTINED_PENDING_HUMAN_REVIEW` for #3955 and then threw `PropertyNotFoundStrict: Count` **before writing the final manifest**. The saved original HTML and quarantined candidate were already written. Root cause: `$draws = if (...) { @(...) } else { @(3955) }` is flattened to a scalar for the singleton case. This draft now explicitly retains an array, with a regression assertion. **Do not redownload or use `-FullCohort` to repair the missing report.**
+
+The following read-only network-free recovery checks the existing local original against the private candidate's digest and byte count, verifies exactly 8+8 tier rows and non-promotion, and writes **only sanitized metadata** to the same private folder. It deliberately does not authenticate the network, verify a signed draw protocol, grant reuse rights or export prize tiers. Use PowerShell 5.1:
+
+```powershell
+& {
+  $ErrorActionPreference = 'Stop'
+  $dirs = @(Get-ChildItem -LiteralPath (Join-Path $HOME 'Downloads') -Directory -Filter 'LREI-P3-private-*' |
+    Where-Object {
+      (Test-Path -LiteralPath (Join-Path $_.FullName 'draw-3955-operator-original.html') -PathType Leaf) -and
+      (Test-Path -LiteralPath (Join-Path $_.FullName 'draw-3955-quarantine-candidate.json') -PathType Leaf)
+    } | Sort-Object LastWriteTimeUtc -Descending)
+  if ($dirs.Count -lt 1) { throw 'No complete private #3955 capture found; stop.' }
+  $folder = $dirs[0].FullName
+  $original = Join-Path $folder 'draw-3955-operator-original.html'
+  $candidatePath = Join-Path $folder 'draw-3955-quarantine-candidate.json'
+  $candidate = Get-Content -LiteralPath $candidatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $sourceHash = (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash.ToLowerInvariant()
+  $sourceBytes = (Get-Item -LiteralPath $original).Length
+  $r = @($candidate.candidate_tiers.regular)
+  $d = @($candidate.candidate_tiers.double)
+  if ([int]$candidate.draw_id -ne 3955 -or $r.Count -ne 8 -or $d.Count -ne 8 -or
+    $candidate.auto_promoted_to_prize_observations -ne $false -or
+    $candidate.candidate_source.operator_page_claimed_url -ne 'https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3955' -or
+    $sourceHash -ne $candidate.candidate_source.sha256_of_actual_supplied_bytes -or
+    $sourceBytes -ne [long]$candidate.candidate_source.supplied_byte_count) {
+    throw 'Private original/candidate integrity mismatch; stop, do not admit data.'
+  }
+  $summary = [ordered]@{
+    schema = 'lrei-p3-private-offline-reconciliation-v1'
+    draw_id = 3955
+    status = 'LOCAL_BYTES_MATCH_STRICT_16_TIERS_QUARANTINED'
+    source_bytes = $sourceBytes
+    source_sha256 = $sourceHash
+    captured_at_utc_as_reported = $candidate.candidate_source.captured_at_utc_supplied_by_researcher
+    regular_tiers = $r.Count
+    double_tiers = $d.Count
+    first_party_source_network_independently_attested = $false
+    binding_committee_protocol_verified = $false
+    source_use_rights_verified = $false
+    rows_approved_for_production = 0
+    eligible_for_play = $false
+  }
+  $summaryPath = Join-Path $folder 'private-capture-recovered-summary.json'
+  [IO.File]::WriteAllText($summaryPath, ($summary | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding($false)))
+  Write-Host 'Local offline reconciliation completed (NO SOURCE ATTESTATION)'
+  Write-Host ('Sanitized summary: ' + $summaryPath)
+  $summary | ConvertTo-Json -Depth 4
+}
+```
+
+Only share `private-capture-recovered-summary.json` after inspecting it. Do not share the original HTML, candidate prize arrays, parser stderr, private exception logs or local site-session metadata. Retain original bytes unchanged.
 ## Gate after pilot
 
 - **If 1/1 captured and 16/16 tiers extracted:** review the `private-capture-manifest.json`, confirm draw/date/current source hashing, check top-level page against independently archived draw numbers; then decide on full cohort collection and separately required permissions, signed protocols or evidence policy.

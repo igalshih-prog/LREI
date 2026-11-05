@@ -84,6 +84,47 @@ def test_payout_reconciliation_does_not_mislabel_extra_as_lotto():
     assert all(len(o["observation_sha256"]) == 64 for o in examples.values())
 
 
+
+def test_3954_official_page_extra_reconciles_all_games_total_without_relabeling_others():
+    """Read-only arithmetic check of the site's informational #3954 display.
+
+    Three product sums are needed when the operator's displayed all-games
+    total includes Extra. This does NOT attest source bytes, binding protocol,
+    reuse rights or any of the missing #3955-#3968 draw tier records.
+    Official page: https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=3954
+    """
+    report = audit_prize_series(RECORDS, MANIFEST, historic())
+    info = report["accounting"]["3954"]
+    # Five published Extra categories: exact matches of 6, 5, 4, 3, 2.
+    # (winning entries, published NIS payout per winning entry)
+    extra_tiers = (
+        (0, 60_000), (50, 1_000), (851, 75),
+        (6_773, 15), (30_610, 10),
+    )
+    extra_payout = sum(winners * amount for winners, amount in extra_tiers)
+    regular_payout = info["known_regular_lotto_payout_ils"]
+    double_payout = info["known_double_lotto_payout_ils"]
+    display_total = info["operator_all_games_total_ils"]
+
+    assert regular_payout == 1_734_564
+    assert double_payout == 2_088_288
+    assert extra_payout == 521_520
+    assert regular_payout + double_payout + extra_payout == display_total == 4_344_372
+    assert info["operator_total_minus_lotto_sum_ils"] == extra_payout
+
+    # The repository explicitly refuses to infer Extra from the other five
+    # unexplained residuals: no independent Extra tier review exists there.
+    for draw_id in range(3949, 3954):
+        row = report["accounting"][str(draw_id)]
+        assert set(row) == {
+            "known_regular_lotto_payout_ils",
+            "known_double_lotto_payout_ils",
+            "operator_all_games_total_ils",
+            "operator_total_minus_lotto_sum_ils",
+            "observation_sha256",
+        }
+
+
 def sandbox(tmp_path):
     directory = tmp_path / "records"
     directory.mkdir()

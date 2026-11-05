@@ -17,6 +17,12 @@ def test_exact_fixed_cohort_and_pilot_default():
     assert '[switch]$FullCohort' in src
     assert "[string]$RepoRoot = ''" in src
     assert '@(3955..3968)' in src and '@(3955)' in src
+    # PowerShell if-expression output unwraps a one-draw array to a scalar:
+    # under Set-StrictMode -Version Latest, $draws.Count then throws.
+    assert '$draws = @(3955)' in src
+    assert 'if ($FullCohort) { $draws = @(3955..3968) }' in src
+    assert '$draws = if ($FullCohort)' not in src
+    assert "Set-StrictMode -Version Latest" in src
     assert 'Get-Command py' in src
     assert 'data\\lottery.csv' in src
 

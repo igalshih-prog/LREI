@@ -25,6 +25,14 @@ if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
     throw 'Python launcher py is missing; install Python and LREI before running.'
 }
 
+# The offline parser must come from THIS reviewed checkout, never an unrelated
+# globally installed package that happens to have the same module name.
+$localParser = Join-Path $repoRoot 'src\lrei\lottery\prize_capture_intake.py'
+if (-not (Test-Path -LiteralPath $localParser -PathType Leaf)) {
+    throw 'The local trusted LREI prize intake module is missing.'
+}
+$env:PYTHONPATH = (Join-Path $repoRoot 'src') + [System.IO.Path]::PathSeparator + $env:PYTHONPATH
+
 $stampDir = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
 $folder = Join-Path (Join-Path $HOME 'Downloads') ('LREI-P3-private-' + $stampDir + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 [void][System.IO.Directory]::CreateDirectory($folder)

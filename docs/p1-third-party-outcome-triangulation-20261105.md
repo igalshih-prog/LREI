@@ -43,7 +43,7 @@ The local CSV is tab-delimited: `draw_id`, `numbers`, `date`, `strong_number`; t
 
 ## Additional *outside-PR* prize-tier accounting example: draw #3981
 
-The [Sikui 3981 results](https://sikui.vercel.app/results/) and the [Lottery Reminder #3981 page](https://israel.lottery-reminder.com/lotto/3981) display **matching winner count and award per win in all 8 Regular + 8 Double tiers** (16/16 spot-reviewed pairs). This is separate from the historical missing #3955–#3968 cohort and separate from PR #44. Using the visible **Lottery Reminder** Extra 5-tier amounts, an arithmetic check gives:
+The [Sikui 3981 results](https://sikui.vercel.app/results/), [Lottery Reminder #3981 page](https://israel.lottery-reminder.com/lotto/3981), and [Lotto Ishi #3981 detail page](https://lottoishi.co.il/g/lotto-3981/) display **matching winner count and award per win in all 8 Regular + 8 Double tiers** (16/16 spot-reviewed tier pairs across **three secondary websites**). Lotto Ishi and Lottery Reminder additionally display matching **five Extra prize tiers** (5/5 counts and amounts). This is separate from the historical missing #3955–#3968 cohort and separate from PR #44. Using the visible **Lottery Reminder** Extra 5-tier amounts, an arithmetic check gives:
 
 | Component | Sum of winner count × payout (NIS) |
 | --- | ---: |
@@ -52,7 +52,7 @@ The [Sikui 3981 results](https://sikui.vercel.app/results/) and the [Lottery Rem
 | Extra 5 tiers | 570,620 |
 | **All-game total** | **4,560,840** |
 
-The arithmetic `1,733,546 + 2,256,674 + 570,620 = 4,560,840` matches the headline *secondary* all-game prize total shown by [Pais Results](https://www.paisresults.co.il/) and Sikui. **The Extra tier calculation uses a single secondary site for its input**; the same-source arithmetic equality and secondary display agreement do not establish true origin or independent feed validation. No #3981 tier rows were copied into `data/prize_observations/` or promoted.
+The arithmetic `1,733,546 + 2,256,674 + 570,620 = 4,560,840` matches the headline *secondary* all-game prize total shown by [Pais Results](https://www.paisresults.co.il/), Sikui and Lotto Ishi. **The Extra tier calculation uses a single secondary site for its input**; the same-source arithmetic equality and secondary display agreement do not establish true origin or independent feed validation. No #3981 tier rows were copied into `data/prize_observations/` or promoted.
 
 ## Explicit decision (not an admission)
 

@@ -86,3 +86,19 @@ def test_private_parser_is_imported_from_the_checked_out_repo():
     assert "$env:PYTHONPATH = (Join-Path $repoRoot 'src')" in src
     # Source-code resolution is fixed before the first HTTPS request.
     assert src.index('$env:PYTHONPATH =') < src.index('foreach ($id in $draws)')
+
+
+def test_powershell_51_parser_errors_fail_closed_and_remain_private():
+    src = script()
+    # Native stderr must not bypass the parser's explicit exit-code branch.
+    assert "$previousAction = $ErrorActionPreference" in src
+    assert "$ErrorActionPreference = 'Continue'" in src
+    assert "$parserExitCode = $LASTEXITCODE" in src
+    assert "$ErrorActionPreference = $previousAction" in src
+    assert "if ($parserExitCode -eq 0)" in src
+    assert 'RAW_PAGE_CAPTURED_PARSER_FAILED_REVIEW_ONLY' in src
+    # Local exception text must not be copied into the shareable manifest.
+    assert "'-private-error.txt'" in src
+    assert '$_.Exception.ToString(), $utf8' in src
+    assert '$_.Exception.Message)' not in src
+    assert 'details retained locally' in src

@@ -133,13 +133,24 @@ foreach ($id in $draws) {
         # The repository's existing STRICT 16-tier parser operates OFFLINE only.
         # Output is written privately and never committed to GitHub.
         $parserError = Join-Path $folder ('draw-' + $id + '-parser-stderr.txt')
-        $parseOutput = @(& py -m lrei.lottery.prize_capture_intake `
-            --source-file $originalFile `
-            --content-type text/html `
-            --draw-id $id `
-            --captured-at-utc $fetched.captured_at_utc `
-            --historical-csv $historyFile 2> $parserError)
-        if ($LASTEXITCODE -eq 0) {
+        # Windows PowerShell 5.1 may treat a native tool's redirected stderr
+        # as a terminating error when ErrorActionPreference = Stop. Capture its
+        # actual exit code, then restore strict handling for the remainder.
+        $previousAction = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $parseOutput = @(& py -m lrei.lottery.prize_capture_intake `
+                --source-file $originalFile `
+                --content-type text/html `
+                --draw-id $id `
+                --captured-at-utc $fetched.captured_at_utc `
+                --historical-csv $historyFile 2> $parserError)
+            $parserExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousAction
+        }
+        if ($parserExitCode -eq 0) {
             $asString = $parseOutput -join [Environment]::NewLine
             $candidate = $asString | ConvertFrom-Json
             if ($candidate.draw_id -ne $id -or
@@ -159,7 +170,16 @@ foreach ($id in $draws) {
         }
     }
     catch {
-        $entry.error = ($_.Exception.GetType().Name + ': ' + $_.Exception.Message)
+        # Exception messages can include absolute local paths or sensitive
+        # fragments. Keep details PRIVATE; the manifest gets only a category.
+        $privateErrorFile = Join-Path $folder ('draw-' + $id + '-private-error.txt')
+        try { [IO.File]::WriteAllText($privateErrorFile, $_.Exception.ToString(), $utf8) }
+        catch { } # Never expose or retry failed captures due to logging errors.
+        $entry.error = ($_.Exception.GetType().Name + ': details retained locally; inspect private diagnostics')
+        if ($_.Exception -is [System.Net.WebException] -and
+            $_.Exception.Response -is [System.Net.HttpWebResponse]) {
+            $entry.http_status = [int]$_.Exception.Response.StatusCode
+        }
         if ($entry.raw_source_sha256) {
             $entry.status = 'RAW_PAGE_CAPTURED_REVIEW_REQUIRED'
         }

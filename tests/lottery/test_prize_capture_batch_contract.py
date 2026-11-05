@@ -65,3 +65,15 @@ def test_report_sanitized_and_no_auto_git_write():
     assert 'CAPTURE_FAILED_PRIVATE_REVIEW_ONLY' in src
     assert 'git add' not in src and 'git push' not in src
     assert 'data/prize_observations/' not in src
+
+def test_first_failure_stops_all_remaining_requests():
+    src = script()
+    # Check the failed capture/parser guard precedes the pacing/next iteration.
+    guard = "if ($entry.status -ne '16_TIERS_QUARANTINED_PENDING_HUMAN_REVIEW') {"
+    logging = "Write-Host ('Draw ' + $id + ': ' + $entry.status)"
+    pacing = 'Start-Sleep -Seconds 3'
+    assert src.count(guard) == 1
+    assert src.index(logging) < src.index(guard) < src.index(pacing)
+    guarded = src[src.index(guard):src.index(pacing)]
+    assert '\n        break\n' in guarded
+    assert 'private manifest will still be written' in guarded

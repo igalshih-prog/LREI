@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Historical CSV has local changes.' }
 
 git fetch origin pull/116/head
 if ($LASTEXITCODE -ne 0) { throw 'Could not fetch PR #116.' }
-$expectedBlob = 'c00b9c556017f6c16786dd456462247bc52290e7'
+$expectedBlob = '4e4ca9b7e2483dfd66a55ead53b5de5778f5ef86'
 $remoteBlob = (git rev-parse 'FETCH_HEAD:scripts/LREI_capture_pais_p3_prizes_v1.ps1').Trim()
 if ($LASTEXITCODE -ne 0 -or $remoteBlob -ne $expectedBlob) {
     throw 'PR #116 capture script changed; require fresh review before execution.'
@@ -54,7 +54,7 @@ if ($LASTEXITCODE -ne 0 -or $extractedBlob -ne $expectedBlob) {
 powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $pilot -RepoRoot $repo
 ```
 
-Do not post the resulting raw HTML or the 16-tier candidate JSON publicly. For initial troubleshooting share **only** the resulting `private-capture-manifest.json` after inspecting it for local paths or other sensitive content. The script sources the offline parser from this checkout's `src` directory before making a request, rather than importing an unrelated globally installed Python module.
+Do not post the resulting raw HTML or the 16-tier candidate JSON publicly. For initial troubleshooting share **only** the resulting `private-capture-manifest.json` after inspecting it for local paths or other sensitive content. HTTP/parser failures stop the batch; full exception details are kept in local `draw-<ID>-private-error.txt` or parser-stderr files and **must not be shared or committed**. The script sources the offline parser from this checkout's `src` directory before making a request, rather than importing an unrelated globally installed Python module.
 
 **Only if** the single draw #3955 succeeds, the operator's current site terms allow the intended collection, and a separate review approves expanding the private audit, use the same reviewed `$pilot` and `$repo` variables in the same PowerShell session:
 

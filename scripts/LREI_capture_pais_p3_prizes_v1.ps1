@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param(
     [switch]$FullCohort,
+    [switch]$RemainingCohort,
     [string]$RepoRoot = ''
 )
 
@@ -13,8 +14,16 @@ $maxPageBytes = 6MB
 # PowerShell unwraps a one-item array emitted by an if expression. Under
 # StrictMode, the resulting scalar has no .Count property (observed in the
 # successful #3955 pilot at manifest generation). Always retain an array.
+# After a successful locally verified #3955 pilot, the optional remaining
+# cohort begins at #3956 and never needlessly re-downloads #3955.
+# Both extended modes are private/research-only and require a human check
+# of operator terms before use; no script option grants rights or attests data.
+if ($FullCohort -and $RemainingCohort) {
+    throw 'Choose FullCohort OR RemainingCohort, not both.'
+}
 $draws = @(3955)
 if ($FullCohort) { $draws = @(3955..3968) }
+if ($RemainingCohort) { $draws = @(3956..3968) }
 if ($RepoRoot -ne '') {
     $repoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
 }

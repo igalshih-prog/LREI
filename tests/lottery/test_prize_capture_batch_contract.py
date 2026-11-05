@@ -77,3 +77,12 @@ def test_first_failure_stops_all_remaining_requests():
     guarded = src[src.index(guard):src.index(pacing)]
     assert '\n        break\n' in guarded
     assert 'private manifest will still be written' in guarded
+
+
+def test_private_parser_is_imported_from_the_checked_out_repo():
+    src = script()
+    assert "Join-Path $repoRoot 'src\\lrei\\lottery\\prize_capture_intake.py'" in src
+    assert 'Test-Path -LiteralPath $localParser -PathType Leaf' in src
+    assert "$env:PYTHONPATH = (Join-Path $repoRoot 'src')" in src
+    # Source-code resolution is fixed before the first HTTPS request.
+    assert src.index('$env:PYTHONPATH =') < src.index('foreach ($id in $draws)')

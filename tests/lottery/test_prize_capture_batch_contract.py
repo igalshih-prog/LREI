@@ -15,8 +15,10 @@ def script() -> str:
 def test_exact_fixed_cohort_and_pilot_default():
     src = script()
     assert '[switch]$FullCohort' in src
+    assert '[switch]$RemainingCohort' in src
     assert "[string]$RepoRoot = ''" in src
     assert '@(3955..3968)' in src and '@(3955)' in src
+    assert 'if ($RemainingCohort) { $draws = @(3956..3968) }' in src
     # PowerShell if-expression output unwraps a one-draw array to a scalar:
     # under Set-StrictMode -Version Latest, $draws.Count then throws.
     assert '$draws = @(3955)' in src
@@ -108,3 +110,19 @@ def test_powershell_51_parser_errors_fail_closed_and_remain_private():
     assert '$_.Exception.ToString(), $utf8' in src
     assert '$_.Exception.Message)' not in src
     assert 'details retained locally' in src
+
+
+
+def test_remaining_cohort_never_recaptures_verified_3955():
+    src = script()
+    assert "if ($FullCohort -and $RemainingCohort)" in src
+    assert "Choose FullCohort OR RemainingCohort" in src
+    assert "$draws = @(3955)" in src
+    assert "if ($FullCohort) { $draws = @(3955..3968) }" in src
+    assert "if ($RemainingCohort) { $draws = @(3956..3968) }" in src
+    # Immutable bounded allowlist: no arbitrary URL parameter or start/end ID.
+    assert "[int]$DrawId" in src
+    assert "'https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId='" in src
+    assert 'Read-BoundedOperatorPage -DrawId $id' in src
+    assert 'Start-Sleep -Seconds 3' in src
+    assert "'16_TIERS_QUARANTINED_PENDING_HUMAN_REVIEW'" in src

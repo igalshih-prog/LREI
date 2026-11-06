@@ -8,6 +8,32 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $scriptPath = Join-Path $repo 'scripts\LREI_capture_pais_p3_prizes_v1.ps1'
 $source = [IO.File]::ReadAllText($scriptPath)
 
+# Verify the actual Python import-path assignment is immune to any inherited
+# PYTHONPATH. Execute only that one assignment, not the capture script or HTTP.
+$pythonPathLines = @($source -split "\r?\n" | Where-Object {
+    $_.TrimStart().StartsWith('$env:PYTHONPATH = ', [StringComparison]::Ordinal)
+})
+if ($pythonPathLines.Count -ne 1) {
+    throw 'Expected exactly one isolated PYTHONPATH assignment'
+}
+$oldPythonPath = [Environment]::GetEnvironmentVariable('PYTHONPATH', 'Process')
+try {
+    $env:PYTHONPATH = 'C:\untrusted\module\path;'
+    $repoRoot = $repo
+    & ([ScriptBlock]::Create($pythonPathLines[0]))
+    if ($env:PYTHONPATH -cne (Join-Path $repo 'src')) {
+        throw ('Ambient PYTHONPATH is still trusted: ' + $env:PYTHONPATH)
+    }
+}
+finally {
+    [Environment]::SetEnvironmentVariable('PYTHONPATH', $oldPythonPath, 'Process')
+}
+if (-not $source.Contains('Push-Location -LiteralPath $repoRoot') -or
+    -not $source.Contains('if ($pushedRepoLocation) { Pop-Location }')) {
+    throw 'The Python -m working directory is not anchored/restored'
+}
+Write-Host 'PASS offline P3 isolated local Python import path'
+
 $tokens = $null
 $parseErrors = $null
 [void][System.Management.Automation.Language.Parser]::ParseFile(

@@ -1,0 +1,40 @@
+name: P3 Windows Prize Capture Offline Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/LREI_capture_pais_p3_prizes_v1.ps1
+      - tests/windows/test_p3_prize_capture_offline.ps1
+      - .github/workflows/p3-windows-prize-capture-offline.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/LREI_capture_pais_p3_prizes_v1.ps1
+      - tests/windows/test_p3_prize_capture_offline.ps1
+      - .github/workflows/p3-windows-prize-capture-offline.yml
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-5-1-offline:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout untrusted candidate read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify P3 script syntax and fixed cohorts (no HTTP)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\tests\windows\test_p3_prize_capture_offline.ps1
+          if (-not $?) { throw 'Offline Windows P3 regression failed' }
+      - name: No capture or admission performed
+        if: always()
+        shell: powershell
+        run: |
+          Write-Host 'This workflow only parses local code and tests synthetic cohorts.'
+          Write-Host 'No Mifal HaPais requests, actual prize records, or production changes.'

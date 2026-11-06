@@ -14,53 +14,35 @@ Do not confuse the four-digit lottery **outcome CSV** (contains dates, numbers a
 
 The trusted `main` code already implements [`lrei.lottery.prize_capture_intake`](../src/lrei/lottery/prize_capture_intake.py) (offline, strict 16-tier extraction from stored original bytes, output **quarantined**) and [`lrei.lottery.source_capture_check`](../src/lrei/lottery/source_capture_check.py) (compare against separately checked observations). This PR adds only a private **one-shot Windows page capture front-end** and static safety tests, not an alternative data importer or a way to turn an unofficial page into a signed draw protocol.
 
-## Windows pilot from the reviewed DRAFT (without changing `main`)
+## Windows preflight after PR #116 code-only merge (research-only)
 
-The capture script **does not exist in main yet**: PR #116 remains DRAFT until its exact-head CI and Windows review pass. Therefore **do not run** `main/scripts/LREI_capture_pais_p3_prizes_v1.ps1`, and do not merge the draft just to obtain the file. Use the following explicit **Git-blob-pinned extraction** from the draft. This reads one file, does not check out/switch branches, and refuses a changed script blob before running. Do this only if the official site's current access and personal-use terms allow the intended one-page private retrieval.
+The P3 capture script becomes available in `main` only **after the reviewed PR is merged**. This section supersedes the earlier draft-only Git-archive copy instructions. The successful #3955 pilot has already been saved and verified locally; **do not re-download that page**.
 
-Open **Windows PowerShell 5.1** in your existing LREI repository directory (for example `Documents/Codex/LREI`, if that is where your reviewed checkout is). The local `main/data/lottery.csv` must match the pinned historical Git object, and must not contain uncommitted changes:
+The following local preflight does **not contact the lottery website**. Use it in **Windows PowerShell 5.1**, after checking the operator's current terms for your proposed personal and non-commercial use. Never publish private source HTML or prize-tier files.
 
 ```powershell
 $ErrorActionPreference = 'Stop'
+Set-Location "$HOME\Documents\Codex\LREI"
 $repo = (Get-Location).Path
-$localBranch = (git branch --show-current).Trim()
-if ($LASTEXITCODE -ne 0 -or $localBranch -ne 'main') { throw 'Run from the existing LREI main checkout.' }
-$historyBlob = (git rev-parse 'HEAD:data/lottery.csv').Trim()
-if ($LASTEXITCODE -ne 0 -or $historyBlob -ne '3f3d4c28e8973861fa7b1eb54773096c3f0fb459') {
-    throw 'Local historical CSV does not match the reviewed approved archive.'
+if ((git branch --show-current).Trim() -ne 'main') { throw 'Use main checkout.' }
+git diff --quiet HEAD
+if ($LASTEXITCODE -ne 0) { throw 'Tracked local changes: stop and review.' }
+git pull --ff-only origin main
+if ($LASTEXITCODE -ne 0) { throw 'Could not fast-forward main.' }
+$historicalBlob = (git rev-parse 'HEAD:data/lottery.csv').Trim()
+if ($LASTEXITCODE -ne 0 -or $historicalBlob -ne '3f3d4c28e8973861fa7b1eb54773096c3f0fb459') {
+    throw 'Approved historical dataset changed; stop for review.'
 }
-git diff --quiet HEAD -- data/lottery.csv
-if ($LASTEXITCODE -ne 0) { throw 'Historical CSV has local changes.' }
-
-git fetch origin pull/116/head
-if ($LASTEXITCODE -ne 0) { throw 'Could not fetch PR #116.' }
-$expectedBlob = '27b1f8ec593e61ed075660df6e4642bb4510329c'
-$remoteBlob = (git rev-parse 'FETCH_HEAD:scripts/LREI_capture_pais_p3_prizes_v1.ps1').Trim()
-if ($LASTEXITCODE -ne 0 -or $remoteBlob -ne $expectedBlob) {
-    throw 'PR #116 capture script changed; require fresh review before execution.'
+$pilot = Join-Path $repo 'scripts\LREI_capture_pais_p3_prizes_v1.ps1'
+if (-not (Test-Path -LiteralPath $pilot -PathType Leaf)) { throw 'P3 script is absent from main.' }
+$actualScriptBlob = (git hash-object -- $pilot).Trim()
+if ($LASTEXITCODE -ne 0 -or $actualScriptBlob -ne '27b1f8ec593e61ed075660df6e4642bb4510329c') {
+    throw 'Capture script does not match reviewed Git blob; stop.'
 }
-
-$folder = Join-Path (Join-Path $HOME 'Downloads') ('LREI-P3-pilot-reviewed-' + [Guid]::NewGuid().ToString('N').Substring(0,8))
-New-Item -ItemType Directory -Path $folder | Out-Null
-$zip = Join-Path $folder 'script.zip'
-git archive --format=zip --output="$zip" FETCH_HEAD scripts/LREI_capture_pais_p3_prizes_v1.ps1
-if ($LASTEXITCODE -ne 0) { throw 'Failed to export script from pinned Git object.' }
-Expand-Archive -LiteralPath $zip -DestinationPath $folder
-$pilot = Join-Path $folder 'scripts\LREI_capture_pais_p3_prizes_v1.ps1'
-$extractedBlob = (git hash-object -- $pilot).Trim()
-if ($LASTEXITCODE -ne 0 -or $extractedBlob -ne $expectedBlob) {
-    throw 'Extracted script bytes mismatch; do not execute.'
-}
-powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $pilot -RepoRoot $repo
+Write-Host 'Script and approved archive verified; no capture started.'
 ```
 
-Do not post the resulting raw HTML or the 16-tier candidate JSON publicly. For initial troubleshooting share **only** the resulting `private-capture-manifest.json` after inspecting it for local paths or other sensitive content. HTTP/parser failures stop the batch; full exception details are kept in local `draw-<ID>-private-error.txt` or parser-stderr files and **must not be shared or committed**. The script sources the offline parser from this checkout's `src` directory before making a request, rather than importing an unrelated globally installed Python module.
-
-**Only if** the single draw #3955 succeeds, the operator's current site terms allow the intended collection, and a separate review approves expanding the private audit, use the same reviewed `$pilot` and `$repo` variables in the same PowerShell session:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $pilot -RepoRoot $repo -FullCohort
-```
+After this preflight, the bounded `-RemainingCohort` option below is the intended **separate, explicit, private** action. Do not run the default #3955 pilot again. `git pull` itself never runs a lottery capture, imports observations, or grants use rights.
 
 Default is exactly **#3955**; no retries, no third-party redirects, default TLS certificate validation, 30-second timeout, 6-MiB page cap. Save the private directory under `Downloads/LREI-P3-private-*`. It produces private `draw-3955-operator-original.html`, a possibly parsed `draw-3955-quarantine-candidate.json`, parser stderr and `private-capture-manifest.json`. **Only the manifest is suitable for sharing for initial triage**, not the HTML or full tier dataset, unless rights and necessity have been reviewed. A parser failure does **not** infer zeros or silently fill prize tiers; preserve the original HTML locally for a reviewed adapter change.
 

@@ -92,6 +92,16 @@ def test_private_parser_is_imported_from_the_checked_out_repo():
     assert "Join-Path $repoRoot 'src\\lrei\\lottery\\prize_capture_intake.py'" in src
     assert 'Test-Path -LiteralPath $localParser -PathType Leaf' in src
     assert "$env:PYTHONPATH = (Join-Path $repoRoot 'src')" in src
+    # Never inherit ambient module directories (including empty segments).
+    assert "+ $env:PYTHONPATH" not in src
+    assert "PathSeparator + $env:PYTHONPATH" not in src
+    # Python -m still implicitly prepends the process working directory.
+    # Anchor it to the reviewed checkout before calling the strict parser.
+    assert "Push-Location -LiteralPath $repoRoot" in src
+    assert "$pushedRepoLocation = $true" in src
+    assert "if ($pushedRepoLocation) { Pop-Location }" in src
+    assert src.index("Push-Location -LiteralPath $repoRoot") < src.index("$parseOutput = @(& py -m")
+    assert src.index("$parseOutput = @(& py -m") < src.index("if ($pushedRepoLocation) { Pop-Location }")
     # Source-code resolution is fixed before the first HTTPS request.
     assert src.index('$env:PYTHONPATH =') < src.index('foreach ($id in $draws)')
 

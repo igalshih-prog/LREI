@@ -106,7 +106,8 @@ def test_strict_thirteen_draw_private_cohort_only_prints_counts(tmp_path):
     assert result["dataset_promotion_approved"] is False
     assert result["source_authenticity_independently_verified"] is False
     assert result["eligible_for_monetary_expected_value"] is False
-    assert "total" not in json.dumps(result)
+    assert "known_regular_lotto_payout_ils" not in result
+    assert "prize_values" not in result
     assert len(list(tmp_path.iterdir())) == 27  # 13 pairs + existing manifest only
 
 

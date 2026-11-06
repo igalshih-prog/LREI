@@ -36,13 +36,13 @@ if ($LASTEXITCODE -ne 0 -or $historicalBlob -ne '3f3d4c28e8973861fa7b1eb54773096
 $pilot = Join-Path $repo 'scripts\LREI_capture_pais_p3_prizes_v1.ps1'
 if (-not (Test-Path -LiteralPath $pilot -PathType Leaf)) { throw 'P3 script is absent from main.' }
 $actualScriptBlob = (git hash-object -- $pilot).Trim()
-if ($LASTEXITCODE -ne 0 -or $actualScriptBlob -ne '27b1f8ec593e61ed075660df6e4642bb4510329c') {
+if ($LASTEXITCODE -ne 0 -or $actualScriptBlob -ne '9e942bbb1fc0a7664937b2cf5196bfb03bf5bc17') {
     throw 'Capture script does not match reviewed Git blob; stop.'
 }
 Write-Host 'Script and approved archive verified; no capture started.'
 ```
 
-After this preflight, the bounded `-RemainingCohort` option below is the intended **separate, explicit, private** action. Do not run the default #3955 pilot again. `git pull` itself never runs a lottery capture, imports observations, or grants use rights.
+After this preflight, the bounded `-RemainingCohort` option below is the intended **separate, explicit, private** action. The strict parser launch now isolates `PYTHONPATH` to this checkout's `src` and temporarily changes the Python process's working directory to the trusted checkout, restoring it immediately afterward. It does not inherit arbitrary third-party Python import directories from the researcher's terminal. Do not run the default #3955 pilot again. `git pull` itself never runs a lottery capture, imports observations, or grants use rights.
 
 Default is exactly **#3955**; no retries, no third-party redirects, default TLS certificate validation, 30-second timeout, 6-MiB page cap. Save the private directory under `Downloads/LREI-P3-private-*`. It produces private `draw-3955-operator-original.html`, a possibly parsed `draw-3955-quarantine-candidate.json`, parser stderr and `private-capture-manifest.json`. **Only the manifest is suitable for sharing for initial triage**, not the HTML or full tier dataset, unless rights and necessity have been reviewed. A parser failure does **not** infer zeros or silently fill prize tiers; preserve the original HTML locally for a reviewed adapter change.
 

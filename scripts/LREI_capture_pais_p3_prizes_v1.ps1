@@ -44,7 +44,10 @@ $localParser = Join-Path $repoRoot 'src\lrei\lottery\prize_capture_intake.py'
 if (-not (Test-Path -LiteralPath $localParser -PathType Leaf)) {
     throw 'The local trusted LREI prize intake module is missing.'
 }
-$env:PYTHONPATH = (Join-Path $repoRoot 'src') + [System.IO.Path]::PathSeparator + $env:PYTHONPATH
+# Do not append inherited PYTHONPATH. Empty segments can add the shell's
+# working directory to import resolution, and inherited segments need not
+# belong to this reviewed checkout. The offline parser only needs local src.
+$env:PYTHONPATH = (Join-Path $repoRoot 'src')
 
 $stampDir = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
 $folder = Join-Path (Join-Path $HOME 'Downloads') ('LREI-P3-private-' + $stampDir + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -150,7 +153,12 @@ foreach ($id in $draws) {
         # as a terminating error when ErrorActionPreference = Stop. Capture its
         # actual exit code, then restore strict handling for the remainder.
         $previousAction = $ErrorActionPreference
+        $pushedRepoLocation = $false
         try {
+            # Python -m also considers its current working directory. Invoke
+            # from the checked-out repository, not an arbitrary shell folder.
+            Push-Location -LiteralPath $repoRoot
+            $pushedRepoLocation = $true
             $ErrorActionPreference = 'Continue'
             $parseOutput = @(& py -m lrei.lottery.prize_capture_intake `
                 --source-file $originalFile `
@@ -162,6 +170,7 @@ foreach ($id in $draws) {
         }
         finally {
             $ErrorActionPreference = $previousAction
+            if ($pushedRepoLocation) { Pop-Location }
         }
         if ($parserExitCode -eq 0) {
             $asString = $parseOutput -join [Environment]::NewLine

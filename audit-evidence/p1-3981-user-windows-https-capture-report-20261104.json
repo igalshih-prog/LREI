@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "record_date_israel": "2026-11-04",
+  "status": "QUARANTINED_USER_UPLOADED_3981_REPORT_ONLY_NOT_INDEPENDENT_ATTESTATION",
+  "source": "USER_UPLOADED_WINDOWS_CAPTURE_REPORT_JSON_NOT_RAW_CSV",
+  "uploaded_report_integrity": {
+    "sha256_locally_computed_from_uploaded_report_bytes": "649c7540e174da33bb76ce1ee1c8e63e2135f5060f359f9c3751b1f8dc0554ea",
+    "report_bytes_locally_measured": 1802,
+    "report_json_schema": "lrei-windows-rolling-https-source-review-v4",
+    "capture_script_sha256_reported": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
+    "capture_script_sha256_matches_previously_reconciled_windows_checkout": true
+  },
+  "reported_first_party_http": {
+    "requested_url": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "final_url": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "redirect_chain": [
+      "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx"
+    ],
+    "captured_at_utc": "2026-11-04T15:13:00Z",
+    "http_status_reported": 200,
+    "content_type_reported": "application/text",
+    "tls_certificate_validation_disabled_reported": false,
+    "final_url_is_first_party_https_reported": true,
+    "independent_network_attestation": false
+  },
+  "reported_original_archive": {
+    "raw_response_sha256_reported": "0034509bdfa510c3978abcff14baee705f6bebf85701c7e6978ac07ecc171560",
+    "raw_response_bytes_reported": 183772,
+    "archive_rows_reported": 4557,
+    "modern_first_draw_id_reported": 2833,
+    "modern_last_draw_id_reported": 3981,
+    "modern_latest_draw_date_israel_reported": "2026-11-03",
+    "modern_draw_count_reported": 1149,
+    "modern_count_matches_contiguous_id_window": true,
+    "raw_source_bytes_received_for_this_review": false,
+    "raw_source_digest_independently_recomputed": false
+  },
+  "predecessor_comparison_reported": {
+    "previous_report_verified_in_previous_review": "2026-11-01 #3980",
+    "previous_raw_sha256_reported": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "previous_last_draw_id": 3980,
+    "compared_prior_modern_rows_reported": 1148,
+    "historical_differences_reported": [],
+    "only_added_draw_ids_reported": [
+      3981
+    ],
+    "raw_archival_byte_delta_reported_vs_predecessor": 42,
+    "predecessor_raw_full_archive_byte_reconciliation_completed_in_this_review": false
+  },
+  "age_gate_at_reported_capture": {
+    "israel_local_age_days_reported": 1,
+    "limit_days": 4,
+    "reported_source_content_recency_ok": true,
+    "approved_main_dataset_freshness_ok": false
+  },
+  "dataset_handling": {
+    "candidate_pr": 44,
+    "file_is_metadata_only": true,
+    "draw_result_row_included": false,
+    "winning_numbers_imported": false,
+    "any_prize_tier_values_imported": false,
+    "verified_source_dataset_created": false,
+    "no_dataset_changes": true,
+    "data_promotion_approved": false,
+    "legally_binding_draw_protocol_verified": false,
+    "source_rights_and_permission_verified": false,
+    "independent_human_source_promotion_approval": false,
+    "financial_or_predictive_eligibility": false,
+    "research_only_no_play": true
+  },
+  "review_limitation": "The locally validated uploaded JSON and its digest establish what the user's Windows script reported. They do not independently prove original network provenance, original raw-source bytes, legal reuse rights, legally binding draw protocols, or permission to update main. Retain original CSV privately; PR #44 remains DRAFT and NO MERGE."
+}

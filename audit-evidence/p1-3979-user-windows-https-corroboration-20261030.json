@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "status": "QUARANTINED_USER_WINDOWS_FIRST_PARTY_HTTPS_REPORT_HUMAN_REVIEW_REQUIRED",
+  "capture_report": {
+    "source": "USER_SUPPLIED_JSON_CAPTURE_REPORT_NOT_SERVER_SIDE_NETWORK_ATTESTATION",
+    "report_schema": "lrei-windows-https-corroboration-v1",
+    "capture_report_sha256": "11279bbbf510cc58fda0df15e4fee36743872174944ff9d28ca6218db840b806",
+    "captured_at_utc": "2026-10-30T17:52:09Z",
+    "source_requested": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "final_response_url": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "http_status": 200,
+    "content_type": "application/text",
+    "first_party_https_hostname_reported": true,
+    "tls_certificate_validation_disabled_reported": false,
+    "raw_response_bytes_reported": 183688,
+    "raw_response_sha256_reported": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "matches_original_uploaded_file_reported": true,
+    "error_reported": null
+  },
+  "local_independent_checks": {
+    "original_uploaded_file_sha256_computed": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "original_uploaded_file_bytes_computed": 183688,
+    "normalized_candidate_sha256_computed": "6843c2e21dc261a00c6bd323638c637bc6a117a6ad5dc1f7bcc303939227ed63",
+    "normalized_candidate_git_blob_sha1_computed": "fd1ee320d048afac033f9ea28a4f55da7da195e8",
+    "normalized_candidate_rows": 1147,
+    "first_candidate_draw": 2833,
+    "last_candidate_draw": 3979,
+    "last_candidate_date_israel": "2026-10-27",
+    "modern_6_of_37_missing_ids": 0,
+    "raw_archive_rows": 4555,
+    "raw_old_upload_plus_one_row_sha256_verified": true,
+    "previous_snapshot_main_draw_2833_to_3973_git_blob_matched": true,
+    "previous_snapshot_pr44_draw_2833_to_3978_git_blob_matched": true
+  },
+  "evidence_limits": {
+    "user_environment_report_is_not_signed_third_party_attestation": true,
+    "tls_certificate_chain_fingerprint_not_in_report": true,
+    "original_raw_http_response_bytes_not_committed": true,
+    "legally_binding_draw_protocol_verified": false,
+    "source_license_and_redistribution_review_complete": false,
+    "independent_human_source_review_complete": false,
+    "dataset_promotion_approved": false,
+    "historical_upload_original_acquisition_provenance_proven": false,
+    "full_payout_8_regular_plus_8_double_present": false,
+    "economic_expected_value_supported": false,
+    "prospective_live_or_play_authorized": false
+  },
+  "next_human_checks": [
+    "Open the preserved local Windows raw operator response privately if required; validate HTTP capture chain, final URL, TLS handling and timestamps",
+    "Review operator-approved draw protocols and any license or reuse limits separately",
+    "Check current operator archive for draws added after 3979 before approving 4-day freshness",
+    "Validate all 1147 modern draw rows and tests on exact draft PR head",
+    "Separately receive and validate missing 14 complete prize-tier tables before economic analysis"
+  ]
+}

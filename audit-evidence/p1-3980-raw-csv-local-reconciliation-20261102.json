@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "review_date_israel": "2026-11-02",
+  "status": "USER_UPLOADED_RAW_BYTES_RECONCILED__PROVENANCE_AND_PROMOTION_UNVERIFIED",
+  "research_only_no_play": true,
+  "review_scope": "Offline inspection of user-uploaded raw CSV bytes; GitHub main and PR #44 file content fetched separately",
+  "captured_source_reported_by_user": {
+    "capture_at_utc": "2026-11-01T19:35:00Z",
+    "reported_final_https_url": "https://www.pais.co.il/Lotto/lotto_resultsDownload.aspx",
+    "reported_http_status": 200,
+    "reported_tls_validation_disabled": false,
+    "independently_verified_network_provenance": false
+  },
+  "raw_upload_verified_locally": {
+    "sha256": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "bytes": 183730,
+    "text_encoding": "windows-1255",
+    "parsed_archive_rows": 4556,
+    "header_fields_including_trailing_empty": 12,
+    "sha256_matches_user_capture_report": true
+  },
+  "modern_window_from_raw_upload": {
+    "first_draw_id": 2833,
+    "last_draw_id": 3980,
+    "draw_count": 1148,
+    "no_missing_draw_ids": true,
+    "no_duplicate_draw_ids": true,
+    "chronological_dates": true,
+    "six_distinct_main_numbers_in_1_to_37": true,
+    "strong_number_in_1_to_7": true,
+    "canonical_format": "draw_id|YYYY-MM-DD|six_ASC_sorted_2_digit_comma_numbers|strong_number followed by LF, in ascending draw_id",
+    "canonical_sha256": "c28e0c5c4a6babb833fad91359538aec0a2cf33b71ccd858d056c461b845651c"
+  },
+  "main_approved_overlap": {
+    "main_sha_at_review": "f6424682bb48c8a909f1fc4714364d9ea5fd9a1a",
+    "first_draw_id": 2833,
+    "last_draw_id": 3973,
+    "compared_rows": 1141,
+    "canonical_sha256_from_raw_upload": "da3b082eec809b3788a870ac6f57284098109bacd761e9aee30aa1594534869b",
+    "canonical_sha256_from_github_main": "da3b082eec809b3788a870ac6f57284098109bacd761e9aee30aa1594534869b",
+    "all_rows_match": true
+  },
+  "draft_candidate_reconciliation": {
+    "pull_request": 44,
+    "remains_draft": true,
+    "previous_last_draw_id": 3979,
+    "previous_rows": 1147,
+    "previous_candidate_raw_sha256": "6843c2e21dc261a00c6bd323638c637bc6a117a6ad5dc1f7bcc303939227ed63",
+    "previous_candidate_reconstructed_from_uploaded_raw_sha256": "6843c2e21dc261a00c6bd323638c637bc6a117a6ad5dc1f7bcc303939227ed63",
+    "only_appended_row": "3980\t01,03,16,21,32,36\t31-10-26\t1",
+    "candidate_after_append_rows": 1148,
+    "candidate_after_append_sha256": "892475f96bb9dbfa4a84c48000d042a317b81b9768fd0ef64ffdb804979c47fc",
+    "appended_draw_is_source_claim_not_signed_result": true
+  },
+  "approval_gates": {
+    "binding_operator_draw_protocol_reviewed": false,
+    "network_origin_cryptographically_attested": false,
+    "permission_and_usage_rights_reviewed": false,
+    "independent_human_dataset_promotion_approved": false,
+    "candidate_eligible_for_main_merge": false,
+    "financial_or_predictive_advantage_established": false
+  },
+  "note": "Digest equality proves equality to these uploaded bytes and repository content; it does not prove who served or signed the bytes. Keep raw CSV private. Do not merge draft PR #44.",
+  "capture_script_reproducibility": {
+    "source_repository": "igalshih-prog/LREI",
+    "source_commit": "7e3eacb3e76fcc06b0e6ba4e02cd6fec4274992c",
+    "source_path": "scripts/LREI_capture_pais_latest_v4.ps1",
+    "git_blob_sha1": "d64ed42f4a9a8d639bb24dec030b58e2005976d2",
+    "source_encoding": "UTF-8 with BOM",
+    "source_git_checkout_line_endings": "CRLF (Windows)",
+    "git_repository_source_sha256_lf": "680cfb1dc5e8556ebf6ae048a9ab9d3225051afb80c36b8f818e73f407f19b44",
+    "checkout_reconstructed_bytes": 20402,
+    "checkout_reconstructed_sha256": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
+    "user_capture_report_script_sha256": "5b297b1dcd2ade79b13dcb055751d926e554ece264f4b0ccfd5b8f06b47403f3",
+    "hashes_match": true,
+    "limits": "Matches submitted report's script fingerprint to a reproducible Windows-format checkout; does not prove execution, network authenticity, signed draw protocol or human approval."
+  },
+  "full_archive_raw_byte_continuity": {
+    "verification_scope": "all raw CSV bytes, not merely the 6/37 comparison window",
+    "new_raw_sha256": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "new_raw_size_bytes": 183730,
+    "header_bytes": 79,
+    "one_appended_top_row": "3980,31/10/2026,01,03,16,21,32,36,1,0,0,",
+    "appended_line_length_bytes": 42,
+    "line_ending": "CRLF",
+    "reconstructed_previous_file_bytes": 183688,
+    "reconstructed_previous_file_sha256": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "previous_reported_raw_sha256": "3f6ff3b40bcf4ac26407fe09cdea6ac5c23cac78fffccc847f74e07f848f0074",
+    "previous_capture_raw_content_match": true,
+    "previous_archive_rows": 4555,
+    "new_archive_rows": 4556,
+    "untouched_previous_archive_rows": 4555,
+    "header_and_all_preexisting_raw_archive_records_unchanged": true,
+    "source_file_schema_checks": {
+      "all_rows_have_12_fields": true,
+      "all_draw_ids_numeric": true,
+      "all_4556_dates_parse_dd_mm_yyyy": true,
+      "no_duplicate_draw_ids_across_archive": true
+    },
+    "limitation": "A byte-for-byte predecessor hash match is offline content continuity, not independent proof of serving host, live HTTPS execution, committee protocol or permission to promote data."
+  },
+  "ci_gate_review_after_pr102": {
+    "reviewed_on_israel_date": "2026-11-03",
+    "trusted_main_workflow_commit": "cbeeebd15d81159fe2927700e1683cffd77d87a0",
+    "trusted_main_merged_pr": 102,
+    "workflow_file": ".github/workflows/p1-operator-csv-audit.yml",
+    "workflow_paths_verified_in_trusted_main": [
+      "data/lottery.csv",
+      "audit-evidence/p1-*.json"
+    ],
+    "new_offline_structural_check_requires_consecutive_numeric_draw_ids": true,
+    "new_offline_structural_check_uses_csv_dataset_loader": true,
+    "reason_for_evidence_update": "Trigger and observe this dedicated offline data-and-evidence CI check on quarantined PR #44 after PR #102 merged.",
+    "no_changes_to_candidate_draw_data": true,
+    "do_not_assume_check_passed_until_exact_head_ci_verified": true,
+    "source_authentication_or_legal_protocol_proved": false,
+    "automatic_data_promotion_permitted": false,
+    "research_only_no_play": true
+  }
+}

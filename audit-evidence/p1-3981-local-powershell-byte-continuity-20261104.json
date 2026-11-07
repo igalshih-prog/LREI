@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "review_date_israel": "2026-11-04",
+  "status": "QUARANTINED_LOCAL_POWERSHELL_BYTE_CONTINUITY_REPORT_NOT_PROVENANCE",
+  "source_scope": "User-uploaded local Windows PowerShell comparison report (NOT original CSV bytes)",
+  "report_file": {
+    "sha256_computed_from_uploaded_json": "a5026a4779505ce96080b927c321e472030495d6fbd83e7fb70ca314fa038404",
+    "size_bytes_computed_from_uploaded_json": 515,
+    "json_parsed_successfully": true,
+    "exact_expected_fields_and_values_validated": true,
+    "actual_local_script_execution_independently_observed": false
+  },
+  "reported_comparison": {
+    "status": "ONE_NEW_DRAW_ROW_BYTE_EXACT_MATCH",
+    "old_sha256": "5d3cfe5e69abefddb606d9a0de74b8c76d4350e129bdc7d7780b549b4d70714b",
+    "new_sha256": "0034509bdfa510c3978abcff14baee705f6bebf85701c7e6978ac07ecc171560",
+    "old_bytes": 183730,
+    "new_bytes": 183772,
+    "new_row_bytes": 42,
+    "new_draw_id": 3981,
+    "prior_archive_bytes_unchanged_reported": true,
+    "reported_new_row_date": "2026-11-03",
+    "size_delta_equals_reported_added_row_length": true,
+    "prior_and_current_digests_match_user_capture_report_chain": true
+  },
+  "validation_scope": {
+    "report_json_bytes_and_schema_independently_inspected": true,
+    "actual_183730_and_183772_raw_csv_bytes_received_or_rehashed_in_this_review": false,
+    "original_https_server_session_independently_attested": false,
+    "verified_operator_binding_draw_protocol": false,
+    "source_reuse_rights_verified": false,
+    "independent_human_promotion_approval": false
+  },
+  "research_disposition": {
+    "keep_pr44_draft": true,
+    "candidate_data_csv_modified": false,
+    "main_approved_csv_modified": false,
+    "promotion_to_main_permitted": false,
+    "draw_results_and_payout_tiers_not_added_to_repository": true,
+    "research_only_no_play": true,
+    "assertion": "Metadata-only reported exact predecessor-byte continuity; not a first-party provenance certificate or source-licence grant."
+  }
+}
